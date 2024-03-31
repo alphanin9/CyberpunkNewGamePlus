@@ -6,6 +6,8 @@
 #include <tuple>
 #include <vector>
 
+#include "fileReader.hpp"
+
 #include "definitions/fileInfo.hpp"
 #include "definitions/nodeEntry.hpp"
 #include "definitions/compression/compressionHeader.hpp"
@@ -20,70 +22,76 @@
 
 // Copypasted from WolvenKit :(
 namespace parser {
-	std::vector<std::byte> DecompressFile(std::vector<std::byte>& fileStream);
+	bool Parser::parseMetadata(std::filesystem::path aMetadataPath) {
+		
+		return true;
+	}
 
-	void loadNodes(std::vector<std::byte>& decompressedData, std::vector<cyberpunk::NodeEntry>& flatNodes);
+	bool Parser::parseSavegame(std::filesystem::path aSavePath) {
 
-	void beginParse(std::vector<std::byte>& fileStream) {
-		cyberpunk::SaveHeader header;
+		const auto bufferSize = std::filesystem::file_size(aSavePath);
+
+		m_fileStream = std::vector<std::byte>{ bufferSize };
 		{
-			auto fileCursorPtr = fileStream.data();
-			auto fileCursor = FileCursor{ fileCursorPtr, fileStream.size() };
+			auto file = std::ifstream{ aSavePath, std::ios_base::binary };
+			file.read(reinterpret_cast<char*>(m_fileStream.data()), bufferSize);
+			std::println("Read file!");
+		}
+
+		{
+			auto fileCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
 
 			const auto magic = fileCursor.readUInt();
 
 			if (magic != cyberpunk::FILE_MAGIC) {
-				std::println("Magic check failed, {}", magic);
-				return;
+				return false;
 			}
 
-			std::println("Magic checks out");
-			header = cyberpunk::SaveHeader::fromCursor(fileCursor);
+			m_header = cyberpunk::SaveHeader::fromCursor(fileCursor);
+		}
+
+		if (m_header.gameVersion < 2000) {
+			return false;
 		}
 		
 		auto infoStart = 0;
 		{
-			auto reverseCursorPtr = fileStream.data() + fileStream.size() - 8u;
-			auto reverseCursor = FileCursor{ fileStream.data(), fileStream.size() };
+			auto reverseCursorPtr = m_fileStream.data() + m_fileStream.size() - 8u;
+			auto reverseCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
 
 			reverseCursor.seekTo(FileCursor::SeekTo::End, -8);
 
 			infoStart = reverseCursor.readInt();
 			if (reverseCursor.readUInt() != cyberpunk::FILE_DONE) {
-				std::println("DONE check failed");
-				return;
+				return false;
 			}
 		}
 
 		std::println("Info start: {}", infoStart);
 
-		auto fileCursor = FileCursor{ fileStream.data(), fileStream.size() };
+		auto fileCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
 		fileCursor.seekTo(FileCursor::SeekTo::Start, infoStart);
 
 		if (fileCursor.readUInt() != cyberpunk::FILE_NODE) {
-			std::println("NODE check failed");
-			return;
+			return false;
 		}
 
 		const auto nodeCount = fileCursor.readVlqInt32();
-		std::println("{} nodes", nodeCount);
-
-		std::vector<cyberpunk::NodeEntry> flatNodes{};
 
 		for (auto i = 0; i < nodeCount; i++) {
-			flatNodes.push_back(cyberpunk::NodeEntry::fromCursor(fileCursor));
+			m_flatNodes.push_back(cyberpunk::NodeEntry::fromCursor(fileCursor));
 		}
 
 		std::println("Finished reading flat nodes");
 
-		auto decompressedData = DecompressFile(fileStream);
+		auto decompressedData = decompressFile(m_fileStream);
 
 		std::println("Buffer size: {}", decompressedData.size());
 
-		loadNodes(decompressedData, flatNodes);
+		return loadNodes(decompressedData);
 	}
 
-	std::vector<std::byte> DecompressFile(std::vector<std::byte>& fileStream) {
+	std::vector<std::byte> Parser::decompressFile(std::vector<std::byte>& fileStream) {
 		// RETARDED CODE ALERT
 		// THIS IS COMPLETELY FUCKED
 		auto compressionTablePosition = 0ll;
@@ -210,7 +218,7 @@ namespace parser {
 		return decompressionResult;
 	}
 
-	void findChildren(std::vector<cyberpunk::NodeEntry>& flatNodes, cyberpunk::NodeEntry& node, int maxNextId) {
+	void Parser::findChildren(cyberpunk::NodeEntry& node, int maxNextId) {
 		if (node.childId > -1) {
 			auto nextId = node.nextId;
 
@@ -219,13 +227,13 @@ namespace parser {
 			}
 
 			for (auto i = node.childId; i < nextId; i++) {
-				auto possibleChild = std::find_if(flatNodes.begin(), flatNodes.end(), [i](cyberpunk::NodeEntry& node) {
+				auto possibleChild = std::find_if(m_flatNodes.begin(), m_flatNodes.end(), [i](cyberpunk::NodeEntry& node) {
 					return node.id == i;
 				});
 
-				if (possibleChild != flatNodes.end()) {
+				if (possibleChild != m_flatNodes.end()) {
 					if (possibleChild->childId > -1) {
-						findChildren(flatNodes, *possibleChild, nextId);
+						findChildren(*possibleChild, nextId);
 						node.addChild(&*possibleChild);
 					}
 					else {
@@ -239,8 +247,8 @@ namespace parser {
 		}
 	}
 
-	void calculateTrueSizes(std::vector<cyberpunk::NodeEntry*>& nodes, int maxLength) {
-		for (auto i = 0; i < nodes.size(); i++) {
+	void Parser::calculateTrueSizes(std::vector<cyberpunk::NodeEntry*>& nodes, int maxLength) {
+		for (auto i = 0ull; i < nodes.size(); i++) {
 			cyberpunk::NodeEntry* currentNode = nodes.at(i);
 			cyberpunk::NodeEntry* nextNode = nullptr;
 
@@ -304,12 +312,12 @@ namespace parser {
 	}
 
 	// The most reasonable course of action is keeping flatNodes allocated as long as possible, and making the actual node list hold ptrs to nodes in flatNodes
-	void loadNodes(std::vector<std::byte>& decompressedData, std::vector<cyberpunk::NodeEntry>& flatNodes) {
+	bool Parser::loadNodes(std::vector<std::byte>& decompressedData) {
 		auto cursor = FileCursor{ decompressedData.data(), decompressedData.size() };
 
 		std::println("Assigning nodeids...");
 
-		for (auto& node : flatNodes) {
+		for (auto& node : m_flatNodes) {
 			cursor.seekTo(FileCursor::SeekTo::Start, node.offset);
 			auto nodeId = cursor.readInt();
 			node.id = nodeId;
@@ -317,12 +325,12 @@ namespace parser {
 
 		std::println("Finding children...");
 
-		for (auto& node : flatNodes) {
+		for (auto& node : m_flatNodes) {
 			if (!node.isChild) {
-				findChildren(flatNodes, node, flatNodes.size());
+				findChildren(node, m_flatNodes.size());
 			}
 			if (node.nextId > -1) {
-				node.nextNode = &*std::find_if(flatNodes.begin(), flatNodes.end(), [&node](cyberpunk::NodeEntry& aNode) {
+				node.nextNode = &*std::find_if(m_flatNodes.begin(), m_flatNodes.end(), [&node](cyberpunk::NodeEntry& aNode) {
 					return node.nextId == aNode.id;
 					});
 			}
@@ -330,21 +338,20 @@ namespace parser {
 
 		std::println("Filtering out children...");
 
-		auto nodeList = std::vector<cyberpunk::NodeEntry*>{};
 
-		for (auto& node : flatNodes) {
+		for (auto& node : m_flatNodes) {
 			if (!node.isChild) {
-				nodeList.push_back(&node);
+				m_nodeList.push_back(&node);
 			}
 		}
 
 		std::println("Calculating real sizes...");
 
-		calculateTrueSizes(nodeList, decompressedData.size());
+		calculateTrueSizes(m_nodeList, decompressedData.size());
 
 		std::println("Beginning node parsing...");
 
-		for (auto& node : flatNodes) {
+		for (auto& node : m_flatNodes) {
 			if (!node.isReadByParent) {
 				cyberpunk::parseNode(cursor, node);
 
@@ -366,12 +373,12 @@ namespace parser {
 
 		std::println("Finished parsing nodes...");
 
-		auto inventory = std::find_if(nodeList.begin(), nodeList.end(), [](cyberpunk::NodeEntry* node) {
+		auto inventory = std::find_if(m_nodeList.begin(), m_nodeList.end(), [](cyberpunk::NodeEntry* node) {
 			return node->name == L"inventory";
 		});
 
-		if (inventory == nodeList.end()) {
-			return;
+		if (inventory == m_nodeList.end()) {
+			return false;
 		}
 
 		auto inventoryData = reinterpret_cast<cyberpunk::InventoryNode*>((*inventory)->nodeData.get());
@@ -406,5 +413,7 @@ namespace parser {
 				}
 			}
 		}
+
+		return true;
 	}
 }

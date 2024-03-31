@@ -14,16 +14,13 @@ int main() {
 	std::wcout << pointOfNoReturnSavePath.native() << std::endl;
 
 	const auto savePath = pointOfNoReturnSavePath / L"sav.dat";
+	const auto metadataPath = pointOfNoReturnSavePath / L"metadata.9.json";
 
 	std::wcout << savePath.native() << std::endl;
 	std::println("Size: {}", std::filesystem::file_size(savePath));
-	const auto bufferSize = std::filesystem::file_size(savePath);
-	auto fileBuffer = std::vector<std::byte>(bufferSize);
 
-	{
-		auto fileStream = std::ifstream{ savePath, std::ios_base::binary };
-		fileStream.read(reinterpret_cast<char*>(fileBuffer.data()), bufferSize);
-	}
+	parser::Parser fileParser;
 
-	parser::beginParse(fileBuffer);
+	const auto ret = fileParser.parseSavegame(savePath);
+	const auto ret2 = fileParser.parseMetadata(metadataPath);
 }

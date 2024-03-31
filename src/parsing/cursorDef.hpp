@@ -195,6 +195,34 @@ struct FileCursor {
         }
     }
 
+    // Theoretically if we don't need a copy we could just do a string_view
+    // But let's be safe!
+    std::string readString(size_t length) {
+        const auto bytes = readBytes(length);
+
+        auto ret = std::string{};
+        ret.reserve(length);
+
+        for (auto i : bytes) {
+            ret.push_back(static_cast<char>(i));
+        }
+
+        return ret;
+    }
+
+    std::string readNullTerminatedString() {
+        auto ret = std::string{};
+
+        auto curByte = readByte();
+
+        do {
+            ret.push_back(curByte);
+            curByte = readByte();
+        } while (curByte != '\0');
+
+        return ret;
+    }
+
     int64_t findByteSequence(std::string_view bytes) const {
         auto start = reinterpret_cast<char*>(baseAddress + offset);
         auto end = start + size;
