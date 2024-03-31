@@ -1,6 +1,5 @@
 #pragma once
 
-#include "../reader/read.hpp"
 #include "../cursorDef.hpp"
 
 namespace cyberpunk {
@@ -15,13 +14,13 @@ namespace cyberpunk {
 		std::uint64_t timeStamp;
 		std::uint32_t archiveVersion;
 
-		static SaveHeader fromCursor(FileCursor fileCursor) {
+		static SaveHeader fromCursor(FileCursor& fileCursor) {
 			SaveHeader header{};
-			header.saveVersion = reader::ReadUint(fileCursor);
-			header.gameVersion = reader::ReadUint(fileCursor);
-			header.gameDefinition = reader::ReadLengthPrefixedString(fileCursor);
-			header.timeStamp = reader::ReadUint64(fileCursor);
-			header.archiveVersion = reader::ReadUint(fileCursor);
+			header.saveVersion = fileCursor.readUInt();
+			header.gameVersion = fileCursor.readUInt();
+			header.gameDefinition = fileCursor.readLengthPrefixedString();
+			header.timeStamp = fileCursor.readUInt64();
+			header.archiveVersion = fileCursor.readUInt();
 
 			return header;
 		}

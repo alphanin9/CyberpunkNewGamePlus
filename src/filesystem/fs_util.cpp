@@ -8,6 +8,8 @@
 
 
 namespace files {
+	bool hasPointOfNoReturnSave(std::filesystem::path cpSaveFolder);
+
 	std::filesystem::path getCpSaveFolder() {
 		PWSTR savedGamesPath = nullptr;
 
@@ -26,14 +28,24 @@ namespace files {
 	}
 
 	std::filesystem::path findLastPointOfNoReturnSave(std::filesystem::path cpSaveFolder) {
+		hasPointOfNoReturnSave(cpSaveFolder);
+
 		auto lastPointOfNoReturnSave = std::filesystem::path{};
 
 		for (const auto& dirEntry : std::filesystem::directory_iterator{ cpSaveFolder }) {
-			if (dirEntry.is_directory() && dirEntry.path().stem().native().starts_with(L"PointOfNoReturnSave")) {
+			if (dirEntry.is_directory() && dirEntry.path().stem().native().starts_with(L"PointOfNoReturn")) {
 				lastPointOfNoReturnSave = dirEntry.path();
 			}
 		}
 
 		return lastPointOfNoReturnSave;
+	}
+
+	bool hasPointOfNoReturnSave(std::filesystem::path cpSaveFolder) {
+		auto dirIterator = std::filesystem::directory_iterator{ cpSaveFolder };
+
+		return std::any_of(std::filesystem::begin(dirIterator), std::filesystem::end(dirIterator), [](const std::filesystem::directory_entry& dirEntry) {
+			return dirEntry.path().stem().native().starts_with(L"PointOfNoReturn");
+		});
 	}
 }

@@ -1,25 +1,60 @@
 #pragma once
 #include "../cursorDef.hpp"
-#include "../reader/read.hpp"
+#include "nodeParsers/interfaceNodeData.hpp"
 
+#include <print>
 #include <string>
+#include <vector>
 
 namespace cyberpunk {
 	struct NodeEntry {
 		std::wstring name;
+
+		int id;
 		int nextId;
 		int childId;
 		int offset;
 		int size;
 
-		static NodeEntry fromCursor(FileCursor fileCursor) {
+		int dataSize;
+		int trailingSize;
+
+		bool isChild;
+		bool isFirstChild;
+		bool isReadByParent;
+		bool isWritingOwnTrailingSize = true;
+
+		NodeEntry* parent = nullptr;
+		NodeEntry* nextNode = nullptr;
+
+		std::vector<NodeEntry*> nodeChildren;
+
+		// Keeping a data buffer like this is kind of dumb IMHO
+		// It would likely be best to have a unique pointer to a structure
+		// std::vector<std::byte> nodeDataBuffer;
+
+		// EVIL UGLY CODE AHEAD, WILL LIKELY LEAK MEMORY LIKE CRAZY
+		std::unique_ptr<NodeDataInterface> nodeData;
+
+		void addChild(NodeEntry* child) {
+			child->isChild = true;
+			child->parent = this;
+
+			if (nodeChildren.empty()) {
+				child->isFirstChild = true;
+			}
+
+			nodeChildren.push_back(child);
+		}
+
+		static NodeEntry fromCursor(FileCursor& fileCursor) {
 			NodeEntry ret{};
 
-			ret.name = reader::ReadLengthPrefixedString(fileCursor);
-			ret.nextId = reader::ReadInt(fileCursor);
-			ret.childId = reader::ReadInt(fileCursor);
-			ret.offset = reader::ReadInt(fileCursor);
-			ret.size = reader::ReadInt(fileCursor);
+			ret.name = fileCursor.readLengthPrefixedString();
+			ret.nextId = fileCursor.readInt();
+			ret.childId = fileCursor.readInt();
+			ret.offset = fileCursor.readInt();
+			ret.size = fileCursor.readInt();
 
 			return ret;
 		}
