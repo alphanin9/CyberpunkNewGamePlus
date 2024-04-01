@@ -6,6 +6,7 @@
 
 #include <print>
 #include <stdexcept>
+#include <unordered_map>
 #include <vector>
 #include <RED4ext/RED4ext.hpp>
 
@@ -124,8 +125,20 @@ namespace cyberpunk {
 	};
 
 	struct RedChunk {
+		// I could use RED4ext's RTTI system for this I'd guess
+		// For now (since I wanna test without loading the game every half a second) I'll do it like this and be happy!
+		struct RedValueContainer {
+			std::string typeName;
+			std::string fieldName;
+			std::uint32_t offset;
+			std::vector<std::byte> dataBlob;
+		};
+
 		std::string typeName;
 		std::vector<std::tuple<std::string, std::string>> varTypeNamePairs;
+
+		std::vector<RedValueContainer> chunkData;
+
 		std::vector<std::byte> dataBuffer;
 	};
 
@@ -158,20 +171,47 @@ namespace cyberpunk {
 				fields.push_back(RedPackageFieldHeader::fromCursor(cursor));
 			}
 			
-			for (auto& fieldDesc : fields) {
-				chunk.varTypeNamePairs.push_back(std::make_tuple(names.at(fieldDesc.typeId), names.at(fieldDesc.nameId)));
+			for (auto i = 0; i < fieldCount; i++) {
+				auto fieldDesc = fields.at(i);
+				auto fieldOffset = fieldDesc.offset;
+				auto blobSize = 0;
+
+				// Safety against getting fucked by unsigned -1
+				if (i < (static_cast<int>(fieldCount) - 1)) {
+					blobSize = fields.at(i + 1).offset - fieldOffset;
+				}
+				else {
+					blobSize = expectedSizeOfChunk - fieldOffset;
+				}
+
+				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + fieldOffset);
+
+				auto container = RedChunk::RedValueContainer{};
+
+				container.offset = fieldOffset;
+				container.typeName = names.at(fieldDesc.typeId);
+				container.fieldName = names.at(fieldDesc.nameId);
+				container.dataBlob = cursor.readBytes(blobSize);
+
+				chunk.chunkData.push_back(container);
 			}
 
 			const auto expectedFinish = baseOffset + expectedSizeOfChunk;
-			const auto bytesToRead = expectedFinish - cursor.offset;
 
-			chunk.dataBuffer = cursor.readBytes(bytesToRead);
+			if (expectedFinish != cursor.offset) {
+				std::println("Expected finish != cursor offset!!!!!!!!!");
+			}
 
+			// Now that we have this, we could hack something to parse the shit we need (e.g. PlayerDevelopmentData && EquipmentSystem)
+			// The problem is: it won't last through updates
 			std::println("Name: {}", chunk.typeName);
-			for (auto& fieldDesc : fields) {
-				auto typeName = names.at(fieldDesc.typeId);
-				auto fieldName = names.at(fieldDesc.nameId);
-				std::println("\t{} {} {}", typeName, fieldName, fieldDesc.offset);
+			for (auto& dataField : chunk.chunkData) {
+				std::print("\t{} {} {} DATA BLOB: ", dataField.typeName, dataField.fieldName, dataField.offset);
+				for (auto ch : dataField.dataBlob) {
+					std::print("{:02x} ", static_cast<std::uint8_t>(ch));
+				}
+
+				std::println("");
 			}
 		}
 	public:
