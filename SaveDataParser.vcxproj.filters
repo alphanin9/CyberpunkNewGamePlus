@@ -38,13 +38,7 @@
     <ClInclude Include="src\parsing\fileReader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\parsing\definitions\fileInfo.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\parsing\cursorDef.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\parsing\definitions\nodeEntry.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\compression\compressionHeader.hpp">
@@ -56,19 +50,7 @@
     <ClInclude Include="src\parsing\bufferWriter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\parsing\definitions\nodeParsers\parserHelper.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\parsing\definitions\nodeParsers\defaultNodeData.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\parsing\definitions\nodeParsers\interfaceNodeData.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\inventory\inventoryNode.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\scriptableContainerNode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

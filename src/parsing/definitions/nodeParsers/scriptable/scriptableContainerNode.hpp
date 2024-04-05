@@ -8,8 +8,11 @@
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
+#include <fstream>
 #include <RED4ext/RED4ext.hpp>
+#include <RedLib.hpp>
 
+#include "helpers/rttiClassCreator.hpp"
 #include "../defaultNodeData.hpp"
 
 namespace cyberpunk {
@@ -108,38 +111,10 @@ namespace cyberpunk {
 		}
 	};
 
-	struct RedPackageFieldHeader {
-		std::uint16_t nameId;
-		std::uint16_t typeId;
-		std::uint32_t offset;
-
-		static RedPackageFieldHeader fromCursor(FileCursor& cursor) {
-			auto ret = RedPackageFieldHeader{};
-
-			ret.nameId = cursor.readUShort();
-			ret.typeId = cursor.readUShort();
-			ret.offset = cursor.readUInt();
-
-			return ret;
-		}
-	};
-
 	struct RedChunk {
-		// I could use RED4ext's RTTI system for this I'd guess
-		// For now (since I wanna test without loading the game every half a second) I'll do it like this and be happy!
-		struct RedValueContainer {
-			std::string typeName;
-			std::string fieldName;
-			std::uint32_t offset;
-			std::vector<std::byte> dataBlob;
-		};
-
-		std::string typeName;
-		std::vector<std::tuple<std::string, std::string>> varTypeNamePairs;
-
-		std::vector<RedValueContainer> chunkData;
-
-		std::vector<std::byte> dataBuffer;
+		std::string m_typeName;
+		redRTTI::RedValueWrapper m_redClass;
+		bool m_isUsed; // For handles, maybe, sometime later...
 	};
 
 	class ScriptableSystemsContainerNode : public NodeDataInterface {
@@ -161,61 +136,64 @@ namespace cyberpunk {
 			return ret;
 		}
 
-		void readChunk(FileCursor& cursor, RedChunk& chunk, size_t expectedSizeOfChunk) {
-			const auto baseOffset = cursor.offset;
-			const auto fieldCount = cursor.readUShort();
-
-			auto fields = std::vector<RedPackageFieldHeader>{};
-
-			for (auto i = 0; i < fieldCount; i++) {
-				fields.push_back(RedPackageFieldHeader::fromCursor(cursor));
-			}
-			
-			for (auto i = 0; i < fieldCount; i++) {
-				auto fieldDesc = fields.at(i);
-				auto fieldOffset = fieldDesc.offset;
-				auto blobSize = 0;
-
-				// Safety against getting fucked by unsigned -1
-				if (i < (static_cast<int>(fieldCount) - 1)) {
-					blobSize = fields.at(i + 1).offset - fieldOffset;
-				}
-				else {
-					blobSize = expectedSizeOfChunk - fieldOffset;
-				}
-
-				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + fieldOffset);
-
-				auto container = RedChunk::RedValueContainer{};
-
-				container.offset = fieldOffset;
-				container.typeName = names.at(fieldDesc.typeId);
-				container.fieldName = names.at(fieldDesc.nameId);
-				container.dataBlob = cursor.readBytes(blobSize);
-
-				chunk.chunkData.push_back(container);
+		void printProperty(std::ofstream& outputDump, RED4ext::CRTTISystem* aRttiSystem, RED4ext::CProperty* aProperty, bool aPersistentOnly, int aIndentation = 0, int aDepth = 0) {
+			if (aPersistentOnly && aProperty->flags.isPersistent == 0) {
+				return;
 			}
 
-			const auto expectedFinish = baseOffset + expectedSizeOfChunk;
+			// Avoiding circular refs
+			constexpr auto MAX_RECURSIVE_TYPE_DEPTH = 4;
 
-			if (expectedFinish != cursor.offset) {
-				std::println("Expected finish != cursor offset!!!!!!!!!");
+			if (aDepth > MAX_RECURSIVE_TYPE_DEPTH) {
+				return;
 			}
 
-			// Now that we have this, we could hack something to parse the shit we need (e.g. PlayerDevelopmentData && EquipmentSystem)
-			// The problem is: it won't last through updates
-			std::println("Name: {}", chunk.typeName);
-			for (auto& dataField : chunk.chunkData) {
-				std::print("\t{} {} {} DATA BLOB: ", dataField.typeName, dataField.fieldName, dataField.offset);
-				for (auto ch : dataField.dataBlob) {
-					std::print("{:02x} ", static_cast<std::uint8_t>(ch));
+			auto baseType = redRTTI::getRttiType(aProperty->type);
+			for (auto i = 0; i < aIndentation; i++) {
+				// Dumb way, I know
+				outputDump << '\t';
+			}
+
+			outputDump << std::format("[{}] {} {} {}", aProperty->type->GetTypeName().c_str(), aProperty->type->GetName().ToString(), aProperty->name.ToString(), aProperty->valueOffset);
+			outputDump << '\n';
+
+			if (baseType->GetType() == RED4ext::ERTTIType::Class) {
+				auto classInstance = aRttiSystem->GetClass(baseType->GetName());
+
+				if (!classInstance) {
+					return;
 				}
 
-				std::println("");
+				for (auto prop : classInstance->props) {
+					printProperty(outputDump, aRttiSystem, prop, aPersistentOnly, aIndentation + 1, aDepth + 1);
+				}
 			}
 		}
+
+		void dumpRttiClassData(std::ofstream& outputDump, RED4ext::CRTTISystem* aRtti, RED4ext::CClass* aRttiClass, int aIndent) {
+			if (!aRttiClass) {
+				return;
+			}
+
+			outputDump << std::format("Class {}\n", aRttiClass->GetName().ToString());;
+
+			for (auto prop : aRttiClass->props) {
+				printProperty(outputDump, aRtti, prop, true, 1);
+			}
+		}
+
+		void readChunk(RED4ext::CRTTISystem* aRtti, FileCursor& aCursor, RedChunk& chunk) {
+			auto chunkValue = redRTTI::RedValueWrapper{};
+
+			chunkValue.m_typeName = RED4ext::CName{ chunk.m_typeName.c_str() };
+			chunkValue.m_typeIndex = RED4ext::ERTTIType::Class;
+			chunkValue.m_value = redRTTI::reader::readClass(aCursor, aRtti, chunk.m_typeName, names);
+
+			redRTTI::dumper::dumpClass(chunkValue);
+			
+			chunk.m_redClass = chunkValue;
+		}
 	public:
-		
 		virtual void readData(FileCursor& cursor, NodeEntry& node) {
 			const auto dataSize = cursor.readInt();
 			auto dataBuffer = cursor.readBytes(dataSize);
@@ -278,9 +256,15 @@ namespace cyberpunk {
 					nameDesc.push_back(RedPackageNameHeader::fromCursor(cursor));
 				}
 
+				auto dumpTarget = std::ofstream{ "RTTIClassDump.txt" };
+
 				for (auto name : nameDesc) {
 					cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + name.offset());
 					names.push_back(cursor.readNullTerminatedString());
+				}
+
+				for (auto& name : names) {
+					dumpTarget << name << "\n";
 				}
 
 				const auto chunkCount = (header.chunkDataOffset - header.chunkDescOffset) / sizeof(RedPackageChunkHeader);
@@ -291,12 +275,14 @@ namespace cyberpunk {
 				for (auto i = 0; i < chunkCount; i++) {
 					chunkHeaders.push_back(RedPackageChunkHeader::fromCursor(cursor));
 				}
-
+				auto rttiSystem = RED4ext::CRTTISystem::Get();
 				const auto chunkPos = cursor.offset;
 				
 				for (auto chunkHeader : chunkHeaders) {
 					auto chunk = RedChunk{};
-					chunk.typeName = names.at(chunkHeader.typeId);
+					chunk.m_typeName = names.at(chunkHeader.typeId);
+
+					dumpRttiClassData(dumpTarget, rttiSystem, rttiSystem->GetClass(RED4ext::CName{ chunk.m_typeName.c_str() }), 0);
 					
 					chunks.push_back(chunk);
 				}
@@ -307,6 +293,7 @@ namespace cyberpunk {
 				for (auto i = 0; i < chunks.size(); i++) {
 					auto& chunk = chunks.at(i);
 					auto chunkSize = 0;
+					auto cursorOffset = cursor.offset;
 
 					if (i == chunks.size() - 1) {
 						chunkSize = cursor.size - cursor.offset;
@@ -315,7 +302,14 @@ namespace cyberpunk {
 						chunkSize = (baseOffset + chunkHeaders.at(i + 1).offset) - cursor.offset;
 					}
 
-					readChunk(cursor, chunk, chunkSize);
+					auto expected = cursorOffset + chunkSize;
+
+					readChunk(rttiSystem, cursor, chunk);
+
+					if (cursor.offset != expected) {
+						// Fix up chunk offset, we read something wrong, better be in the right place for the next chunk
+						cursor.seekTo(FileCursor::SeekTo::Start, expected);
+					}
 				}
 			}
 		}

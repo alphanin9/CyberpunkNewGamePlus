@@ -16,8 +16,7 @@ namespace parser {
 		void calculateTrueSizes(std::vector<cyberpunk::NodeEntry*>& nodes, int maxLength);
 		void findChildren(cyberpunk::NodeEntry& node, int maxNextId);
 
-		std::vector<std::byte> decompressFile(std::vector<std::byte>& fileStream);
-
+		std::vector<std::byte> decompressFile();
 		bool loadNodes(std::vector<std::byte>& decompressedData);
 	public:
 		bool parseMetadata(std::filesystem::path aMetadataPath);

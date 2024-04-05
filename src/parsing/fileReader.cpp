@@ -21,6 +21,7 @@
 #include "../dependencies/lz4.h"
 
 #include <nlohmann/json.hpp>
+#include <RedLib.hpp>
 
 // Copypasted from WolvenKit :(
 namespace parser {
@@ -53,8 +54,8 @@ namespace parser {
 		const auto perkPointCount = saveMetadata["level"].get<float>() + 20; // LOL
 		const auto addedPerkPoints = 10; // Reward for NG+? Maybe add a few Cyberware Cap shards too just to make sure equipment slots don't get megafucked (NEVERMIND WE CAN'T ACTUALLY PARSE WHERE EQUIPMENT IS PLACED LOL)
 
-		std::println("{}", saveMetadata["trackedQuestEntry"].get<std::string_view>());
-		std::println("Attribute points: {}", attributePointCount);
+		// std::println("{}", saveMetadata["trackedQuestEntry"].get<std::string_view>());
+		// std::println("Attribute points: {}", attributePointCount);
 
 		return true;
 	}
@@ -116,21 +117,21 @@ namespace parser {
 
 		std::println("Finished reading flat nodes");
 
-		auto decompressedData = decompressFile(m_fileStream);
+		auto decompressedData = decompressFile();
 
 		std::println("Buffer size: {}", decompressedData.size());
 
 		return loadNodes(decompressedData);
 	}
 
-	std::vector<std::byte> Parser::decompressFile(std::vector<std::byte>& fileStream) {
+	std::vector<std::byte> Parser::decompressFile() {
 		// RETARDED CODE ALERT
 		// THIS IS COMPLETELY FUCKED
 		auto compressionTablePosition = 0ll;
 		{
-			auto fileCursorPtr = fileStream.data();
-			auto fileSize = fileStream.size();
-			auto fileCursor = FileCursor{ fileStream.data(), fileStream.size() };
+			auto fileCursorPtr = m_fileStream.data();
+			auto fileSize = m_fileStream.size();
+			auto fileCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
 			
 			compressionTablePosition = fileCursor.findByteSequence("FZLC");
 
@@ -138,8 +139,8 @@ namespace parser {
 		}
 		auto decompressionResult = std::vector<std::byte>{};
 		{
-			auto temporaryResult = std::vector<std::byte>{ fileStream.data(), fileStream.data() + compressionTablePosition };
-			auto fileCursor = FileCursor{ fileStream.data(), fileStream.size() };
+			auto temporaryResult = std::vector<std::byte>{ m_fileStream.data(), m_fileStream.data() + compressionTablePosition };
+			auto fileCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
 			fileCursor.seekTo(FileCursor::SeekTo::Start, compressionTablePosition);
 
 			const auto compressionHeader = compression::CompressionHeader::fromCursor(fileCursor);
@@ -425,6 +426,8 @@ namespace parser {
 			std::make_tuple(0x7901DE03D136A5AF, "V's Wardrobe"),
 		};
 
+		const auto tweakDb = RED4ext::TweakDB::Get();
+
 		for (auto& subInventory : inventoryData->subInventories) {
 			auto inventoryName = std::find_if(inventoryNames.begin(), inventoryNames.end(), [&subInventory](std::tuple<std::uint64_t, std::string>& tuple) {
 				return std::get<0>(tuple) == subInventory.inventoryId;
@@ -439,12 +442,19 @@ namespace parser {
 
 			for (auto& inventoryItem : subInventory.inventoryItems) {
 				std::println("\tItem {:#010x}, qty {}", inventoryItem.itemInfo.itemId.tdbid.value, inventoryItem.itemQuantity);
+				
+				Red::CString str;
+				Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, inventoryItem.itemInfo.itemId.tdbid);
 
-				if (inventoryItem.itemInfo.itemId.tdbid == RED4ext::TweakDBID{ 95932206476 }) {
-					std::println("OMG E3!!!!!!!!!!!!!!!111111111111111111111111");
-				}
+				std::println("{}", str.c_str());
 			}
 		}
+
+		auto rttiSystem = RED4ext::CRTTISystem::Get();
+
+		auto testType_enum = rttiSystem->GetType(RED4ext::CName{ "gamedataNewPerkType" });
+
+		auto enumAsEnum = static_cast<RED4ext::CEnum*>(testType_enum);
 
 		return true;
 	}
