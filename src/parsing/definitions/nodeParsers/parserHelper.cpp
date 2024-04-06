@@ -6,6 +6,7 @@
 #include "defaultNodeData.hpp"
 
 #include "inventory/inventoryNode.hpp"
+#include "persistency/persistencySystemNode.hpp"
 #include "scriptable/scriptableContainerNode.hpp"
 
 #include "../nodeEntry.hpp"
@@ -45,6 +46,14 @@ std::unique_ptr<cyberpunk::NodeDataInterface> scriptableSystemsContainerParser(F
 	return dataPtr;
 }
 
+std::unique_ptr<cyberpunk::NodeDataInterface> persistencySystemParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
+	auto dataPtr = std::make_unique<cyberpunk::PersistencySystemNode>();
+
+	dataPtr->readData(cursor, node);
+	
+	return dataPtr;
+}
+
 parseNodeFn findParser(std::wstring_view nodeName) {
 	if (nodeName == cyberpunk::InventoryNode::nodeName) {
 		return inventoryParser;
@@ -54,6 +63,9 @@ parseNodeFn findParser(std::wstring_view nodeName) {
 	}
 	else if (nodeName == cyberpunk::ScriptableSystemsContainerNode::nodeName) {
 		return scriptableSystemsContainerParser;
+	}
+	else if (nodeName == cyberpunk::PersistencySystemNode::nodeName) {
+		return persistencySystemParser;
 	}
 
 	return defaultParser;

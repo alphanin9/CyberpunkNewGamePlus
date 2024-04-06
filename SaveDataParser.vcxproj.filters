@@ -30,6 +30,9 @@
     <ClCompile Include="src\parsing\definitions\nodeParsers\parserHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\redscript_api\redscriptBindings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\filesystem\fs_util.hpp">
@@ -51,6 +54,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\inventory\inventoryNode.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\vehicleGarageComponentPSParser.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\persistencyRttiClassCreator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

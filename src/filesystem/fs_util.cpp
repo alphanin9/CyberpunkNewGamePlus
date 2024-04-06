@@ -33,7 +33,7 @@ namespace files {
 		auto lastPointOfNoReturnSave = std::filesystem::path{};
 
 		for (const auto& dirEntry : std::filesystem::directory_iterator{ cpSaveFolder }) {
-			if (dirEntry.is_directory() && dirEntry.path().stem().native().starts_with(L"PointOfNoReturn")) {
+			if (dirEntry.is_directory() && dirEntry.path().stem().native().starts_with(L"QuickSave")) {
 				lastPointOfNoReturnSave = dirEntry.path();
 			}
 		}

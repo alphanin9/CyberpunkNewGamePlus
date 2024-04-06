@@ -6,6 +6,7 @@
 
 #include <nlohmann/json.hpp>
 #include <RED4ext/RED4ext.hpp>
+#include <RedLib.hpp>
 
 namespace redRTTI {
 	struct CNameHasher {
@@ -292,7 +293,7 @@ namespace redRTTI {
 				for (auto fieldDesc : fieldDescriptors) {
 					aCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + fieldDesc.offset);
 
-					auto fieldName = aNames.at(fieldDesc.nameId);
+					auto& fieldName = aNames.at(fieldDesc.nameId);
 					const auto classProperty = classPtr->GetProperty(fieldName.c_str());
 
 					assert(classProperty);
@@ -433,7 +434,12 @@ namespace redRTTI {
 				}
 				else if (redType == ERTTIType::Simple) {
 					if (redTypeName == RED4ext::CName{ "TweakDBID" }) {
-						outputBuffer << std::format("{:#010x}", std::any_cast<RED4ext::TweakDBID>(aProperty.m_value).value) << "\n";
+						auto tdbId = std::any_cast<RED4ext::TweakDBID>(aProperty.m_value);
+
+						Red::CString str;
+						Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, tdbId);
+
+						outputBuffer << std::format("{:#010x}", tdbId.value) << " " << str.c_str() << "\n";
 						return;
 					}
 					else if (redTypeName == RED4ext::CName{ "NodeRef" }) {

@@ -8,8 +8,9 @@
 #include "parsing/fileReader.hpp"
 
 #include <RED4ext/RED4ext.hpp>
+#include <RedLib.hpp>
 
-void runParsing() {
+/* void runParsing() {
 	const auto cpRootSavePath = files::getCpSaveFolder();
 	const auto pointOfNoReturnSavePath = files::findLastPointOfNoReturnSave(cpRootSavePath);
 
@@ -25,7 +26,7 @@ void runParsing() {
 
 	const auto ret = fileParser.parseSavegame(savePath);
 	const auto ret2 = fileParser.parseMetadata(metadataPath);
-}
+} */
 
 RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::EMainReason aReason, const RED4ext::Sdk* aSdk)
 {
@@ -33,7 +34,7 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 	{
 	case RED4ext::EMainReason::Load:
 	{
-		auto parserState = RED4ext::GameState{};
+		/*auto parserState = RED4ext::GameState{};
 
 		parserState.OnEnter = nullptr;
 		parserState.OnUpdate = [](RED4ext::CGameApplication* aApp) {
@@ -43,7 +44,9 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 		};
 		parserState.OnExit = nullptr;
 
-		aSdk->gameStates->Add(aHandle, RED4ext::EGameStateType::Running, &parserState);
+		aSdk->gameStates->Add(aHandle, RED4ext::EGameStateType::Running, &parserState);*/
+		Red::TypeInfoRegistrar::RegisterDiscovered();
+
 		break;
 	}
 	case RED4ext::EMainReason::Unload:

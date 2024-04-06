@@ -172,6 +172,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\parsing\definitions\nodeParsers\parserHelper.cpp" />
     <ClCompile Include="src\parsing\fileReader.cpp" />
+    <ClCompile Include="src\redscript_api\redscriptBindings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\dependencies\lz4.h" />
@@ -180,6 +181,9 @@
     <ClInclude Include="src\parsing\cursorDef.hpp" />
     <ClInclude Include="src\parsing\definitions\compression\compressionHeader.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\inventory\inventoryNode.hpp" />
+    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\persistencyRttiClassCreator.hpp" />
+    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp" />
+    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\vehicleGarageComponentPSParser.hpp" />
     <ClInclude Include="src\parsing\fileReader.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -235,4 +235,8 @@ struct FileCursor {
 
         return it - start;
     }
+
+    std::ptrdiff_t getRemaining() const {
+        return size - offset;
+    }
 };
