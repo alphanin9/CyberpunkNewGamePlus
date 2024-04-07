@@ -174,32 +174,28 @@ struct FileCursor {
         int prefix = readVlqInt32();
 
         int length = std::abs(int(prefix));
+        std::wstring ret{};
 
-        if (length == 0) {
-            return std::wstring{};
+        if (length > 0) {
+            if (prefix > 0) {
+                for (auto i = 0; i < length; i++) {
+                    ret.push_back(readUShort());
+                }
+            }
+            else {
+                for (auto i = 0; i < length; i++) {
+                    ret.push_back(readByte());
+                }
+            }
         }
 
-        if (prefix > 0) {
-            std::wstring ret{};
-            for (auto i = 0; i < length; i++) {
-                ret.push_back(readUShort());
-            }
-            return ret;
-        }
-        else {
-            std::wstring ret;
-            for (auto i = 0; i < length; i++) {
-                ret.push_back(readByte());
-            }
-            return ret;
-        }
+        return ret;
     }
 
     // Theoretically if we don't need a copy we could just do a string_view
     // But let's be safe!
     std::string readString(size_t length) {
         const auto bytes = readBytes(length);
-
         auto ret = std::string{};
         ret.reserve(length);
 

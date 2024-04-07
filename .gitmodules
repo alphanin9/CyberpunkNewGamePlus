@@ -7,3 +7,6 @@
 [submodule "deps/redlib"]
 	path = deps/redlib
 	url = https://github.com/psiberx/cp2077-red-lib.git
+[submodule "deps/archivexl"]
+	path = deps/archivexl
+	url = https://github.com/psiberx/cp2077-archive-xl.git

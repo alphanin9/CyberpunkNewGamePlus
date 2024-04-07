@@ -46,13 +46,13 @@ namespace parser {
 			return false;
 		}
 
-		auto saveMetadata = data["Data"]["metadata"];
+		// auto saveMetadata = data["Data"]["metadata"];
 
-		constexpr auto baseAttributePointCount = 7;
-		const auto attributePointCount = baseAttributePointCount + saveMetadata["level"].get<float>() - 1;
+		// constexpr auto baseAttributePointCount = 7;
+		// const auto attributePointCount = baseAttributePointCount + saveMetadata["level"].get<float>() - 1;
 		// OK but fuck parsing PDD
-		const auto perkPointCount = saveMetadata["level"].get<float>() + 20; // LOL
-		const auto addedPerkPoints = 10; // Reward for NG+? Maybe add a few Cyberware Cap shards too just to make sure equipment slots don't get megafucked (NEVERMIND WE CAN'T ACTUALLY PARSE WHERE EQUIPMENT IS PLACED LOL)
+		// const auto perkPointCount = saveMetadata["level"].get<float>() + 20; // LOL
+		// const auto addedPerkPoints = 10; // Reward for NG+? Maybe add a few Cyberware Cap shards too just to make sure equipment slots don't get megafucked (NEVERMIND WE CAN'T ACTUALLY PARSE WHERE EQUIPMENT IS PLACED LOL)
 
 		// std::println("{}", saveMetadata["trackedQuestEntry"].get<std::string_view>());
 		// std::println("Attribute points: {}", attributePointCount);

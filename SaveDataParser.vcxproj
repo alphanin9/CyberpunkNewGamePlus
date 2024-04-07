@@ -72,28 +72,28 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>
@@ -175,6 +175,7 @@
     <ClCompile Include="src\redscript_api\redscriptBindings.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\context\context.hpp" />
     <ClInclude Include="src\dependencies\lz4.h" />
     <ClInclude Include="src\filesystem\fs_util.hpp" />
     <ClInclude Include="src\parsing\bufferWriter.hpp" />

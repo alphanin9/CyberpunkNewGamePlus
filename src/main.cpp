@@ -9,24 +9,7 @@
 
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
-
-/* void runParsing() {
-	const auto cpRootSavePath = files::getCpSaveFolder();
-	const auto pointOfNoReturnSavePath = files::findLastPointOfNoReturnSave(cpRootSavePath);
-
-	std::wcout << pointOfNoReturnSavePath.native() << std::endl;
-
-	const auto savePath = pointOfNoReturnSavePath / L"sav.dat";
-	const auto metadataPath = pointOfNoReturnSavePath / L"metadata.9.json";
-
-	std::wcout << savePath.native() << std::endl;
-	std::println("Size: {}", std::filesystem::file_size(savePath));
-
-	parser::Parser fileParser;
-
-	const auto ret = fileParser.parseSavegame(savePath);
-	const auto ret2 = fileParser.parseMetadata(metadataPath);
-} */
+#include <ArchiveXL.hpp>
 
 RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::EMainReason aReason, const RED4ext::Sdk* aSdk)
 {
@@ -34,18 +17,15 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 	{
 	case RED4ext::EMainReason::Load:
 	{
-		/*auto parserState = RED4ext::GameState{};
-
-		parserState.OnEnter = nullptr;
-		parserState.OnUpdate = [](RED4ext::CGameApplication* aApp) {
-			runParsing();
-
-			return true;
-		};
-		parserState.OnExit = nullptr;
-
-		aSdk->gameStates->Add(aHandle, RED4ext::EGameStateType::Running, &parserState);*/
 		Red::TypeInfoRegistrar::RegisterDiscovered();
+
+		// shhhhhhhhhhhhh
+		// Nothing is happening here :)
+		constexpr auto shouldLoadTopSecretArchive = false;
+		if constexpr (shouldLoadTopSecretArchive) {
+			// I wonder what this could contain!
+			ArchiveXL::RegisterArchive(aHandle, L"TopSecret.archive"); // :)
+		}
 
 		break;
 	}
@@ -62,9 +42,9 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 
 RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::PluginInfo* aInfo)
 {
-	aInfo->name = L"Save parsing without loading save";
+	aInfo->name = L"Top Secret Module";
 	aInfo->author = L"not_alphanine";
-	aInfo->version = RED4EXT_SEMVER(0, 0, 0); // Set your version here.
+	aInfo->version = RED4EXT_SEMVER(0, 0, 1); // Set your version here.
 	aInfo->runtime = RED4EXT_RUNTIME_LATEST;
 	aInfo->sdk = RED4EXT_SDK_LATEST;
 }
