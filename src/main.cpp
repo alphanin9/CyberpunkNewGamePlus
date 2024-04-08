@@ -4,8 +4,8 @@
 #include <print>
 #include <vector>
 
-#include "filesystem/fs_util.hpp"
-#include "parsing/fileReader.hpp"
+#include "context/context.hpp"
+#include "hooking/hooking.hpp"
 
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
@@ -17,6 +17,9 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 	{
 	case RED4ext::EMainReason::Load:
 	{
+		pluginContext::m_redPlugin = aHandle;
+		pluginContext::m_redSdk = aSdk;
+
 		Red::TypeInfoRegistrar::RegisterDiscovered();
 
 		// shhhhhhhhhhhhh
@@ -24,15 +27,22 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 		constexpr auto shouldLoadTopSecretArchive = false;
 		if constexpr (shouldLoadTopSecretArchive) {
 			// I wonder what this could contain!
-			ArchiveXL::RegisterArchive(aHandle, L"TopSecret.archive"); // :)
+			if (!ArchiveXL::RegisterArchive(aHandle, L"TopSecret.archive")) { // :)
+				return false;
+			}
 		}
-
+		
+		if (!hooking::InitializeHooking()) {
+			return false;
+		}
 		break;
 	}
 	case RED4ext::EMainReason::Unload:
 	{
-		// Free memory, detach hooks.
-		// The game's memory is already freed, to not try to do anything with it.
+		if (!hooking::DetachHooking()) {
+			return false;
+		}
+
 		break;
 	}
 	}

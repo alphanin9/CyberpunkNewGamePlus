@@ -4,6 +4,8 @@
 #include "../parsing/fileReader.hpp"
 #include "../filesystem/fs_util.hpp"
 
+#include "../context/context.hpp"
+
 namespace redscript {
 	struct PlayerSaveData {
 		// We do not save actual perks - what if the player wants a respec?
@@ -46,11 +48,19 @@ namespace redscript {
 
 	class TopSecretSystem : public Red::IGameSystem {
 	public:
-		bool isAttached() const {
+		bool IsAttached() const {
 			return m_isAttached;
 		}
 
-		bool parsePointOfNoReturnSaveData() {
+		bool GetSecretVariableState() const {
+			return pluginContext::m_isSecretOverrideActivated;
+		}
+
+		void SetSecretVariableState(bool newState) {
+			pluginContext::m_isSecretOverrideActivated = newState;
+		}
+
+		bool ParsePointOfNoReturnSaveData() {
 			auto savePath = files::findLastPointOfNoReturnSave(files::getCpSaveFolder()) / L"sav.dat";
 
 			parser::Parser parser{};
@@ -74,8 +84,10 @@ namespace redscript {
 }
 
 RTTI_DEFINE_CLASS(redscript::TopSecretSystem, {
-	RTTI_METHOD(isAttached);
-	RTTI_METHOD(parsePointOfNoReturnSaveData);
+	RTTI_METHOD(IsAttached);
+	RTTI_METHOD(ParsePointOfNoReturnSaveData);
+	RTTI_METHOD(GetSecretVariableState);
+	RTTI_METHOD(SetSecretVariableState);
 });
 
 RTTI_DEFINE_CLASS(redscript::PlayerSaveData, {
