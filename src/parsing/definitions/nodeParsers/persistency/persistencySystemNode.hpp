@@ -123,5 +123,15 @@ namespace cyberpunk {
 
 			std::println("{} nodes in PersistencySystem", m_redClasses.size());
 		}
+
+		const UnknownRedBuffer& LookupChunk(std::string_view aChunkName) {
+			auto chunkIt = std::find_if(m_redClasses.begin(), m_redClasses.end(), [aChunkName](const UnknownRedBuffer& aBuffer) {
+				return RED4ext::CName{ aChunkName.data() } == aBuffer.m_className;
+			});
+
+			assert(chunkIt != m_redClasses.end());
+
+			return *chunkIt;
+		}
 	};
 }

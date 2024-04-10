@@ -186,7 +186,6 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\inventory\inventoryNode.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\persistencyRttiClassCreator.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp" />
-    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\vehicleGarageComponentPSParser.hpp" />
     <ClInclude Include="src\parsing\fileReader.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

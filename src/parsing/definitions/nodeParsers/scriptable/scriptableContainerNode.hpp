@@ -313,5 +313,15 @@ namespace cyberpunk {
 				}
 			}
 		}
+
+		const RedChunk& LookupChunk(std::string_view aChunkType) const {
+			auto chunkIter = std::find_if(chunks.begin(), chunks.end(), [aChunkType](const RedChunk& aChunk) {
+				return aChunk.m_typeName == aChunkType;
+			});
+
+			assert(chunkIter != chunks.end());
+
+			return *chunkIter;
+		}
 	};
 }

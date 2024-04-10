@@ -1,7 +1,9 @@
 #pragma once
-#include "../interfaceNodeData.hpp"
+
+#include <cassert>
 
 #include <RED4ext/RED4ext.hpp>
+#include "../interfaceNodeData.hpp"
 
 namespace cyberpunk {
 	struct ItemInfo {
@@ -11,13 +13,14 @@ namespace cyberpunk {
 			Quantity = 2
 		};
 
+		// Repeating the same value, BAD!
 		RED4ext::ItemID itemId;
 		ItemStructure itemStructure;
 
 		static ItemInfo fromCursor(FileCursor& cursor) {
 			auto id = cursor.readTdbId();
 			auto seed = cursor.readUInt();
-			auto itemStructore = cursor.readValue<ItemStructure>();
+			auto itemStructure = cursor.readValue<ItemStructure>();
 			auto uniqueCounter = cursor.readUShort();
 			auto flags = cursor.readByte();
 
@@ -27,8 +30,9 @@ namespace cyberpunk {
 			ret.itemId.rngSeed = seed;
 			ret.itemId.uniqueCounter = uniqueCounter;
 			ret.itemId.flags = flags;
+			ret.itemId.structure = static_cast<std::uint8_t>(itemStructure);
 
-			ret.itemStructure = itemStructore;
+			ret.itemStructure = itemStructure;
 
 			return ret;
 		}
@@ -163,6 +167,9 @@ namespace cyberpunk {
 	};
 
 	struct SubInventory {
+		static constexpr auto inventoryIdLocal = 0x1;
+		static constexpr auto inventoryIdCarStash = 0xF4240;
+
 		std::uint64_t inventoryId;
 		std::vector<ItemData> inventoryItems;
 	};
@@ -207,6 +214,16 @@ namespace cyberpunk {
 
 				offset += subInventory.inventoryItems.size();
 			}
+		}
+
+		const SubInventory& LookupInventory(std::uint64_t aInventoryId) {
+			auto inventoryIt = std::find_if(subInventories.begin(), subInventories.end(), [aInventoryId](const SubInventory& aSubInventory) {
+				return aSubInventory.inventoryId == aInventoryId;
+			});
+
+			assert(inventoryIt != subInventories.end());
+
+			return *inventoryIt;
 		}
 	};
 }

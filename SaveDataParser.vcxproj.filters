@@ -62,9 +62,6 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\vehicleGarageComponentPSParser.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\persistencyRttiClassCreator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -10,7 +10,7 @@
 
 namespace redRTTI {
 	struct CNameHasher {
-		std::size_t operator()(const RED4ext::CName cname) const noexcept {
+		inline std::size_t operator()(const RED4ext::CName cname) const noexcept {
 			return std::hash<std::uint64_t>{}(cname.hash);
 		}
 	};
@@ -19,6 +19,10 @@ namespace redRTTI {
 		RED4ext::CName m_typeName;
 		RED4ext::ERTTIType m_typeIndex;
 		std::any m_value;
+
+		inline std::any operator()() const {
+			return m_value;
+		}
 	};
 
 	struct RedPackageFieldHeader {
@@ -26,7 +30,7 @@ namespace redRTTI {
 		std::uint16_t typeId;
 		std::uint32_t offset;
 
-		static RedPackageFieldHeader fromCursor(FileCursor& cursor) {
+		inline static RedPackageFieldHeader fromCursor(FileCursor& cursor) {
 			auto ret = RedPackageFieldHeader{};
 
 			ret.nameId = cursor.readUShort();

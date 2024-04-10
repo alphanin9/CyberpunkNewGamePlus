@@ -21,5 +21,7 @@ namespace parser {
 	public:
 		bool parseMetadata(std::filesystem::path aMetadataPath);
 		bool parseSavegame(std::filesystem::path aSavePath);
+
+		cyberpunk::NodeEntry* LookupNode(std::wstring_view aNodeName);
 	};
 }

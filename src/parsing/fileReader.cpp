@@ -124,6 +124,48 @@ namespace parser {
 		return loadNodes(decompressedData);
 	}
 
+	void DumpItemInfo(cyberpunk::ItemInfo& aItemInfo, int aIndentation) {
+		for (auto i = 0; i < aIndentation; i++) {
+			std::print("\t");
+		}
+
+		Red::CString str;
+		Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aItemInfo.itemId.tdbid);
+		
+		std::println("{}", str.c_str());
+	}
+
+	void DumpItemSlotParts(cyberpunk::ItemSlotPart& aItemSlotPart, int aIndentation) {
+		if (!aItemSlotPart.isValid) {
+			return;
+		}
+
+		DumpItemInfo(aItemSlotPart.itemInfo, aIndentation);
+		for (auto i = 0; i < aIndentation; i++) {
+			std::print("\t");
+		}
+		Red::CString str;
+		Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aItemSlotPart.attachmentSlotTdbId);
+
+		std::println("Attachment slot {}", str.c_str());
+		for (auto& i : aItemSlotPart.children) {
+			DumpItemSlotParts(i, aIndentation + 1);
+		}
+	}
+
+	void DumpItem(cyberpunk::ItemData& aItemData) {
+		Red::CString str;
+		Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aItemData.itemInfo.itemId.tdbid);
+
+		const auto itemQuantity = aItemData.hasQuantity() ? aItemData.itemQuantity : 1;
+
+		std::println("{}, qty {}", str.c_str(), itemQuantity);
+		
+		if (aItemData.hasExtendedData()) {
+			DumpItemSlotParts(aItemData.itemSlotPart, 1);
+		}
+	}
+
 	std::vector<std::byte> Parser::decompressFile() {
 		// RETARDED CODE ALERT
 		// THIS IS COMPLETELY FUCKED
@@ -441,21 +483,20 @@ namespace parser {
 			}
 
 			for (auto& inventoryItem : subInventory.inventoryItems) {
-				std::println("\tItem {:#010x}, qty {}", inventoryItem.itemInfo.itemId.tdbid.value, inventoryItem.itemQuantity);
-				
-				Red::CString str;
-				Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, inventoryItem.itemInfo.itemId.tdbid);
-
-				std::println("{}", str.c_str());
+				DumpItem(inventoryItem);
 			}
 		}
 
-		auto rttiSystem = RED4ext::CRTTISystem::Get();
-
-		auto testType_enum = rttiSystem->GetType(RED4ext::CName{ "gamedataNewPerkType" });
-
-		auto enumAsEnum = static_cast<RED4ext::CEnum*>(testType_enum);
-
 		return true;
+	}
+
+	cyberpunk::NodeEntry* Parser::LookupNode(std::wstring_view aNodeName) {
+		auto node = std::find_if(m_nodeList.begin(), m_nodeList.end(), [aNodeName](const cyberpunk::NodeEntry* aNode) {
+			return aNode->name == aNodeName;
+		});
+
+		assert(node != m_nodeList.end());
+
+		return *node;
 	}
 }
