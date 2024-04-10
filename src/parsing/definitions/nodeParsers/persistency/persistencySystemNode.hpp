@@ -92,14 +92,14 @@ namespace cyberpunk {
 					// vehicleGarageComponentPS, 
 					// as we don't *really* need any other nodes
 					if (!className.IsNone() && className == RED4ext::CName{ "vehicleGarageComponentPS" }) {
-						auto dumpFile = std::ofstream{ "vehicleGarageComponent.txt" };
-						std::println("{} in PersistencySystem", className.ToString());
+						//auto dumpFile = std::ofstream{ "vehicleGarageComponent.txt" };
+						//std::println("{} in PersistencySystem", className.ToString());
 
 						const auto redClass = rtti->GetClass(className);
 
 						assert(redClass);
 
-						dumpRttiClassData(dumpFile, rtti, redClass);
+						//dumpRttiClassData(dumpFile, rtti, redClass);
 
 						auto classBytes = aCursor.readBytes(classSize);
 						auto subCursor = FileCursor{ classBytes.data(), classBytes.size() };
@@ -121,7 +121,7 @@ namespace cyberpunk {
 				m_redClasses.push_back(classEntry);
 			}
 
-			std::println("{} nodes in PersistencySystem", m_redClasses.size());
+			//std::println("{} nodes in PersistencySystem", m_redClasses.size());
 		}
 
 		const UnknownRedBuffer& LookupChunk(std::string_view aChunkName) {

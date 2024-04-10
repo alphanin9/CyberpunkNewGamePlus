@@ -20,6 +20,7 @@ namespace redRTTI {
 		RED4ext::ERTTIType m_typeIndex;
 		std::any m_value;
 
+		operator std::any() = delete;
 		inline std::any operator()() const {
 			return m_value;
 		}
@@ -475,6 +476,11 @@ namespace redRTTI {
 		}
 
 		inline void dumpClass(RedValueWrapper& aDatamap) {
+			constexpr auto shouldDumpClass = false;
+			if constexpr (!shouldDumpClass) {
+				return;
+			}
+
 			auto fileName = std::format("savegame_scriptable_{}.txt", aDatamap.m_typeName.ToString());
 			auto widened = std::wstring(fileName.begin(), fileName.end());
 

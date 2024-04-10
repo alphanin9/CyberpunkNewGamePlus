@@ -26,6 +26,11 @@ namespace redRTTI {
 			RED4ext::CName m_typeName;
 			RED4ext::ERTTIType m_typeIndex;
 			std::any m_value;
+
+			operator std::any() = delete;
+			std::any operator()() const {
+				return m_value;
+			}
 		};
 
 		using RedClassMap = std::unordered_map<std::string, RedValueWrapper>;
@@ -210,7 +215,7 @@ namespace redRTTI {
 						wrapper.m_typeName = innerType->GetName();
 						wrapper.m_value = readValue(aCursor, aRtti, innerType);
 
-						return wrapper;
+						return std::any{ wrapper };
 					}
 					else if (aType->GetType() == ERTTIType::WeakHandle) {
 						return aCursor.readInt();
@@ -449,6 +454,7 @@ namespace redRTTI {
 							Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, tdbId);
 
 							outputBuffer << std::format("{:#010x}", tdbId.value) << " " << str.c_str() << "\n";
+							return;
 						}
 						else if (redTypeName == RED4ext::CName{ "NodeRef" }) {
 							outputBuffer << std::any_cast<RED4ext::NodeRef>(aProperty.m_value).hash << "\n";
@@ -481,6 +487,12 @@ namespace redRTTI {
 			}
 
 			inline void dumpClass(RedValueWrapper& aDatamap) {
+				constexpr auto shouldDumpClass = false;
+
+				if constexpr (!shouldDumpClass) {
+					return;
+				}
+
 				auto fileName = std::format("savegame_persistent_{}.txt", aDatamap.m_typeName.ToString());
 				auto widened = std::wstring(fileName.begin(), fileName.end());
 

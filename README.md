@@ -10,6 +10,7 @@ Dependencies include:
 - Player inventory parsing
 - Scriptable system parsing
 - Minor implementation of PersistencySystem parsing, being able to parse the player's vehicles
+- Redscript integration, being able to give internal game systems the loaded save data
 
 ## Versions tested on
 - 2.12

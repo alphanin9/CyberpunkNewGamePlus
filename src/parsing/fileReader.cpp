@@ -26,6 +26,7 @@
 // Copypasted from WolvenKit :(
 namespace parser {
 	bool Parser::parseMetadata(std::filesystem::path aMetadataPath) {
+		/*
 		const auto bufferSize = std::filesystem::file_size(aMetadataPath);
 		
 		if (bufferSize == 0) {
@@ -45,6 +46,7 @@ namespace parser {
 		if (data["RootType"].get<std::string_view>() != "saveMetadataContainer") {
 			return false;
 		}
+		*/
 
 		// auto saveMetadata = data["Data"]["metadata"];
 
@@ -68,7 +70,7 @@ namespace parser {
 		{
 			auto file = std::ifstream{ aSavePath, std::ios_base::binary };
 			file.read(reinterpret_cast<char*>(m_fileStream.data()), bufferSize);
-			std::println("Read file!");
+			// std::println("Read file!");
 		}
 
 		{
@@ -100,7 +102,7 @@ namespace parser {
 			}
 		}
 
-		std::println("Info start: {}", infoStart);
+		// std::println("Info start: {}", infoStart);
 
 		auto fileCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
 		fileCursor.seekTo(FileCursor::SeekTo::Start, infoStart);
@@ -115,11 +117,11 @@ namespace parser {
 			m_flatNodes.push_back(cyberpunk::NodeEntry::fromCursor(fileCursor));
 		}
 
-		std::println("Finished reading flat nodes");
+		// std::println("Finished reading flat nodes");
 
 		auto decompressedData = decompressFile();
 
-		std::println("Buffer size: {}", decompressedData.size());
+		// std::println("Buffer size: {}", decompressedData.size());
 
 		return loadNodes(decompressedData);
 	}
@@ -147,7 +149,7 @@ namespace parser {
 		Red::CString str;
 		Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aItemSlotPart.attachmentSlotTdbId);
 
-		std::println("Attachment slot {}", str.c_str());
+		std::println("Attachment slot {}",	str.c_str());
 		for (auto& i : aItemSlotPart.children) {
 			DumpItemSlotParts(i, aIndentation + 1);
 		}
@@ -177,7 +179,7 @@ namespace parser {
 			
 			compressionTablePosition = fileCursor.findByteSequence("FZLC");
 
-			std::println("Compression table pos: {}", compressionTablePosition);
+			// std::println("Compression table pos: {}", compressionTablePosition);
 		}
 		auto decompressionResult = std::vector<std::byte>{};
 		{
@@ -390,7 +392,7 @@ namespace parser {
 	bool Parser::loadNodes(std::vector<std::byte>& decompressedData) {
 		auto cursor = FileCursor{ decompressedData.data(), decompressedData.size() };
 
-		std::println("Assigning nodeids...");
+		//std::println("Assigning nodeids...");
 
 		for (auto& node : m_flatNodes) {
 			cursor.seekTo(FileCursor::SeekTo::Start, node.offset);
@@ -398,7 +400,7 @@ namespace parser {
 			node.id = nodeId;
 		}
 
-		std::println("Finding children...");
+		//std::println("Finding children...");
 
 		for (auto& node : m_flatNodes) {
 			if (!node.isChild) {
@@ -411,8 +413,7 @@ namespace parser {
 			}
 		}
 
-		std::println("Filtering out children...");
-
+		//std::println("Filtering out children...");
 
 		for (auto& node : m_flatNodes) {
 			if (!node.isChild) {
@@ -420,11 +421,11 @@ namespace parser {
 			}
 		}
 
-		std::println("Calculating real sizes...");
+		//std::println("Calculating real sizes...");
 
 		calculateTrueSizes(m_nodeList, decompressedData.size());
 
-		std::println("Beginning node parsing...");
+		//std::println("Beginning node parsing...");
 
 		for (auto& node : m_flatNodes) {
 			if (!node.isReadByParent) {
@@ -446,47 +447,50 @@ namespace parser {
 			}
 		}
 
-		std::println("Finished parsing nodes...");
+		//std::println("Finished parsing nodes...");
+		constexpr auto shouldDumpInventory = false;
 
-		auto inventory = std::find_if(m_nodeList.begin(), m_nodeList.end(), [](cyberpunk::NodeEntry* node) {
-			return node->name == L"inventory";
-		});
+		if constexpr (shouldDumpInventory) {
+			auto inventory = std::find_if(m_nodeList.begin(), m_nodeList.end(), [](cyberpunk::NodeEntry* node) {
+				return node->name == L"inventory";
+				});
 
-		if (inventory == m_nodeList.end()) {
-			return false;
+			if (inventory == m_nodeList.end()) {
+				return false;
+			}
+
+			auto inventoryData = reinterpret_cast<cyberpunk::InventoryNode*>((*inventory)->nodeData.get());
+
+			//std::println("V's inventories @ {:#010x}...", reinterpret_cast<uintptr_t>(inventoryData));
+
+			auto inventoryNames = std::array<std::tuple<std::uint64_t, std::string>, 5u>{
+				std::make_tuple(0x1, "V's inventory"),
+					std::make_tuple(0xF4240, "V's car stash"),
+					std::make_tuple(0x896368, "Johnny's Inventory"),
+					std::make_tuple(9014340, "Kurtz's Inventory"),
+					std::make_tuple(0x7901DE03D136A5AF, "V's Wardrobe"),
+			};
+
+			const auto tweakDb = RED4ext::TweakDB::Get();
+
+			for (auto& subInventory : inventoryData->subInventories) {
+				auto inventoryName = std::find_if(inventoryNames.begin(), inventoryNames.end(), [&subInventory](std::tuple<std::uint64_t, std::string>& tuple) {
+					return std::get<0>(tuple) == subInventory.inventoryId;
+					});
+
+				if (inventoryName != inventoryNames.end()) {
+					std::println("Inventory \"{}\", {} items", std::get<1>(*inventoryName), subInventory.inventoryItems.size());
+				}
+				else {
+					std::println("Inventory {:#010x}, {} items", subInventory.inventoryId, subInventory.inventoryItems.size());
+				}
+
+				for (auto& inventoryItem : subInventory.inventoryItems) {
+					DumpItem(inventoryItem);
+				}
+			}
 		}
-
-		auto inventoryData = reinterpret_cast<cyberpunk::InventoryNode*>((*inventory)->nodeData.get());
-
-		std::println("V's inventories @ {:#010x}...", reinterpret_cast<uintptr_t>(inventoryData));
-
-		auto inventoryNames = std::array<std::tuple<std::uint64_t, std::string>, 5u>{
-			std::make_tuple(0x1, "V's inventory"),
-			std::make_tuple(0xF4240, "V's car stash"),
-			std::make_tuple(0x896368, "Johnny's Inventory"),
-			std::make_tuple(9014340, "Kurtz's Inventory"),
-			std::make_tuple(0x7901DE03D136A5AF, "V's Wardrobe"),
-		};
-
-		const auto tweakDb = RED4ext::TweakDB::Get();
-
-		for (auto& subInventory : inventoryData->subInventories) {
-			auto inventoryName = std::find_if(inventoryNames.begin(), inventoryNames.end(), [&subInventory](std::tuple<std::uint64_t, std::string>& tuple) {
-				return std::get<0>(tuple) == subInventory.inventoryId;
-			});
-
-			if (inventoryName != inventoryNames.end()) {
-				std::println("Inventory \"{}\", {} items", std::get<1>(*inventoryName), subInventory.inventoryItems.size());
-			}
-			else {
-				std::println("Inventory {:#010x}, {} items", subInventory.inventoryId, subInventory.inventoryItems.size());
-			}
-
-			for (auto& inventoryItem : subInventory.inventoryItems) {
-				DumpItem(inventoryItem);
-			}
-		}
-
+		
 		return true;
 	}
 

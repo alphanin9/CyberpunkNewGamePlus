@@ -100,7 +100,8 @@ namespace redscript {
 		}
 
 		bool ParsePointOfNoReturnSaveData() {
-			m_saveData.m_isValid = false; // Invalidate!
+			// Invalidate and reset
+			m_saveData = PlayerSaveData{};
 			auto savePath = files::findLastPointOfNoReturnSave(files::getCpSaveFolder()) / L"sav.dat";
 
 			parser::Parser parser{};
@@ -117,10 +118,12 @@ namespace redscript {
 
 			const auto& equipmentSystemPlayerData = scriptableSystemsContainerNode->LookupChunk("EquipmentSystemPlayerData").m_redClass;
 			const auto& playerDevelopmentData = scriptableSystemsContainerNode->LookupChunk("PlayerDevelopmentData").m_redClass;
+			const auto& vehicleGarageData = persistencySystemNode->LookupChunk("vehicleGarageComponentPS").m_redClass;
 
 			LoadPlayerDevelopmentData(playerDevelopmentData);
 			LoadEquipmentSystemPlayerData(equipmentSystemPlayerData);
 			LoadInventory(inventoryNode);
+			LoadGarage(vehicleGarageData);
 
 			m_saveData.m_isValid = true;
 			return true;
@@ -307,6 +310,25 @@ namespace redscript {
 		}
 
 		bool ShouldAddItemToInventory(RED4ext::TweakDB* aTweakDb, const RED4ext::ItemID& aItemId) {
+			// Sorry, but these REALLY annoy me
+			static constexpr auto bannedTdbIds = std::array<RED4ext::TweakDBID, 32>{
+				RED4ext::TweakDBID{ "Items.MaskCW" },
+				RED4ext::TweakDBID{ "Items.MaskCWPlus" },
+				RED4ext::TweakDBID{ "Items.MaskCWPlusPlus" },
+				RED4ext::TweakDBID{ "Items.w_melee_004__fists_a" },
+				RED4ext::TweakDBID{ "Items.PersonalLink" },
+				RED4ext::TweakDBID{ "Items.personal_link" },
+				RED4ext::TweakDBID{ "Items.PlayerMaTppHead" },
+				RED4ext::TweakDBID{ "Items.PlayerWaTppHead" },
+				RED4ext::TweakDBID{ "Items.PlayerFppHead" },
+				RED4ext::TweakDBID{ "Items.HolsteredFists" },
+				RED4ext::TweakDBID{ "Items.mq024_sandra_data_carrier" },
+			};
+
+			if (std::find(bannedTdbIds.begin(), bannedTdbIds.end(), aItemId.tdbid) != bannedTdbIds.end()) {
+				return false;
+			}
+
 			auto itemRecord = aTweakDb->GetRecord(aItemId.tdbid);
 
 			if (!itemRecord) {
@@ -334,6 +356,7 @@ namespace redscript {
 			case gamedataItemType::Gen_Readable:
 			case gamedataItemType::Gen_Tarot:
 			case gamedataItemType::VendorToken:
+			case gamedataItemType::Wea_Fists:
 			case gamedataItemType::Wea_VehicleMissileLauncher:
 			case gamedataItemType::Wea_VehiclePowerWeapon:
 				return false;
@@ -442,6 +465,29 @@ namespace redscript {
 
 			for (auto item : inventoryCarStash.inventoryItems) {
 				ParseItem(tweakDb, item, true);
+			}
+		}
+
+		void LoadGarage(const redRTTI::persistent::RedValueWrapper& aClassMap) {
+			// Good enough
+			// I'd include the V-Tech, but I actually like that one.
+			static constexpr auto blacklistedVehicles = std::array<RED4ext::TweakDBID, 32>{
+				RED4ext::TweakDBID{ "Vehicle.v_utility4_thorton_mackinaw_bmf_player" },
+				RED4ext::TweakDBID{ "Vehicle.v_sport2_quadra_type66_nomad_tribute" }
+			};
+
+			auto root = std::any_cast<redRTTI::persistent::RedClassMap>(aClassMap());
+			// Really need a typedef for arrays
+			// Some sort of .at_as<>(std::string_view aProperty) method for class maps as well
+			// But that's a lot of refactoring....
+			for (auto unlockedVehicle : std::any_cast<std::vector<redRTTI::persistent::RedValueWrapper>>(root.at("unlockedVehicleArray")())) {
+				auto unlockedVehicleData = std::any_cast<redRTTI::persistent::RedClassMap>(unlockedVehicle());
+				auto vehicleIdData = std::any_cast<redRTTI::persistent::RedClassMap>(unlockedVehicleData.at("vehicleID")());
+				auto vehicleRecordId = std::any_cast<RED4ext::TweakDBID>(vehicleIdData.at("recordID")());
+
+				if (std::find(blacklistedVehicles.begin(), blacklistedVehicles.end(), vehicleRecordId) == blacklistedVehicles.end()) {
+					m_saveData.m_playerVehicleGarage.PushBack(vehicleRecordId);
+				}
 			}
 		}
 

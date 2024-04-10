@@ -256,16 +256,16 @@ namespace cyberpunk {
 					nameDesc.push_back(RedPackageNameHeader::fromCursor(cursor));
 				}
 
-				auto dumpTarget = std::ofstream{ "RTTIClassDump.txt" };
+				//auto dumpTarget = std::ofstream{ "RTTIClassDump.txt" };
 
 				for (auto name : nameDesc) {
 					cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + name.offset());
 					names.push_back(cursor.readNullTerminatedString());
 				}
 
-				for (auto& name : names) {
-					dumpTarget << name << "\n";
-				}
+				//for (auto& name : names) {
+				//	dumpTarget << name << "\n";
+				//}
 
 				const auto chunkCount = (header.chunkDataOffset - header.chunkDescOffset) / sizeof(RedPackageChunkHeader);
 				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + header.chunkDescOffset);
@@ -282,7 +282,7 @@ namespace cyberpunk {
 					auto chunk = RedChunk{};
 					chunk.m_typeName = names.at(chunkHeader.typeId);
 
-					dumpRttiClassData(dumpTarget, rttiSystem, rttiSystem->GetClass(RED4ext::CName{ chunk.m_typeName.c_str() }), 0);
+					//dumpRttiClassData(dumpTarget, rttiSystem, rttiSystem->GetClass(RED4ext::CName{ chunk.m_typeName.c_str() }), 0);
 					
 					chunks.push_back(chunk);
 				}
