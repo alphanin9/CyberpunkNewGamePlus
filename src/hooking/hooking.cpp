@@ -20,12 +20,6 @@ namespace hooking {
 		SelectGameDefinition m_originalFn = nullptr;
 
 		uint64_t* __fastcall m_detourFn(uint64_t* aDepotPath, GamedefType aGamedefType) {
-			constexpr auto shouldDebugPrint = true;
-
-			if constexpr (shouldDebugPrint) {
-				std::println("SelectGameDefinition called, inStartNewGame {}, inSecret {}, gamedefType {}", pluginContext::m_isInStartNewGame, pluginContext::m_isSecretOverrideActivated, std::bit_cast<std::uint8_t>(aGamedefType));
-			}
-
 			if (!pluginContext::m_isSecretOverrideActivated || !pluginContext::m_isInStartNewGame) {
 				return m_originalFn(aDepotPath, aGamedefType);
 			}
