@@ -30,9 +30,6 @@
     <ClCompile Include="src\parsing\definitions\nodeParsers\parserHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\redscript_api\redscriptBindings.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\hooking\hooking.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -69,6 +66,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\hooking\hooking.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\redscriptBindings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

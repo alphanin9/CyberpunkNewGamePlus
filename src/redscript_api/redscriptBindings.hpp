@@ -1,3 +1,4 @@
+#pragma once
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
@@ -16,43 +17,53 @@
 
 namespace redscript {
 	struct RedItemData {
-		RED4ext::ItemID m_itemId;
-		int m_itemQuantity;
-	};
+		Red::ItemID m_itemId{};
+		int32_t m_itemQuantity{};
 
+		RTTI_IMPL_TYPEINFO(RedItemData);
+		RTTI_IMPL_ALLOCATOR();
+	};
+}
+
+RTTI_DEFINE_CLASS(redscript::RedItemData, {
+	RTTI_PROPERTY(m_itemId);
+	RTTI_PROPERTY(m_itemQuantity);
+});
+
+namespace redscript {
 	struct PlayerSaveData {
 		bool m_isValid{};
 		// We do not save actual perks - what if the player wants a respec?
 		// Excessive cyberware can be fixed by not giving it all in one go 
 		// and debug cyberware capacity shards
-		int m_playerPerkPoints{};
+		int32_t m_playerPerkPoints{};
 		// Not sure how progression builds handle this, but you get Relic perks even without doing anything there
 		// Fact n"ep1_tree_unlocked"
-		int m_playerRelicPoints{};
-		int m_playerAttributePoints{};
+		int32_t m_playerRelicPoints{};
+		int32_t m_playerAttributePoints{};
 
 		// Maybe put attributes in the character creation screen?
 		// Would be cool
-		int m_playerBodyAttribute{};
-		int m_playerReflexAttribute{};
-		int m_playerTechAttribute{};
-		int m_playerIntelligenceAttribute{};
-		int m_playerCoolAttribute{};
+		int32_t m_playerBodyAttribute{};
+		int32_t m_playerReflexAttribute{};
+		int32_t m_playerTechAttribute{};
+		int32_t m_playerIntelligenceAttribute{};
+		int32_t m_playerCoolAttribute{};
 
-		int m_playerBodySkillLevel{};
-		int m_playerReflexSkillLevel{};
-		int m_playerTechSkillLevel{};
-		int m_playerIntelligenceSkillLevel{};
-		int m_playerCoolSkillLevel{};
+		int32_t m_playerBodySkillLevel{};
+		int32_t m_playerReflexSkillLevel{};
+		int32_t m_playerTechSkillLevel{};
+		int32_t m_playerIntelligenceSkillLevel{};
+		int32_t m_playerCoolSkillLevel{};
 
 		// Cap this to 50 on the scripting side, so the player still has something to level towards
-		int m_playerLevel{};
+		int32_t m_playerLevel{};
 
 		// Dumb and can just be set to 50 LMAO
-		int m_playerStreetCred{};
+		int32_t m_playerStreetCred{};
 
 		// Special treatment :D
-		int m_playerMoney{};
+		int32_t m_playerMoney{};
 
 		// No other inventories matter too much
 		// Johnny and Kurtz get their own shit anyway
@@ -79,8 +90,40 @@ namespace redscript {
 		// Nah, shit idea, maybe for the Demiurge
 		// Seeing as acquiring it is pretty cool
 		Red::DynArray<Red::TweakDBID> m_playerVehicleGarage{};
-	};
 
+		RTTI_IMPL_TYPEINFO(PlayerSaveData);
+		RTTI_IMPL_ALLOCATOR();
+	};
+}
+
+RTTI_DEFINE_CLASS(redscript::PlayerSaveData, {
+	RTTI_PROPERTY(m_isValid);
+	RTTI_PROPERTY(m_playerPerkPoints);
+	RTTI_PROPERTY(m_playerRelicPoints);
+	RTTI_PROPERTY(m_playerAttributePoints);
+	RTTI_PROPERTY(m_playerBodyAttribute);
+	RTTI_PROPERTY(m_playerReflexAttribute);
+	RTTI_PROPERTY(m_playerTechAttribute);
+	RTTI_PROPERTY(m_playerIntelligenceAttribute);
+	RTTI_PROPERTY(m_playerCoolAttribute);
+	RTTI_PROPERTY(m_playerBodySkillLevel);
+	RTTI_PROPERTY(m_playerReflexSkillLevel);
+	RTTI_PROPERTY(m_playerTechSkillLevel);
+	RTTI_PROPERTY(m_playerIntelligenceSkillLevel);
+	RTTI_PROPERTY(m_playerCoolSkillLevel);
+	RTTI_PROPERTY(m_playerLevel);
+	RTTI_PROPERTY(m_playerStreetCred);
+	RTTI_PROPERTY(m_playerMoney);
+	RTTI_PROPERTY(m_playerItems);
+	RTTI_PROPERTY(m_playerStashItems);
+	RTTI_PROPERTY(m_playerEquippedOperatingSystem);
+	RTTI_PROPERTY(m_playerEquippedKiroshis);
+	RTTI_PROPERTY(m_playerEquippedLegCyberware);
+	RTTI_PROPERTY(m_playerEquippedArmCyberware);
+	RTTI_PROPERTY(m_playerVehicleGarage);
+});
+
+namespace redscript {
 	class TopSecretSystem : public Red::IGameSystem {
 	public:
 		bool IsAttached() const {
@@ -137,26 +180,36 @@ namespace redscript {
 			m_isAttached = false;
 		}
 
-		// CRINGE (AND SLOW) CODE AHEAD
+		// CRINGE (AND SLOW) CODE AHEAD (It's actually not too slow in the release configuration)
 		// This is the result of not using proper RTTI classes...
 		void LoadPlayerDevelopmentData(const redRTTI::RedValueWrapper& aPlayerDevelopmentData) {
 			auto root = std::any_cast<redRTTI::RedClassMap>(aPlayerDevelopmentData.m_value);
 
 			// Load unspent points? Kinda useless, TBH (Also completely broken with progression builds)
-			// Maybe useful for Relic?
+			// Maybe useful for Relic? Or wraparound into perk points for attribute points that can't be spent anymore
 			for (auto& devPointData : std::any_cast<std::vector<redRTTI::RedValueWrapper>>(root.at("devPoints").m_value)) {
 				auto developmentPointData = std::any_cast<redRTTI::RedClassMap>(devPointData.m_value);
+				const auto pointType = std::any_cast<RED4ext::CName>(developmentPointData.at("type")());
+				const auto unspentPointCount = std::any_cast<std::int32_t>(developmentPointData.at("unspent")());
 
-				if (std::any_cast<RED4ext::CName>(developmentPointData.at("type").m_value) == RED4ext::CName{ "Espionage" }) {
-					m_saveData.m_playerRelicPoints = std::any_cast<std::int32_t>(developmentPointData.at("unspent").m_value) + std::any_cast<std::int32_t>(developmentPointData.at("spent").m_value);
-					
-					const auto relicPointSpillover = m_saveData.m_playerRelicPoints - 8;
+				if (pointType == RED4ext::CName{ "Espionage" }) {
+					m_saveData.m_playerRelicPoints = unspentPointCount + std::any_cast<std::int32_t>(developmentPointData.at("spent").m_value);
+
+					// 3 milestone perks - 9 points
+					// 4 cyberarm perks - 4 points
+					// 1 additional perk for stealth
+					// 1 additional perk for weakspots
+					constexpr auto MAX_RELIC_POINTS = 15;
+
+					const auto relicPointSpillover = m_saveData.m_playerRelicPoints - MAX_RELIC_POINTS;
 
 					if (relicPointSpillover > 0) {
 						m_saveData.m_playerPerkPoints += relicPointSpillover;
-						m_saveData.m_playerRelicPoints = 8;
+						m_saveData.m_playerRelicPoints = MAX_RELIC_POINTS;
 					}
-					break;
+				}
+				else if (pointType == RED4ext::CName{ "Primary" }) { // Perks
+					m_saveData.m_playerPerkPoints += unspentPointCount; // Fill the unspent points
 				}
 			}
 
@@ -176,7 +229,7 @@ namespace redscript {
 				for (auto& perkData : unlockedPerks) {
 					auto perk = std::any_cast<redRTTI::RedClassMap>(perkData.m_value);
 					perkPointsSpent += std::any_cast<std::int32_t>(perk.at("currLevel").m_value);
-				}	
+				}
 			}
 
 			m_saveData.m_playerPerkPoints += perkPointsSpent;
@@ -189,6 +242,9 @@ namespace redscript {
 
 				if (proficiencyType == RED4ext::CName{ "Level" }) {
 					m_saveData.m_playerLevel = std::clamp(proficiencyLevel, 1, 50);
+				}
+				else if (proficiencyType == RED4ext::CName{ "StreetCred" }) {
+					m_saveData.m_playerStreetCred = proficiencyLevel;
 				}
 				else if (proficiencyType == RED4ext::CName{ "StrengthSkill" }) {
 					m_saveData.m_playerBodySkillLevel = proficiencyLevel;
@@ -233,7 +289,7 @@ namespace redscript {
 
 		RED4ext::ItemID GetItemIDFromClassMap(const redRTTI::RedClassMap& aClassMap) {
 			RED4ext::ItemID id{};
-			
+
 			id.tdbid = std::any_cast<RED4ext::TweakDBID>(aClassMap.at("id")());
 			id.rngSeed = std::any_cast<std::uint32_t>(aClassMap.at("rngSeed")());
 			id.uniqueCounter = std::any_cast<std::uint16_t>(aClassMap.at("uniqueCounter")());
@@ -253,7 +309,7 @@ namespace redscript {
 				auto equipAreaData = std::any_cast<redRTTI::RedClassMap>(equipArea());
 				auto equipAreaType = std::any_cast<RED4ext::CName>(equipAreaData.at("areaType")());
 				auto equipSlots = std::any_cast<std::vector<redRTTI::RedValueWrapper>>(equipAreaData.at("equipSlots")());
-				
+
 				if (equipAreaType == RED4ext::CName{ "EyesCW" }) {
 					// Fuck the mask
 					for (auto& equippedItemData : equipSlots) {
@@ -313,16 +369,16 @@ namespace redscript {
 			// Sorry, but these REALLY annoy me
 			static constexpr auto bannedTdbIds = std::array<RED4ext::TweakDBID, 32>{
 				RED4ext::TweakDBID{ "Items.MaskCW" },
-				RED4ext::TweakDBID{ "Items.MaskCWPlus" },
-				RED4ext::TweakDBID{ "Items.MaskCWPlusPlus" },
-				RED4ext::TweakDBID{ "Items.w_melee_004__fists_a" },
-				RED4ext::TweakDBID{ "Items.PersonalLink" },
-				RED4ext::TweakDBID{ "Items.personal_link" },
-				RED4ext::TweakDBID{ "Items.PlayerMaTppHead" },
-				RED4ext::TweakDBID{ "Items.PlayerWaTppHead" },
-				RED4ext::TweakDBID{ "Items.PlayerFppHead" },
-				RED4ext::TweakDBID{ "Items.HolsteredFists" },
-				RED4ext::TweakDBID{ "Items.mq024_sandra_data_carrier" },
+					RED4ext::TweakDBID{ "Items.MaskCWPlus" },
+					RED4ext::TweakDBID{ "Items.MaskCWPlusPlus" },
+					RED4ext::TweakDBID{ "Items.w_melee_004__fists_a" },
+					RED4ext::TweakDBID{ "Items.PersonalLink" },
+					RED4ext::TweakDBID{ "Items.personal_link" },
+					RED4ext::TweakDBID{ "Items.PlayerMaTppHead" },
+					RED4ext::TweakDBID{ "Items.PlayerWaTppHead" },
+					RED4ext::TweakDBID{ "Items.PlayerFppHead" },
+					RED4ext::TweakDBID{ "Items.HolsteredFists" },
+					RED4ext::TweakDBID{ "Items.mq024_sandra_data_carrier" },
 			};
 
 			if (std::find(bannedTdbIds.begin(), bannedTdbIds.end(), aItemId.tdbid) != bannedTdbIds.end()) {
@@ -427,6 +483,13 @@ namespace redscript {
 				return;
 			}
 
+			static constexpr auto moneyItemTDBID = Red::TweakDBID{ "Items.money" };
+
+			if (aItemData.itemInfo.itemId.tdbid == moneyItemTDBID) {
+				m_saveData.m_playerMoney += aItemData.itemQuantity;
+				return;
+			}
+
 			RedItemData itemData{};
 
 			itemData.m_itemId = itemInfo.itemId;
@@ -473,7 +536,7 @@ namespace redscript {
 			// I'd include the V-Tech, but I actually like that one.
 			static constexpr auto blacklistedVehicles = std::array<RED4ext::TweakDBID, 32>{
 				RED4ext::TweakDBID{ "Vehicle.v_utility4_thorton_mackinaw_bmf_player" },
-				RED4ext::TweakDBID{ "Vehicle.v_sport2_quadra_type66_nomad_tribute" }
+					RED4ext::TweakDBID{ "Vehicle.v_sport2_quadra_type66_nomad_tribute" }
 			};
 
 			auto root = std::any_cast<redRTTI::persistent::RedClassMap>(aClassMap());
@@ -505,40 +568,4 @@ RTTI_DEFINE_CLASS(redscript::TopSecretSystem, {
 	RTTI_METHOD(GetSecretVariableState);
 	RTTI_METHOD(SetSecretVariableState);
 	RTTI_METHOD(GetSaveData);
-});
-
-RTTI_DEFINE_CLASS(redscript::PlayerSaveData, {
-	RTTI_PROPERTY(m_isValid);
-
-	RTTI_PROPERTY(m_playerPerkPoints);
-	RTTI_PROPERTY(m_playerRelicPoints);
-	RTTI_PROPERTY(m_playerAttributePoints);
-
-	RTTI_PROPERTY(m_playerBodyAttribute);
-	RTTI_PROPERTY(m_playerReflexAttribute);
-	RTTI_PROPERTY(m_playerTechAttribute);
-	RTTI_PROPERTY(m_playerIntelligenceAttribute);
-	RTTI_PROPERTY(m_playerCoolAttribute);
-
-	RTTI_PROPERTY(m_playerBodySkillLevel);
-	RTTI_PROPERTY(m_playerReflexSkillLevel);
-	RTTI_PROPERTY(m_playerTechSkillLevel);
-	RTTI_PROPERTY(m_playerIntelligenceSkillLevel);
-	RTTI_PROPERTY(m_playerCoolSkillLevel);
-
-	RTTI_PROPERTY(m_playerLevel);
-	RTTI_PROPERTY(m_playerStreetCred);
-	RTTI_PROPERTY(m_playerMoney);
-	RTTI_PROPERTY(m_playerItems);
-	RTTI_PROPERTY(m_playerStashItems);
-	RTTI_PROPERTY(m_playerEquippedOperatingSystem);
-	RTTI_PROPERTY(m_playerEquippedKiroshis);
-	RTTI_PROPERTY(m_playerEquippedLegCyberware);
-	RTTI_PROPERTY(m_playerEquippedArmCyberware);
-	RTTI_PROPERTY(m_playerVehicleGarage);
-});
-
-RTTI_DEFINE_CLASS(redscript::RedItemData, {
-	RTTI_PROPERTY(m_itemId);
-	RTTI_PROPERTY(m_itemQuantity);
 });

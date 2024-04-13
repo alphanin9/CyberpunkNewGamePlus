@@ -6,6 +6,7 @@
 
 #include "context/context.hpp"
 #include "hooking/hooking.hpp"
+#include "redscript_api/redscriptBindings.hpp" // HACK, maybe that's why RTTI shit wasn't working right?
 
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
