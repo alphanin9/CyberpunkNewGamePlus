@@ -142,14 +142,22 @@ namespace redscript {
 			pluginContext::m_isSecretOverrideActivated = newState;
 		}
 
+		bool HasPointOfNoReturnSave() {
+			return !files::GetLatestPointOfNoReturnSave().empty();
+		}
+
 		bool ParsePointOfNoReturnSaveData() {
 			// Invalidate and reset
 			m_saveData = PlayerSaveData{};
-			auto savePath = files::findLastPointOfNoReturnSave(files::getCpSaveFolder()) / L"sav.dat";
+			const auto basePath = files::GetLatestPointOfNoReturnSave();
+
+			if (basePath.empty()) {
+				return false;
+			}
 
 			parser::Parser parser{};
 
-			const bool wasParseSuccessful = parser.parseSavegame(savePath);
+			const auto wasParseSuccessful = parser.parseSavegame(basePath / L"sav.dat");
 
 			if (!wasParseSuccessful) {
 				return false;
@@ -289,6 +297,10 @@ namespace redscript {
 
 		RED4ext::ItemID GetItemIDFromClassMap(const redRTTI::RedClassMap& aClassMap) {
 			RED4ext::ItemID id{};
+			// HACK
+			if (aClassMap.empty()) {
+				return id;
+			}
 
 			id.tdbid = std::any_cast<RED4ext::TweakDBID>(aClassMap.at("id")());
 			id.rngSeed = std::any_cast<std::uint32_t>(aClassMap.at("rngSeed")());
@@ -565,6 +577,7 @@ namespace redscript {
 RTTI_DEFINE_CLASS(redscript::TopSecretSystem, {
 	RTTI_METHOD(IsAttached);
 	RTTI_METHOD(ParsePointOfNoReturnSaveData);
+	RTTI_METHOD(HasPointOfNoReturnSave);
 	RTTI_METHOD(GetSecretVariableState);
 	RTTI_METHOD(SetSecretVariableState);
 	RTTI_METHOD(GetSaveData);

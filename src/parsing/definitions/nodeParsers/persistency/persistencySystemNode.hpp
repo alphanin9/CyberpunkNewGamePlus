@@ -67,6 +67,7 @@ namespace cyberpunk {
 	public:
 		static constexpr std::wstring_view nodeName = L"PersistencySystem2";
 		virtual void readData(FileCursor& aCursor, NodeEntry& node) {
+			RED4EXT_UNUSED_PARAMETER(node);
 			const auto rtti = RED4ext::CRTTISystem::Get();
 			const auto idCount = aCursor.readInt();
 			m_ids.reserve(idCount);
@@ -94,11 +95,8 @@ namespace cyberpunk {
 					if (!className.IsNone() && className == RED4ext::CName{ "vehicleGarageComponentPS" }) {
 						//auto dumpFile = std::ofstream{ "vehicleGarageComponent.txt" };
 						//std::println("{} in PersistencySystem", className.ToString());
-
-						const auto redClass = rtti->GetClass(className);
-
-						assert(redClass);
-
+						//const auto redClass = rtti->GetClass(className);
+						//assert(redClass);
 						//dumpRttiClassData(dumpFile, rtti, redClass);
 
 						auto classBytes = aCursor.readBytes(classSize);
