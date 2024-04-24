@@ -28,9 +28,7 @@ namespace hooking {
 				return m_originalFn(aDepotPath, aGamedefType);
 			}
 
-			constexpr auto secretDepotPath = 8728878857868329297u; // I wonder what that could be?
-
-			*aDepotPath = secretDepotPath;
+			*aDepotPath = pluginContext::m_ngPlusGameDefinitionHash;
 
 			pluginContext::m_isSecretOverrideActivated = false;
 			return aDepotPath;

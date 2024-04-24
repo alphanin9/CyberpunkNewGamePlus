@@ -141,6 +141,10 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <ExternalWarningLevel>Level2</ExternalWarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <DisableLanguageExtensions>false</DisableLanguageExtensions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -159,6 +163,9 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <ExternalWarningLevel>Level2</ExternalWarningLevel>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <DisableLanguageExtensions>false</DisableLanguageExtensions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -187,6 +194,7 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\persistencyRttiClassCreator.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp" />
     <ClInclude Include="src\parsing\fileReader.hpp" />
+    <ClInclude Include="src\redscript_api\callback_system\eventCallback.hpp" />
     <ClInclude Include="src\redscript_api\redscriptBindings.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
