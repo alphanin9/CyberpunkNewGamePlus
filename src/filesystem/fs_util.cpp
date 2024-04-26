@@ -108,13 +108,13 @@ std::filesystem::path GetLatestPointOfNoReturnSave()
     return vecSavePaths.at(0).m_path;
 }
 
+constexpr auto pointOfNoReturnPrefix = L"PointOfNoReturn";
+constexpr auto saveMetadataType = "saveMetadataContainer";
+constexpr auto minSupportedGameVersion = 2000;
+
 bool HasValidPointOfNoReturnSave()
 {
-    constexpr auto pointOfNoReturnPrefix = L"PointOfNoReturn";
-    constexpr auto saveMetadataType = "saveMetadataContainer";
-    constexpr auto minSupportedGameVersion = 2000;
-
-    const auto basePath = GetCpSaveFolder();
+    static const auto basePath = GetCpSaveFolder();
 
     std::filesystem::directory_iterator directoryIterator{basePath};
 
@@ -122,7 +122,7 @@ bool HasValidPointOfNoReturnSave()
     auto dirEnd = std::filesystem::end(directoryIterator);
 
     return std::any_of(dirBegin, dirEnd,
-                       [&pointOfNoReturnPrefix, &saveMetadataType, minSupportedGameVersion](const std::filesystem::directory_entry& aDirEntry)
+                       [](const std::filesystem::directory_entry& aDirEntry)
                        {
                            if (!aDirEntry.is_directory())
                            {
@@ -158,4 +158,33 @@ bool HasValidPointOfNoReturnSave()
                            return saveMetadata["gameVersion"].get<std::int64_t>() >= minSupportedGameVersion;
                        });
 }
+
+bool IsValidForNewGamePlus(std::string_view aSaveName)
+{
+    static const auto basePath = GetCpSaveFolder();
+
+    const auto metadataPath = basePath / aSaveName / "metadata.9.json";
+
+    if (!std::filesystem::is_regular_file(metadataPath))
+    {
+        return false;
+    }
+
+    const auto json = nlohmann::json::parse(std::ifstream{metadataPath});
+
+    if (json.empty())
+    {
+        return false;
+    }
+
+    if (json["RootType"].get<std::string_view>() != saveMetadataType)
+    {
+        return false;
+    }
+
+    const auto& saveMetadata = json["Data"]["metadata"];
+
+    return saveMetadata["gameVersion"].get<std::int64_t>() >= minSupportedGameVersion;
+}
+
 } // namespace files

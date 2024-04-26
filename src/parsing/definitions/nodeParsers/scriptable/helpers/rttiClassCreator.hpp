@@ -8,163 +8,72 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
-namespace redRTTI {
-	struct CNameHasher {
-		inline std::size_t operator()(const RED4ext::CName cname) const noexcept {
-			return std::hash<std::uint64_t>{}(cname.hash);
-		}
-	};
+#include "../../rttiHelpers/rttiValueReader.hpp"
 
-	struct RedValueWrapper {
-		RED4ext::CName m_typeName;
-		RED4ext::ERTTIType m_typeIndex;
-		std::any m_value;
+namespace scriptable
+{
+struct RedPackageFieldHeader
+{
+    std::uint16_t m_nameId;
+    std::uint16_t m_typeId;
+    std::uint32_t m_offset;
 
-		operator std::any() = delete;
-		inline std::any operator()() const {
-			return m_value;
-		}
-	};
+    inline static RedPackageFieldHeader fromCursor(FileCursor& cursor)
+    {
+        auto ret = RedPackageFieldHeader{};
 
-	struct RedPackageFieldHeader {
-		std::uint16_t nameId;
-		std::uint16_t typeId;
-		std::uint32_t offset;
+        ret.m_nameId = cursor.readUShort();
+        ret.m_typeId = cursor.readUShort();
+        ret.m_offset = cursor.readUInt();
 
-		inline static RedPackageFieldHeader fromCursor(FileCursor& cursor) {
-			auto ret = RedPackageFieldHeader{};
+        return ret;
+    }
+};
 
-			ret.nameId = cursor.readUShort();
-			ret.typeId = cursor.readUShort();
-			ret.offset = cursor.readUInt();
+class ScriptableReader : public redRTTI::RTTIReader
+{
+private:
+    std::vector<std::string> m_names;
 
-			return ret;
-		}
-	};
-
-	using RedClassMap = std::unordered_map<std::string, RedValueWrapper>;
-
-	// Recursively arrive to the underlying type
-	inline RED4ext::CBaseRTTIType* getRttiType(RED4ext::CBaseRTTIType* aType) {
-		using RED4ext::ERTTIType;
-		switch (aType->GetType()) {
-		case ERTTIType::Array:
-			return getRttiType(static_cast<RED4ext::CRTTIArrayType*>(aType)->GetInnerType());
-		case ERTTIType::StaticArray:
-			return getRttiType(static_cast<RED4ext::CRTTIStaticArrayType*>(aType)->GetInnerType());
-		case ERTTIType::NativeArray:
-			return getRttiType(static_cast<RED4ext::CRTTINativeArrayType*>(aType)->GetInnerType());
-		case ERTTIType::Handle:
-			return getRttiType(static_cast<RED4ext::CRTTIHandleType*>(aType)->GetInnerType());
-		case ERTTIType::WeakHandle:
-			return getRttiType(static_cast<RED4ext::CRTTIWeakHandleType*>(aType)->GetInnerType());
-		default:
-			return aType;
-		}
+	virtual Red::TweakDBID ReadTweakDBID(FileCursor& aCursor)
+    {
+        return aCursor.readTdbId();
 	}
 
-	namespace reader {
-		template<typename T>
-		inline T readPrimitive(FileCursor& aCursor) {
-			return aCursor.readValue<T>();
+	virtual Red::NodeRef ReadNodeRef(FileCursor& aCursor)
+    {
+        const auto str = aCursor.readLengthPrefixedString();
+        const auto lengthNeeded =
+            WideCharToMultiByte(CP_UTF8, 0, &str.at(0), str.size(), nullptr, 0, nullptr, nullptr);
+
+        std::string ascii(lengthNeeded, 0);
+
+        WideCharToMultiByte(CP_UTF8, 0, &str.at(0), str.size(), &ascii.at(0), lengthNeeded, nullptr, nullptr);
+
+        return Red::NodeRef{ascii.c_str()};
+	}
+	
+	virtual Red::CName ReadCName(FileCursor& aCursor)
+    {
+        auto index = aCursor.readUShort();
+		
+		if (index >= m_names.size())
+        {
+            return Red::CName{};
 		}
 
-		inline RED4ext::TweakDBID readTweakDBID(FileCursor& aCursor) {
-			return aCursor.readTdbId();
-		}
+		return Red::CName{m_names.at(index).c_str()};
+	}
 
-		inline RED4ext::CName readCName(FileCursor& aCursor, std::vector<std::string>& names) {
-			auto index = aCursor.readUShort();
+	virtual Red::CName ReadEnum(FileCursor& aCursor, Red::CBaseRTTIType* aType)
+    {
+        return ReadCName(aCursor);
+	}
 
-			if (index > names.size()) {
-				return RED4ext::CName{ "None" };
-			}
-			else {
-				return RED4ext::CName{ names.at(index).c_str() };
-			}
-		}
-
-		inline RED4ext::NodeRef readNodeRef(FileCursor& aCursor) {
-			// Evil
-			const auto str = aCursor.readLengthPrefixedString();
-			const auto length_needed = WideCharToMultiByte(CP_UTF8, 0, &str.at(0), str.size(), nullptr, 0, nullptr, nullptr);
-
-			auto ascii = std::string(length_needed, 0);
-
-			WideCharToMultiByte(CP_UTF8, 0, &str.at(0), str.size(), &ascii.at(0), length_needed, nullptr, nullptr);
-
-			return RED4ext::NodeRef{ ascii.c_str() };
-		}
-
-		// A very limited subset
-		// We don't need much, we have basically all we need for the ScriptableSystemContainer in the save
-		// FUCK handle reading btw
-		namespace {
-			RedClassMap readClassInternal(FileCursor& aCursor, RED4ext::CRTTISystem* aRtti, std::string_view aClassName, std::vector<std::string>& aNames);
-
-			std::any readValue(FileCursor& aCursor, RED4ext::CRTTISystem* aRtti, RED4ext::CBaseRTTIType* aType, std::vector<std::string>& aNames) {
-				using RED4ext::ERTTIType;
-				// Cope, I'm not using a switch statement
-				if (aType->GetType() == ERTTIType::Name) {
-					if (aType->GetName() == RED4ext::CName{ "CName" }) {
-						return readCName(aCursor, aNames);
-					}
-				}
-				else if (aType->GetType() == ERTTIType::Fundamental) {
-					if (aType->GetName() == RED4ext::CName{ "Int8" }) {
-						return readPrimitive<std::int8_t>(aCursor);
-					}
-					if (aType->GetName() == RED4ext::CName{ "Uint8" }) {
-						return readPrimitive<std::uint8_t>(aCursor);
-					}
-					if (aType->GetName() == RED4ext::CName{ "Int16" }) {
-						return readPrimitive<std::int16_t>(aCursor);
-					}
-					if (aType->GetName() == RED4ext::CName{ "Uint16" }) {
-						return readPrimitive<std::uint16_t>(aCursor);
-					}
-					if (aType->GetName() == RED4ext::CName{ "Int32" }) {
-						return readPrimitive<std::int32_t>(aCursor);
-					}
-					if (aType->GetName() == RED4ext::CName{ "Uint32" }) {
-						return readPrimitive<std::uint32_t>(aCursor);
-					}
-					if (aType->GetName() == RED4ext::CName{ "Int64" }) {
-						return readPrimitive<std::int64_t>(aCursor);
-					}
-					if (aType->GetName() == RED4ext::CName{ "Uint64" }) {
-						return readPrimitive<std::uint64_t>(aCursor);
-					}
-					if (aType->GetName() == RED4ext::CName{ "Float" }) {
-						return readPrimitive<float>(aCursor);
-					}
-					if (aType->GetName() == RED4ext::CName{ "Double" }) {
-						return readPrimitive<double>(aCursor);
-					}
-					if (aType->GetName() == RED4ext::CName{ "Bool" }) {
-						return readPrimitive<bool>(aCursor);
-					}
-				}
-				else if (aType->GetType() == ERTTIType::Simple) {
-					if (aType->GetName() == RED4ext::CName{ "TweakDBID" }) {
-						return readTweakDBID(aCursor);
-					}
-					else if (aType->GetName() == RED4ext::CName{ "NodeRef" }) {
-						return readNodeRef(aCursor);
-					}
-				}
-				else if (aType->GetType() == ERTTIType::Enum) {
-					auto nameIndex = aCursor.readUShort();
-
-					if (nameIndex >= aNames.size()) {
-						return RED4ext::CName{ "UnknownEnum" };
-					}
-					else {
-						return RED4ext::CName{ aNames.at(nameIndex).c_str() };
-					}
-				}
-				else if (aType->GetType() == ERTTIType::Array) {
-					const auto elementCount = aCursor.readInt();
+	virtual redRTTI::RTTIArray ReadArray(FileCursor& aCursor, Red::CBaseRTTIType* aType)
+    {
+        /*
+		const auto elementCount = aCursor.readInt();
 					auto arr = std::vector<RedValueWrapper>{};
 
 					auto innerType = static_cast<RED4ext::CRTTIBaseArrayType*>(aType)->GetInnerType();
@@ -183,313 +92,218 @@ namespace redRTTI {
 					}
 
 					return arr;
-				}
-				else if (aType->GetType() == ERTTIType::Class) {
-					return readClassInternal(aCursor, aRtti, aType->GetName().ToString(), aNames);
-				}
-				else if (aType->GetType() == ERTTIType::Handle) {
-					return aCursor.readInt();
-				}
-				else if (aType->GetType() == ERTTIType::WeakHandle) {
-					return aCursor.readInt();
-				}
+		*/
 
-				return std::string{ "Unknown type!" };
-			}
+		auto innerType = static_cast<RED4ext::CRTTIBaseArrayType*>(aType)->GetInnerType();
 
-			// Hack to not get issues with outputs
-			std::any getDefaultValue(RED4ext::CBaseRTTIType* aType) {
-				using RED4ext::ERTTIType;
-				// Cope, I'm not using a switch statement
-				if (aType->GetType() == ERTTIType::Name) {
-					if (aType->GetName() == RED4ext::CName{ "CName" }) {
-						return RED4ext::CName{};
-					}
-				}
-				else if (aType->GetType() == ERTTIType::Fundamental) {
-					if (aType->GetName() == RED4ext::CName{ "Int8" }) {
-						return std::int8_t{};
-					}
-					if (aType->GetName() == RED4ext::CName{ "Uint8" }) {
-						return std::uint8_t{};
-					}
-					if (aType->GetName() == RED4ext::CName{ "Int16" }) {
-						return std::int16_t{};
-					}
-					if (aType->GetName() == RED4ext::CName{ "Uint16" }) {
-						return std::uint16_t{};
-					}
-					if (aType->GetName() == RED4ext::CName{ "Int32" }) {
-						return std::int32_t{};
-					}
-					if (aType->GetName() == RED4ext::CName{ "Uint32" }) {
-						return std::uint32_t{};
-					}
-					if (aType->GetName() == RED4ext::CName{ "Int64" }) {
-						return std::int64_t{};
-					}
-					if (aType->GetName() == RED4ext::CName{ "Uint64" }) {
-						return std::uint64_t{};
-					}
-					if (aType->GetName() == RED4ext::CName{ "Float" }) {
-						return float{};
-					}
-					if (aType->GetName() == RED4ext::CName{ "Double" }) {
-						return double{};
-					}
-					if (aType->GetName() == RED4ext::CName{ "Bool" }) {
-						return false;
-					}
-				}
-				else if (aType->GetType() == ERTTIType::Simple) {
-					if (aType->GetName() == RED4ext::CName{ "TweakDBID" }) {
-						return RED4ext::TweakDBID{};
-					}
-					else if (aType->GetName() == RED4ext::CName{ "NodeRef" }) {
-						return RED4ext::NodeRef{};
-					}
-				}
-				else if (aType->GetType() == ERTTIType::Enum) {
-					auto typeEnum = static_cast<RED4ext::CEnum*>(aType);
-					if (typeEnum->hashList.size > 0) {
-						return typeEnum->hashList[0];
-					}
-					else {
-						return RED4ext::CName{ "Invalid" };
-					}
-				}
-				else if (aType->GetType() == ERTTIType::Array) {
-					return std::vector<RedValueWrapper>{};
-				}
-				else if (aType->GetType() == ERTTIType::Class) {
-					return RedClassMap{};
-				}
-				else if (aType->GetType() == ERTTIType::Handle) {
-					return int{};
-				}
-				else if (aType->GetType() == ERTTIType::WeakHandle) {
-					return int{};
-				}
+		const auto elementCount = aCursor.readInt();
+		
+		redRTTI::RTTIArray retValue{};
+		retValue.reserve(elementCount);
 
-				return std::string{ "Unknown type!" };
-			}
-
-			RedClassMap readClassInternal(FileCursor& aCursor, RED4ext::CRTTISystem* aRtti, std::string_view aClassName, std::vector<std::string>& aNames) {
-				const auto baseOffset = aCursor.offset;
-				const auto fieldCount = aCursor.readUShort();
-
-				auto fieldDescriptors = std::vector<RedPackageFieldHeader>{};
-				fieldDescriptors.reserve(fieldCount);
-
-				for (auto i = 0; i < fieldCount; i++) {
-					fieldDescriptors.push_back(RedPackageFieldHeader::fromCursor(aCursor));
-				}
-
-				auto classPtr = aRtti->GetClass(RED4ext::CName{ aClassName.data() });
-				assert(classPtr);
-
-				auto classProps = RED4ext::DynArray<RED4ext::CProperty*>{};
-				classPtr->GetProperties(classProps);
-
-				auto usedProperties = std::unordered_set<RED4ext::CName>{};
-
-				auto classMap = RedClassMap{};
-
-				for (auto fieldDesc : fieldDescriptors) {
-					aCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + fieldDesc.offset);
-
-					auto& fieldName = aNames.at(fieldDesc.nameId);
-					const auto classProperty = classPtr->GetProperty(fieldName.c_str());
-
-					assert(classProperty);
-
-					auto redValue = RedValueWrapper{};
-					redValue.m_typeName = RED4ext::CName{ aNames.at(fieldDesc.typeId).c_str() };
-					redValue.m_typeIndex = classProperty->type->GetType();
-					redValue.m_value = readValue(aCursor, aRtti, classProperty->type, aNames);
-
-					usedProperties.insert(classProperty->name);
-
-					classMap[fieldName] = redValue;
-				}
-
-				// For easier looks later on
-				for (auto prop : classProps) {
-					if (prop->flags.isPersistent == 0 && prop->flags.isSavable == 0) {
-						continue;
-					}
-
-					if (usedProperties.contains(prop->name)) {
-						continue;
-					}
-
-					auto redValue = RedValueWrapper{};
-					redValue.m_typeName = prop->type->GetName();
-					redValue.m_typeIndex = prop->type->GetType();
-					redValue.m_value = getDefaultValue(prop->type);
-
-					classMap[std::string{ prop->name.ToString()}] = redValue;
-				}
-
-				return classMap;
-			}
+		for (auto i = 0; i < elementCount; i++)
+        {
+            retValue.push_back(ReadValue(aCursor, innerType));
 		}
 
-		inline RedClassMap readClass(FileCursor& aCursor, RED4ext::CRTTISystem* aRtti, std::string_view aClassName, std::vector<std::string>& aNames) {
-			return readClassInternal(aCursor, aRtti, aClassName, aNames);
-		}
+		return retValue;
 	}
 
-	namespace dumper {
-		namespace {
-			void dumpClassInternal(std::ostream& outputBuffer, RedClassMap& aDatamap, int aIndentation);
+	virtual redRTTI::RTTIValue ReadHandle(FileCursor& aCursor, Red::CBaseRTTIType* aType)
+    {
+        redRTTI::RTTIValue ret{};
 
-			void dumpProperty(std::ostream& outputBuffer, std::string_view aValueName, RedValueWrapper& aProperty, int aIndentation, bool aIsArray = false) {
-				auto redType = aProperty.m_typeIndex;
-				auto redTypeName = aProperty.m_typeName;
+		ret.m_typeIndex = static_cast<Red::CRTTIHandleType*>(aType)->GetInnerType()->GetType();
+        ret.m_typeName = static_cast<Red::CRTTIHandleType*>(aType)->GetInnerType()->GetName();
+        ret.m_value = aCursor.readInt();
 
-				using RED4ext::ERTTIType;
-
-				constexpr auto MAX_INDENTATION = 8;
-
-				if (aIndentation >= MAX_INDENTATION) {
-					return;
-				}
-
-				for (auto i = 0; i < aIndentation; i++) {
-					outputBuffer << "\t";
-				}
-
-				if (!aIsArray) {
-					outputBuffer << redTypeName.ToString() << " " << aValueName << " = ";
-				}
-
-				if (redType == ERTTIType::Class) {
-					auto classData = std::any_cast<RedClassMap>(aProperty.m_value);
-					outputBuffer << "{" << "\n";
-					dumpClassInternal(outputBuffer, classData, aIndentation + 1);
-					for (auto i = 0; i < aIndentation; i++) {
-						outputBuffer << "\t";
-					}
-					outputBuffer << "}" << "\n";
-					return;
-				}
-				else if (redType == ERTTIType::Array) {
-					auto arrayData = std::any_cast<std::vector<RedValueWrapper>>(aProperty.m_value);
-					outputBuffer << "[" << "\n";
-					for (auto& i : arrayData) {
-						dumpProperty(outputBuffer, aValueName, i, aIndentation + 1, true);
-					}
-					for (auto i = 0; i < aIndentation; i++) {
-						outputBuffer << "\t";
-					}
-					outputBuffer << "]" << "\n";
-					return;
-				}
-				else if (redType == ERTTIType::Name) {
-					outputBuffer << "CName " << std::any_cast<RED4ext::CName>(aProperty.m_value).ToString() << "\n";
-					return;
-				}
-				else if (redType == ERTTIType::Fundamental) {
-					// Vulnerable thanks to char fuckery, have to upcast them
-					if (redTypeName == RED4ext::CName{ "Int8" }) {
-						outputBuffer << static_cast<int>(std::any_cast<std::int8_t>(aProperty.m_value)) << "\n";
-						return;
-					}
-					if (redTypeName == RED4ext::CName{ "Uint8" }) {
-						outputBuffer << static_cast<int>(std::any_cast<std::uint8_t>(aProperty.m_value)) << "\n";
-						return;
-					}
-					if (redTypeName == RED4ext::CName{ "Int16" }) {
-						outputBuffer << std::any_cast<std::int16_t>(aProperty.m_value) << "\n";
-						return;
-					}
-					if (redTypeName == RED4ext::CName{ "Uint16" }) {
-						outputBuffer << std::any_cast<std::uint16_t>(aProperty.m_value) << "\n";
-						return;
-					}
-					if (redTypeName == RED4ext::CName{ "Int32" }) {
-						outputBuffer << std::any_cast<std::int32_t>(aProperty.m_value) << "\n";
-						return;
-					}
-					if (redTypeName == RED4ext::CName{ "Uint32" }) {
-						outputBuffer << std::any_cast<std::uint32_t>(aProperty.m_value) << "\n";
-						return;
-					}
-					if (redTypeName == RED4ext::CName{ "Int64" }) {
-						outputBuffer << std::any_cast<std::int64_t>(aProperty.m_value) << "\n";
-						return;
-					}
-					if (redTypeName == RED4ext::CName{ "Uint64" }) {
-						outputBuffer << std::any_cast<std::uint64_t>(aProperty.m_value) << "\n";
-						return;
-					}
-					if (redTypeName == RED4ext::CName{ "Float" }) {
-						outputBuffer << std::any_cast<float>(aProperty.m_value) << "\n";
-						return;
-					}
-					if (redTypeName == RED4ext::CName{ "Double" }) {
-						outputBuffer << std::any_cast<double>(aProperty.m_value) << "\n";
-						return;
-					}
-					if (redTypeName == RED4ext::CName{ "Bool" }) {
-						outputBuffer << std::any_cast<bool>(aProperty.m_value) << "\n";
-						return;
-					}
-				}
-				else if (redType == ERTTIType::Simple) {
-					if (redTypeName == RED4ext::CName{ "TweakDBID" }) {
-						auto tdbId = std::any_cast<RED4ext::TweakDBID>(aProperty.m_value);
-
-						Red::CString str;
-						Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, tdbId);
-
-						outputBuffer << std::format("{:#010x}", tdbId.value) << " " << str.c_str() << "\n";
-						return;
-					}
-					else if (redTypeName == RED4ext::CName{ "NodeRef" }) {
-						outputBuffer << std::any_cast<RED4ext::NodeRef>(aProperty.m_value).hash << "\n";
-						return;
-					}
-				}
-				else if (redType == ERTTIType::Enum) {
-					outputBuffer << "Enum " << std::any_cast<RED4ext::CName>(aProperty.m_value).ToString() << "\n";
-					return;
-				}
-				else if (redType == ERTTIType::Handle) {
-					outputBuffer << "Handle to chunk " << std::any_cast<int>(aProperty.m_value) << "\n";
-					return;
-				}
-				else if (redType == ERTTIType::WeakHandle) {
-					outputBuffer << "Weak handle to chunk " << std::any_cast<int>(aProperty.m_value) << "\n";
-					return;
-				}
-
-				outputBuffer << "We don't know :(\n";
-			}
-
-			void dumpClassInternal(std::ostream& outputBuffer, RedClassMap& aDatamap, int aIndentation) {
-				for (auto& [key, value] : aDatamap) {
-					dumpProperty(outputBuffer, key.c_str(), value, aIndentation);
-				}
-			}
-		}
-
-		inline void dumpClass(RedValueWrapper& aDatamap) {
-			constexpr auto shouldDumpClass = false;
-			if constexpr (!shouldDumpClass) {
-				return;
-			}
-
-			auto fileName = std::format("savegame_scriptable_{}.txt", aDatamap.m_typeName.ToString());
-			auto widened = std::wstring(fileName.begin(), fileName.end());
-
-			auto filePath = std::filesystem::current_path() / L"ClassDumps" / widened;
-
-			auto saveGameDump = std::fstream(filePath, std::ios::out | std::ios::trunc);
-
-			auto datamap = std::any_cast<RedClassMap>(aDatamap.m_value);
-			dumpClassInternal(saveGameDump, datamap, 0);
-		}
+		return ret;
 	}
+
+	virtual redRTTI::RTTIValue ReadWeakHandle(FileCursor& aCursor, Red::CBaseRTTIType* aType)
+    {
+        redRTTI::RTTIValue ret{};
+
+        ret.m_typeIndex = static_cast<Red::CRTTIWeakHandleType*>(aType)->GetInnerType()->GetType();
+        ret.m_typeName = static_cast<Red::CRTTIWeakHandleType*>(aType)->GetInnerType()->GetName();
+        ret.m_value = aCursor.readInt();
+
+        return ret;
+    }
+
+	virtual redRTTI::RTTIValue ReadValue(FileCursor& aCursor, Red::CBaseRTTIType* aType)
+    {
+        using Red::ERTTIType;
+        auto retValue = redRTTI::RTTIValue{};
+
+        retValue.m_typeIndex = aType->GetType();
+        retValue.m_typeName = aType->GetName();
+        if (aType->GetType() == ERTTIType::Name)
+        {
+            if (aType->GetName() == RED4ext::CName{"CName"})
+            {
+                retValue.m_value = ReadCName(aCursor);
+                return retValue;
+            }
+        }
+        else if (aType->GetType() == ERTTIType::Fundamental)
+        {
+            if (aType->GetName() == RED4ext::CName{"Int8"})
+            {
+                retValue.m_value = ReadInt8(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"Uint8"})
+            {
+                retValue.m_value = ReadUInt8(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"Int16"})
+            {
+                retValue.m_value = ReadInt16(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"Uint16"})
+            {
+                retValue.m_value = ReadUInt16(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"Int32"})
+            {
+                retValue.m_value = ReadInt32(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"Uint32"})
+            {
+                retValue.m_value = ReadUInt32(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"Int64"})
+            {
+                retValue.m_value = ReadInt64(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"Uint64"})
+            {
+                retValue.m_value = ReadUInt64(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"Float"})
+            {
+                retValue.m_value = ReadFloat(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"Double"})
+            {
+                retValue.m_value = ReadDouble(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"Bool"})
+            {
+                retValue.m_value = ReadBool(aCursor);
+            }
+        }
+        else if (aType->GetType() == ERTTIType::Simple)
+        {
+            if (aType->GetName() == RED4ext::CName{"TweakDBID"})
+            {
+                retValue.m_value = ReadTweakDBID(aCursor);
+            }
+            else if (aType->GetName() == RED4ext::CName{"NodeRef"})
+            {
+                retValue.m_value = ReadNodeRef(aCursor);
+            }
+        }
+        else if (aType->GetType() == ERTTIType::Enum)
+        {
+            retValue.m_value = ReadEnum(aCursor, aType);
+        }
+        else if (aType->GetType() == ERTTIType::Array)
+        {
+            retValue.m_value = ReadArray(aCursor, aType);
+        }
+        else if (aType->GetType() == ERTTIType::Class)
+        {
+            retValue.m_value = ReadClass(aCursor, aType);
+        }
+        else if (aType->GetType() == ERTTIType::Handle)
+        {
+            retValue.m_value = std::any{ReadHandle(aCursor, aType)};
+        }
+        else if (aType->GetType() == ERTTIType::WeakHandle)
+        {
+            retValue.m_value = std::any{ReadWeakHandle(aCursor, aType)};
+        }
+
+        if (!retValue.m_value.has_value())
+        {
+            throw std::runtime_error{std::format("Failed to resolve value for type {}", aType->GetName().ToString())};
+        }
+
+        return retValue;
+	}
+
+public:
+    virtual redRTTI::RTTIClass ReadClass(FileCursor& aCursor, Red::CBaseRTTIType* aType)
+    {
+        const auto baseOffset = aCursor.offset;
+        const auto fieldCount = aCursor.readUShort();
+
+		std::vector<RedPackageFieldHeader> fieldDescriptors{};
+
+		fieldDescriptors.reserve(fieldCount);
+
+		for (auto i = 0; i < fieldCount; i++)
+        {
+            fieldDescriptors.push_back(RedPackageFieldHeader::fromCursor(aCursor));
+		}
+
+		auto classType = static_cast<Red::CClass*>(aType);
+		auto properties = Red::DynArray<Red::CProperty*>{};
+
+		classType->GetProperties(properties);
+        std::unordered_set<Red::CName> usedProps{};
+
+		redRTTI::RTTIClass retValue{};
+
+		try
+        {
+            for (auto fieldDesc : fieldDescriptors)
+            {
+                aCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + fieldDesc.m_offset);
+
+				auto& fieldName = m_names.at(fieldDesc.m_nameId);
+                const auto prop = classType->GetProperty(fieldName.c_str());
+				
+				if (!prop)
+                {
+					// Something went very wrong - maybe it's a mod that was uninstalled between making the save and us parsing it?
+                    throw std::runtime_error{
+                        std::format("Class {} does not have property {}", classType->GetName().ToString(), fieldName)};
+				}
+
+				retValue[fieldName] = ReadValue(aCursor, prop->type);
+                usedProps.insert(prop->name);
+			}
+
+			for (auto prop : properties)
+            {
+                if (prop->flags.isPersistent == 0 && prop->flags.isSavable == 0)
+                {
+                    continue;
+				}
+
+				if (usedProps.contains(prop->name))
+                {
+                    continue;
+				}
+
+				retValue[prop->name.ToString()] = GetDefaultValue(prop->type);
+			}
+		}
+        catch (std::exception e)
+        {
+            std::println("scriptable::ReadClass EXCEPTION: {}", e.what());
+            return retValue;
+		}
+
+		retValue.SetFullyLoaded(true);
+        return retValue;
+	}
+
+	ScriptableReader(const std::vector<std::string>& aNames)
+    {
+        m_names = aNames;
+	}
+};
 }

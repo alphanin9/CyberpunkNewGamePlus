@@ -74,5 +74,8 @@
     <ClInclude Include="src\redscript_api\callback_system\eventCallback.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

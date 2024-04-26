@@ -113,7 +113,7 @@ namespace cyberpunk {
 
 	struct RedChunk {
 		std::string m_typeName;
-		redRTTI::RedValueWrapper m_redClass;
+        redRTTI::RTTIValue m_redClass;
 		bool m_isUsed; // For handles, maybe, sometime later...
 	};
 
@@ -136,54 +136,18 @@ namespace cyberpunk {
 			return ret;
 		}
 
-		void printProperty(std::ofstream& outputDump, RED4ext::CRTTISystem* aRttiSystem, RED4ext::CProperty* aProperty, bool aPersistentOnly, int aIndentation = 0, int aDepth = 0) {
-			if (aPersistentOnly && aProperty->flags.isPersistent == 0) {
-				return;
-			}
-
-			// Avoiding circular refs
-			constexpr auto MAX_RECURSIVE_TYPE_DEPTH = 4;
-
-			if (aDepth > MAX_RECURSIVE_TYPE_DEPTH) {
-				return;
-			}
-
-			auto baseType = redRTTI::getRttiType(aProperty->type);
-			for (auto i = 0; i < aIndentation; i++) {
-				// Dumb way, I know
-				outputDump << '\t';
-			}
-
-			outputDump << std::format("[{}] {} {} {}", aProperty->type->GetTypeName().c_str(), aProperty->type->GetName().ToString(), aProperty->name.ToString(), aProperty->valueOffset);
-			outputDump << '\n';
-
-			if (baseType->GetType() == RED4ext::ERTTIType::Class) {
-				auto classInstance = aRttiSystem->GetClass(baseType->GetName());
-
-				if (!classInstance) {
-					return;
-				}
-
-				for (auto prop : classInstance->props) {
-					printProperty(outputDump, aRttiSystem, prop, aPersistentOnly, aIndentation + 1, aDepth + 1);
-				}
-			}
-		}
-
-		void dumpRttiClassData(std::ofstream& outputDump, RED4ext::CRTTISystem* aRtti, RED4ext::CClass* aRttiClass, int aIndent) {
-			if (!aRttiClass) {
-				return;
-			}
-
-			outputDump << std::format("Class {}\n", aRttiClass->GetName().ToString());;
-
-			for (auto prop : aRttiClass->props) {
-				printProperty(outputDump, aRtti, prop, true, 1);
-			}
-		}
-
 		void readChunk(RED4ext::CRTTISystem* aRtti, FileCursor& aCursor, RedChunk& chunk) {
-			auto chunkValue = redRTTI::RedValueWrapper{};
+            scriptable::ScriptableReader reader{names};
+
+			redRTTI::RTTIValue wrapper{};
+
+			wrapper.m_typeName = Red::CName{chunk.m_typeName.c_str()};
+            wrapper.m_typeIndex = Red::ERTTIType::Class;
+            wrapper.m_value = reader.ReadClass(aCursor, aRtti->GetClass(wrapper.m_typeName));
+
+			chunk.m_redClass = wrapper;
+
+			/*auto chunkValue = redRTTI::RedValueWrapper{};
 
 			chunkValue.m_typeName = RED4ext::CName{ chunk.m_typeName.c_str() };
 			chunkValue.m_typeIndex = RED4ext::ERTTIType::Class;
@@ -191,7 +155,7 @@ namespace cyberpunk {
 
 			redRTTI::dumper::dumpClass(chunkValue);
 			
-			chunk.m_redClass = chunkValue;
+			chunk.m_redClass = chunkValue;*/
 		}
 	public:
 		virtual void readData(FileCursor& cursor, NodeEntry& node) {
@@ -319,7 +283,10 @@ namespace cyberpunk {
 				return aChunk.m_typeName == aChunkType;
 			});
 
-			assert(chunkIter != chunks.end());
+			if (chunkIter == chunks.end())
+            {
+                throw std::runtime_error{std::format("Failed to find chunk {}", aChunkType)};
+			}
 
 			return *chunkIter;
 		}

@@ -2,6 +2,6 @@
 #include <filesystem>
 namespace files {
 	std::filesystem::path GetCpSaveFolder();
-	std::filesystem::path GetLatestPointOfNoReturnSave();
 	bool HasValidPointOfNoReturnSave();
+    bool IsValidForNewGamePlus(std::string_view aSaveName);
 }

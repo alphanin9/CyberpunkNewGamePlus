@@ -182,6 +182,11 @@ public:
         return files::HasValidPointOfNoReturnSave();
     }
 
+    bool IsSaveValidForNewGamePlus(Red::ScriptRef<Red::CString>& aSaveName)
+    {
+        return files::IsValidForNewGamePlus(aSaveName->c_str());
+    }
+
     bool ParsePointOfNoReturnSaveData(Red::ScriptRef<Red::CString>& aSaveName)
     {
         if (!aSaveName)
@@ -248,22 +253,18 @@ private:
 
     // CRINGE (AND SLOW) CODE AHEAD (It's actually not too slow in the release configuration)
     // This is the result of not using proper RTTI classes...
-    void LoadPlayerDevelopmentData(const redRTTI::RedValueWrapper& aPlayerDevelopmentData)
+    void LoadPlayerDevelopmentData(const redRTTI::RTTIValue& aPlayerDevelopmentData)
     {
-        auto root = std::any_cast<redRTTI::RedClassMap>(aPlayerDevelopmentData.m_value);
-
         // Load unspent points? Kinda useless, TBH (Also completely broken with progression builds)
         // Maybe useful for Relic? Or wraparound into perk points for attribute points that can't be spent anymore
-        for (auto& devPointData : std::any_cast<std::vector<redRTTI::RedValueWrapper>>(root.at("devPoints").m_value))
+        for (auto& devPointData : aPlayerDevelopmentData["devPoints"].Cast<redRTTI::RTTIArray>())
         {
-            auto developmentPointData = std::any_cast<redRTTI::RedClassMap>(devPointData.m_value);
-            const auto pointType = std::any_cast<RED4ext::CName>(developmentPointData.at("type")());
-            const auto unspentPointCount = std::any_cast<std::int32_t>(developmentPointData.at("unspent")());
+            const auto pointType = devPointData["type"].Cast<Red::CName>();
+            const auto unspentPointCount = devPointData["unspent"].Cast<std::int32_t>();
 
-            if (pointType == RED4ext::CName{"Espionage"})
+            if (pointType == Red::CName{"Espionage"})
             {
-                m_saveData.m_playerRelicPoints =
-                    unspentPointCount + std::any_cast<std::int32_t>(developmentPointData.at("spent").m_value);
+                m_saveData.m_playerRelicPoints = unspentPointCount + devPointData["spent"].Cast<std::int32_t>();
 
                 // 3 milestone perks - 9 points
                 // 4 cyberarm perks - 4 points
@@ -279,7 +280,7 @@ private:
                     m_saveData.m_playerRelicPoints = MAX_RELIC_POINTS;
                 }
             }
-            else if (pointType == RED4ext::CName{"Primary"})
+            else if (pointType == Red::CName{"Primary"})
             {                                                       // Perks
                 m_saveData.m_playerPerkPoints += unspentPointCount; // Fill the unspent points
             }
@@ -287,35 +288,29 @@ private:
 
         auto perkPointsSpent = 0;
 
-        for (auto& attributePerkData :
-             std::any_cast<std::vector<redRTTI::RedValueWrapper>>(root.at("attributesData").m_value))
+        for (auto& attributePerkData : aPlayerDevelopmentData["attributesData"].Cast<redRTTI::RTTIArray>())
         {
-            auto attributePerkDataClass = std::any_cast<redRTTI::RedClassMap>(attributePerkData.m_value);
-            auto unlockedPerks = std::any_cast<std::vector<redRTTI::RedValueWrapper>>(
-                attributePerkDataClass.at("unlockedPerks").m_value);
+            auto unlockedPerks = attributePerkData["unlockedPerks"].Cast<redRTTI::RTTIArray>();
 
-            if (std::any_cast<RED4ext::CName>(attributePerkDataClass.at("type").m_value) ==
-                RED4ext::CName{"EspionageAttributeData"})
+            if (attributePerkData["type"].Cast<Red::CName>() ==
+                Red::CName{"EspionageAttributeData"})
             {
                 // We already process Espionage
                 continue;
             }
 
-            for (auto& perkData : unlockedPerks)
+            for (auto& perk : unlockedPerks)
             {
-                auto perk = std::any_cast<redRTTI::RedClassMap>(perkData.m_value);
-                perkPointsSpent += std::any_cast<std::int32_t>(perk.at("currLevel").m_value);
+                perkPointsSpent += perk["currLevel"].Cast<std::int32_t>();
             }
         }
 
         m_saveData.m_playerPerkPoints += perkPointsSpent;
 
-        for (auto& proficiency : std::any_cast<std::vector<redRTTI::RedValueWrapper>>(root.at("proficiencies").m_value))
+        for (auto& proficiency : aPlayerDevelopmentData["proficiencies"].Cast<redRTTI::RTTIArray>())
         {
-            auto proficiencyData = std::any_cast<redRTTI::RedClassMap>(proficiency.m_value);
-
-            auto proficiencyLevel = std::any_cast<std::int32_t>(proficiencyData.at("currentLevel").m_value);
-            auto proficiencyType = std::any_cast<RED4ext::CName>(proficiencyData.at("type").m_value);
+            auto proficiencyLevel = proficiency["currentLevel"].Cast<std::int32_t>();
+            auto proficiencyType = proficiency["type"].Cast<Red::CName>();
 
             if (proficiencyType == RED4ext::CName{"Level"})
             {
@@ -346,13 +341,10 @@ private:
                 m_saveData.m_playerCoolSkillLevel = proficiencyLevel;
             }
         }
-
-        for (auto& attribute : std::any_cast<std::vector<redRTTI::RedValueWrapper>>(root.at("attributes").m_value))
+        for (auto& attribute : aPlayerDevelopmentData["attributes"].Cast<redRTTI::RTTIArray>())
         {
-            auto attributeData = std::any_cast<redRTTI::RedClassMap>(attribute.m_value);
-
-            auto attributeLevel = std::any_cast<std::int32_t>(attributeData.at("value").m_value);
-            auto attributeName = std::any_cast<RED4ext::CName>(attributeData.at("attributeName").m_value);
+            auto attributeLevel = attribute["value"].Cast<std::int32_t>();
+            auto attributeName = attribute["attributeName"].Cast<Red::CName>();
 
             if (attributeName == RED4ext::CName{"Strength"})
             {
@@ -377,45 +369,43 @@ private:
         }
     }
 
-    RED4ext::ItemID GetItemIDFromClassMap(const redRTTI::RedClassMap& aClassMap)
+    RED4ext::ItemID GetItemIDFromClassMap(const redRTTI::RTTIValue& aItemId)
     {
         RED4ext::ItemID id{};
         // HACK
-        if (aClassMap.empty())
+        if (aItemId.Cast<redRTTI::RTTIClass>().IsEmpty())
         {
             return id;
         }
 
-        id.tdbid = std::any_cast<RED4ext::TweakDBID>(aClassMap.at("id")());
-        id.rngSeed = std::any_cast<std::uint32_t>(aClassMap.at("rngSeed")());
-        id.uniqueCounter = std::any_cast<std::uint16_t>(aClassMap.at("uniqueCounter")());
-        id.flags = std::any_cast<std::uint8_t>(aClassMap.at("flags")());
+        id.tdbid = aItemId["id"].Cast<Red::TweakDBID>();
+        id.rngSeed = aItemId["rngSeed"].Cast<std::uint32_t>();
+        id.uniqueCounter = aItemId["uniqueCounter"].Cast<std::uint16_t>();
+        id.flags = aItemId["flags"].Cast<std::uint8_t>();
 
         return id;
     }
 
-    void LoadEquipmentSystemPlayerData(const redRTTI::RedValueWrapper& aEquipmentSystemPlayerData)
+    void LoadEquipmentSystemPlayerData(const redRTTI::RTTIValue& aEquipmentSystemPlayerData)
     {
         // Get rid of the behavioral imprint
         auto tweakDb = RED4ext::TweakDB::Get();
 
-        auto root = std::any_cast<redRTTI::RedClassMap>(aEquipmentSystemPlayerData());
-        auto loadoutData = std::any_cast<redRTTI::RedClassMap>(root.at("equipment")());
+        auto loadoutData = aEquipmentSystemPlayerData["equipment"];
 
-        for (auto& equipArea : std::any_cast<std::vector<redRTTI::RedValueWrapper>>(loadoutData.at("equipAreas")()))
+        for (auto& equipArea : loadoutData["equipAreas"].Cast<redRTTI::RTTIArray>())
         {
-            auto equipAreaData = std::any_cast<redRTTI::RedClassMap>(equipArea());
-            auto equipAreaType = std::any_cast<RED4ext::CName>(equipAreaData.at("areaType")());
-            auto equipSlots = std::any_cast<std::vector<redRTTI::RedValueWrapper>>(equipAreaData.at("equipSlots")());
+            auto equipAreaType = equipArea["areaType"].Cast<Red::CName>();
+            auto equipSlots = equipArea["equipSlots"].Cast<redRTTI::RTTIArray>();
 
             if (equipAreaType == RED4ext::CName{"EyesCW"})
             {
                 // Fuck the mask
                 for (auto& equippedItemData : equipSlots)
                 {
-                    auto equippedItem = std::any_cast<redRTTI::RedClassMap>(
-                        std::any_cast<redRTTI::RedClassMap>(equippedItemData()).at("itemID")());
-                    auto gameItem = GetItemIDFromClassMap(std::any_cast<redRTTI::RedClassMap>(equippedItem));
+                    equippedItemData["itemID"];
+                    auto equippedItem = equippedItemData["itemID"];
+                    auto gameItem = GetItemIDFromClassMap(equippedItem);
 
                     auto tweakRecord = tweakDb->GetRecord(gameItem.tdbid);
 
@@ -438,32 +428,41 @@ private:
             }
             else if (equipAreaType == RED4ext::CName{"SystemReplacementCW"})
             {
-                if (equipSlots.size() > 0)
+                for (auto& slot : equipSlots)
                 {
-                    auto equippedItem = std::any_cast<redRTTI::RedClassMap>(
-                        std::any_cast<redRTTI::RedClassMap>(equipSlots.at(0)()).at("itemID")());
-
+                    auto equippedItem = slot["itemID"];
                     m_saveData.m_playerEquippedOperatingSystem = GetItemIDFromClassMap(equippedItem);
+
+                    if (m_saveData.m_playerEquippedOperatingSystem.IsValid())
+                    {
+                        break;
+                    }
                 }
             }
             else if (equipAreaType == RED4ext::CName{"ArmsCW"})
             {
-                if (equipSlots.size() > 0)
+                for (auto& slot : equipSlots)
                 {
-                    auto equippedItem = std::any_cast<redRTTI::RedClassMap>(
-                        std::any_cast<redRTTI::RedClassMap>(equipSlots.at(0)()).at("itemID")());
-
+                    auto equippedItem = slot["itemID"];
                     m_saveData.m_playerEquippedArmCyberware = GetItemIDFromClassMap(equippedItem);
+
+                    if (m_saveData.m_playerEquippedArmCyberware.IsValid())
+                    {
+                        break;
+                    }
                 }
             }
             else if (equipAreaType == RED4ext::CName{"LegsCW"})
             {
-                if (equipSlots.size() > 0)
+                for (auto& slot : equipSlots)
                 {
-                    auto equippedItem = std::any_cast<redRTTI::RedClassMap>(
-                        std::any_cast<redRTTI::RedClassMap>(equipSlots.at(0)()).at("itemID")());
-
+                    auto equippedItem = slot["itemID"];
                     m_saveData.m_playerEquippedLegCyberware = GetItemIDFromClassMap(equippedItem);
+
+                    if (m_saveData.m_playerEquippedLegCyberware.IsValid())
+                    {
+                        break;
+                    }
                 }
             }
         }
@@ -701,7 +700,7 @@ private:
         }
     }
 
-    void LoadGarage(const redRTTI::persistent::RedValueWrapper& aClassMap)
+    void LoadGarage(const redRTTI::RTTIValue& aVehicleGarage)
     {
         // Good enough
         // I'd include the V-Tech, but I actually like that one.
@@ -710,10 +709,25 @@ private:
             RED4ext::TweakDBID{"Vehicle.v_sport2_quadra_type66_nomad_tribute"},
             RED4ext::TweakDBID{"Vehicle.v_sportbike2_arch_jackie_player"}, RED4ext::TweakDBID{"Vehicle.v_sportbike2_arch_jackie_tuned_player"}};
 
+        
+        for (auto unlockedVehicle : aVehicleGarage["unlockedVehicleArray"].Cast<redRTTI::RTTIArray>())
+        {
+            auto vehicleId = unlockedVehicle["vehicleID"];
+            auto vehicleRecordId = vehicleId["recordID"].Cast<Red::TweakDBID>();
+
+            if (std::find(blacklistedVehicles.begin(), blacklistedVehicles.end(), vehicleRecordId) ==
+                blacklistedVehicles.end())
+            {
+                m_saveData.m_playerVehicleGarage.PushBack(vehicleRecordId);
+            }
+        }
+
+        /*
         auto root = std::any_cast<redRTTI::persistent::RedClassMap>(aClassMap());
         // Really need a typedef for arrays
         // Some sort of .at_as<>(std::string_view aProperty) method for class maps as well
         // But that's a lot of refactoring....
+
         for (auto unlockedVehicle :
              std::any_cast<std::vector<redRTTI::persistent::RedValueWrapper>>(root.at("unlockedVehicleArray")()))
         {
@@ -727,6 +741,7 @@ private:
                 m_saveData.m_playerVehicleGarage.PushBack(vehicleRecordId);
             }
         }
+        */ 
     }
 
     bool m_isAttached{};
@@ -748,4 +763,5 @@ RTTI_DEFINE_CLASS(redscript::TopSecretSystem, {
     RTTI_METHOD(SetSecretVariableState);
     RTTI_METHOD(GetSaveData);
     RTTI_METHOD(SetNewGamePlusGameDefinition);
+    RTTI_METHOD(IsSaveValidForNewGamePlus);
 });
