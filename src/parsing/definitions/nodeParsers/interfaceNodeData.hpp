@@ -6,7 +6,7 @@ namespace cyberpunk {
 
 	class NodeDataInterface {
 	public:
-		virtual void readData(FileCursor& cursor, NodeEntry& node) = 0;
+		virtual void ReadData(FileCursor& cursor, NodeEntry& node) = 0;
 
 		virtual ~NodeDataInterface() {
 		

@@ -11,6 +11,7 @@
 
 #include "../../../../cursorDef.hpp"
 #include "../../rttiHelpers/rttiValueReader.hpp"
+#include "../../../../../context/context.hpp"
 
 namespace persistent
 {
@@ -281,7 +282,7 @@ public:
 		}
         catch (std::exception e)
         {
-            std::println("persistency::ReadClass EXCEPTION {}", e.what());
+            PluginContext::Error(std::format("persistency::ReadClass EXCEPTION {}", e.what()));
             return retValue;
 		}
 		

@@ -21,7 +21,7 @@ namespace cyberpunk {
 
 	public:
 		static constexpr std::wstring_view nodeName = L"PersistencySystem2";
-		virtual void readData(FileCursor& aCursor, NodeEntry& node) {
+		virtual void ReadData(FileCursor& aCursor, NodeEntry& node) {
 			RED4EXT_UNUSED_PARAMETER(node);
 			const auto rtti = RED4ext::CRTTISystem::Get();
 			const auto idCount = aCursor.readInt();
@@ -71,7 +71,7 @@ namespace cyberpunk {
 			//std::println("{} nodes in PersistencySystem", m_redClasses.size());
 		}
 
-		const UnknownRedBuffer& LookupChunk(std::string_view aChunkName) {
+		const UnknownRedBuffer& LookupChunk(std::string_view aChunkName) const {
 			auto chunkIt = std::find_if(m_redClasses.begin(), m_redClasses.end(), [aChunkName](const UnknownRedBuffer& aBuffer) {
 				return RED4ext::CName{ aChunkName.data() } == aBuffer.m_className;
 			});

@@ -38,6 +38,8 @@ public:
     }
 };
 
+using RTTIArray = std::vector<RTTIValue>;
+
 struct RTTIValue
 {
     RED4ext::ERTTIType m_typeIndex;
@@ -55,11 +57,37 @@ struct RTTIValue
     // Can't really make this return a reference
     RTTIValue operator[](const std::string& aKey) const
     {
-        return Cast<RTTIClass>()[aKey];
+        return AsClass()[aKey];
     }
-};
 
-using RTTIArray = std::vector<RTTIValue>;
+    template<typename T>
+    bool Equals(T value)
+    {
+        return Cast<T>() == value;
+    }
+
+    #define RTTIVALUE_GETTER_DEFINER(aTypeName, aType) \
+    aType As##aTypeName() const                                                                                         \
+    {                                                                                                                   \
+        return Cast<aType>();                                                                                           \
+    }                                                                                                                   \
+
+    RTTIVALUE_GETTER_DEFINER(Byte, std::int8_t);
+    RTTIVALUE_GETTER_DEFINER(Short, std::int16_t);
+    RTTIVALUE_GETTER_DEFINER(Int, std::int32_t);
+    RTTIVALUE_GETTER_DEFINER(Int64, std::int64_t);
+    RTTIVALUE_GETTER_DEFINER(Ubyte, std::uint8_t);
+    RTTIVALUE_GETTER_DEFINER(Ushort, std::uint16_t);
+    RTTIVALUE_GETTER_DEFINER(Uint, std::uint32_t);
+    RTTIVALUE_GETTER_DEFINER(Uint64, std::uint64_t);
+    RTTIVALUE_GETTER_DEFINER(Bool, bool);
+    RTTIVALUE_GETTER_DEFINER(Float, float);
+    RTTIVALUE_GETTER_DEFINER(Double, double);
+    RTTIVALUE_GETTER_DEFINER(CName, Red::CName);
+    RTTIVALUE_GETTER_DEFINER(TweakDBID, Red::TweakDBID);
+    RTTIVALUE_GETTER_DEFINER(Array, RTTIArray);
+    RTTIVALUE_GETTER_DEFINER(Class, RTTIClass);
+};
 
 class RTTIReader
 {

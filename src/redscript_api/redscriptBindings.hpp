@@ -15,8 +15,6 @@
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType_Record.hpp>
 
-#include "callback_system/eventCallback.hpp"
-
 namespace redscript
 {
 struct RedItemData
@@ -155,12 +153,12 @@ public:
 
     bool GetSecretVariableState() const
     {
-        return pluginContext::m_isSecretOverrideActivated;
+        return PluginContext::m_isSecretOverrideActivated;
     }
 
     void SetSecretVariableState(bool aNewState)
     {
-        pluginContext::m_isSecretOverrideActivated = aNewState;
+        PluginContext::m_isSecretOverrideActivated = aNewState;
     }
 
     void SetNewGamePlusGameDefinition(ENewGamePlusStartType aStartType)
@@ -168,12 +166,12 @@ public:
         if (aStartType == ENewGamePlusStartType::StartFromQ001)
         {
             constexpr auto q001Path = RED4ext::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001.gamedef");
-            pluginContext::m_ngPlusGameDefinitionHash = q001Path;   
+            PluginContext::m_ngPlusGameDefinitionHash = q001Path;   
         }
         else
         {
             constexpr auto q101Path = RED4ext::ResourcePath::HashSanitized("base/quest/NewGamePlus.gamedef");
-            pluginContext::m_ngPlusGameDefinitionHash = q101Path; // Should fix it being in base/ sometime
+            PluginContext::m_ngPlusGameDefinitionHash = q101Path; // Should fix it being in base/ sometime
         }
     }
 
@@ -204,7 +202,7 @@ public:
         {
             parser::Parser parser{};
 
-            const auto wasParseSuccessful = parser.parseSavegame(fullPath / "sav.dat");
+            const auto wasParseSuccessful = parser.ParseSavegame(fullPath / "sav.dat");
 
             if (!wasParseSuccessful)
             {
@@ -226,12 +224,13 @@ public:
 
             LoadPlayerDevelopmentData(playerDevelopmentData);
             LoadEquipmentSystemPlayerData(equipmentSystemPlayerData);
-            LoadInventory(inventoryNode);
+            //LoadInventory(inventoryNode);
+            LoadInventoryNew(inventoryNode);
             LoadGarage(vehicleGarageData);
         }
         catch (std::exception e)
         {
-            std::println("EXCEPTION {}", e.what());
+            PluginContext::Error(std::format("EXCEPTION {}", e.what()));
             m_lastError = e.what();
             return false;
         }
@@ -257,14 +256,14 @@ private:
     {
         // Load unspent points? Kinda useless, TBH (Also completely broken with progression builds)
         // Maybe useful for Relic? Or wraparound into perk points for attribute points that can't be spent anymore
-        for (auto& devPointData : aPlayerDevelopmentData["devPoints"].Cast<redRTTI::RTTIArray>())
+        for (auto& devPointData : aPlayerDevelopmentData["devPoints"].AsArray())
         {
-            const auto pointType = devPointData["type"].Cast<Red::CName>();
-            const auto unspentPointCount = devPointData["unspent"].Cast<std::int32_t>();
+            const auto pointType = devPointData["type"].AsCName();
+            const auto unspentPointCount = devPointData["unspent"].AsInt();
 
-            if (pointType == Red::CName{"Espionage"})
+            if (pointType == "Espionage")
             {
-                m_saveData.m_playerRelicPoints = unspentPointCount + devPointData["spent"].Cast<std::int32_t>();
+                m_saveData.m_playerRelicPoints = unspentPointCount + devPointData["spent"].AsInt();
 
                 // 3 milestone perks - 9 points
                 // 4 cyberarm perks - 4 points
@@ -280,7 +279,7 @@ private:
                     m_saveData.m_playerRelicPoints = MAX_RELIC_POINTS;
                 }
             }
-            else if (pointType == Red::CName{"Primary"})
+            else if (pointType == "Primary")
             {                                                       // Perks
                 m_saveData.m_playerPerkPoints += unspentPointCount; // Fill the unspent points
             }
@@ -288,12 +287,11 @@ private:
 
         auto perkPointsSpent = 0;
 
-        for (auto& attributePerkData : aPlayerDevelopmentData["attributesData"].Cast<redRTTI::RTTIArray>())
+        for (auto& attributePerkData : aPlayerDevelopmentData["attributesData"].AsArray())
         {
-            auto unlockedPerks = attributePerkData["unlockedPerks"].Cast<redRTTI::RTTIArray>();
+            auto unlockedPerks = attributePerkData["unlockedPerks"].AsArray();
 
-            if (attributePerkData["type"].Cast<Red::CName>() ==
-                Red::CName{"EspionageAttributeData"})
+            if (attributePerkData["type"].Equals(Red::CName{"EspionageAttributeData"}))
             {
                 // We already process Espionage
                 continue;
@@ -301,68 +299,68 @@ private:
 
             for (auto& perk : unlockedPerks)
             {
-                perkPointsSpent += perk["currLevel"].Cast<std::int32_t>();
+                perkPointsSpent += perk["currLevel"].AsInt();
             }
         }
 
         m_saveData.m_playerPerkPoints += perkPointsSpent;
 
-        for (auto& proficiency : aPlayerDevelopmentData["proficiencies"].Cast<redRTTI::RTTIArray>())
+        for (auto& proficiency : aPlayerDevelopmentData["proficiencies"].AsArray())
         {
-            auto proficiencyLevel = proficiency["currentLevel"].Cast<std::int32_t>();
-            auto proficiencyType = proficiency["type"].Cast<Red::CName>();
+            auto proficiencyLevel = proficiency["currentLevel"].AsInt();
+            auto proficiencyType = proficiency["type"].AsCName();
 
-            if (proficiencyType == RED4ext::CName{"Level"})
+            if (proficiencyType == "Level")
             {
                 m_saveData.m_playerLevel = std::clamp(proficiencyLevel, 1, 50);
             }
-            else if (proficiencyType == RED4ext::CName{"StreetCred"})
+            else if (proficiencyType == "StreetCred")
             {
                 m_saveData.m_playerStreetCred = proficiencyLevel;
             }
-            else if (proficiencyType == RED4ext::CName{"StrengthSkill"})
+            else if (proficiencyType == "StrengthSkill")
             {
                 m_saveData.m_playerBodySkillLevel = proficiencyLevel;
             }
-            else if (proficiencyType == RED4ext::CName{"ReflexesSkill"})
+            else if (proficiencyType == "ReflexesSkill")
             {
                 m_saveData.m_playerReflexSkillLevel = proficiencyLevel;
             }
-            else if (proficiencyType == RED4ext::CName{"TechnicalAbilitySkill"})
+            else if (proficiencyType == "TechnicalAbilitySkill")
             {
                 m_saveData.m_playerTechSkillLevel = proficiencyLevel;
             }
-            else if (proficiencyType == RED4ext::CName{"IntelligenceSkill"})
+            else if (proficiencyType == "IntelligenceSkill")
             {
                 m_saveData.m_playerIntelligenceSkillLevel = proficiencyLevel;
             }
-            else if (proficiencyType == RED4ext::CName{"CoolSkill"})
+            else if (proficiencyType == "CoolSkill")
             {
                 m_saveData.m_playerCoolSkillLevel = proficiencyLevel;
             }
         }
-        for (auto& attribute : aPlayerDevelopmentData["attributes"].Cast<redRTTI::RTTIArray>())
+        for (auto& attribute : aPlayerDevelopmentData["attributes"].AsArray())
         {
-            auto attributeLevel = attribute["value"].Cast<std::int32_t>();
-            auto attributeName = attribute["attributeName"].Cast<Red::CName>();
+            auto attributeLevel = attribute["value"].AsInt();
+            auto attributeName = attribute["attributeName"].AsCName();
 
-            if (attributeName == RED4ext::CName{"Strength"})
+            if (attributeName == "Strength")
             {
                 m_saveData.m_playerBodyAttribute = attributeLevel;
             }
-            else if (attributeName == RED4ext::CName{"Reflexes"})
+            else if (attributeName == "Reflexes")
             {
                 m_saveData.m_playerReflexAttribute = attributeLevel;
             }
-            else if (attributeName == RED4ext::CName{"TechnicalAbility"})
+            else if (attributeName == "TechnicalAbility")
             {
                 m_saveData.m_playerTechAttribute = attributeLevel;
             }
-            else if (attributeName == RED4ext::CName{"Intelligence"})
+            else if (attributeName == "Intelligence")
             {
                 m_saveData.m_playerIntelligenceAttribute = attributeLevel;
             }
-            else if (attributeName == RED4ext::CName{"Cool"})
+            else if (attributeName == "Cool")
             {
                 m_saveData.m_playerCoolAttribute = attributeLevel;
             }
@@ -373,15 +371,15 @@ private:
     {
         RED4ext::ItemID id{};
         // HACK
-        if (aItemId.Cast<redRTTI::RTTIClass>().IsEmpty())
+        if (aItemId.AsClass().IsEmpty())
         {
             return id;
         }
 
-        id.tdbid = aItemId["id"].Cast<Red::TweakDBID>();
-        id.rngSeed = aItemId["rngSeed"].Cast<std::uint32_t>();
-        id.uniqueCounter = aItemId["uniqueCounter"].Cast<std::uint16_t>();
-        id.flags = aItemId["flags"].Cast<std::uint8_t>();
+        id.tdbid = aItemId["id"].AsTweakDBID();
+        id.rngSeed = aItemId["rngSeed"].AsUint();
+        id.uniqueCounter = aItemId["uniqueCounter"].AsUshort();
+        id.flags = aItemId["flags"].AsUbyte();
 
         return id;
     }
@@ -393,17 +391,16 @@ private:
 
         auto loadoutData = aEquipmentSystemPlayerData["equipment"];
 
-        for (auto& equipArea : loadoutData["equipAreas"].Cast<redRTTI::RTTIArray>())
+        for (auto& equipArea : loadoutData["equipAreas"].AsArray())
         {
-            auto equipAreaType = equipArea["areaType"].Cast<Red::CName>();
-            auto equipSlots = equipArea["equipSlots"].Cast<redRTTI::RTTIArray>();
+            auto equipAreaType = equipArea["areaType"].AsCName();
+            auto equipSlots = equipArea["equipSlots"].AsArray();
 
             if (equipAreaType == RED4ext::CName{"EyesCW"})
             {
                 // Fuck the mask
                 for (auto& equippedItemData : equipSlots)
                 {
-                    equippedItemData["itemID"];
                     auto equippedItem = equippedItemData["itemID"];
                     auto gameItem = GetItemIDFromClassMap(equippedItem);
 
@@ -426,7 +423,7 @@ private:
                     }
                 }
             }
-            else if (equipAreaType == RED4ext::CName{"SystemReplacementCW"})
+            else if (equipAreaType == "SystemReplacementCW")
             {
                 for (auto& slot : equipSlots)
                 {
@@ -439,7 +436,7 @@ private:
                     }
                 }
             }
-            else if (equipAreaType == RED4ext::CName{"ArmsCW"})
+            else if (equipAreaType == "ArmsCW")
             {
                 for (auto& slot : equipSlots)
                 {
@@ -452,7 +449,7 @@ private:
                     }
                 }
             }
-            else if (equipAreaType == RED4ext::CName{"LegsCW"})
+            else if (equipAreaType == "LegsCW")
             {
                 for (auto& slot : equipSlots)
                 {
@@ -467,8 +464,141 @@ private:
             }
         }
     }
+ 
+    struct ExtendedItemData
+    {
+        Red::ItemID m_itemId;
+        Red::TweakDBID m_tdbId;
+        Red::Handle<Red::IScriptable> m_itemRecord;
+        Red::DynArray<Red::CName> m_tags;
 
-    bool ShouldAddItemToInventory(RED4ext::TweakDB* aTweakDb, const RED4ext::ItemID& aItemId)
+        Red::gamedataItemType m_itemType;
+        Red::CName m_itemCategory;
+
+        bool IsHiddenInUI() const
+        {
+            return HasTag("HideInUI") || HasTag("HideAtVendor");
+        }
+
+        bool IsValidAttachment() const
+        {
+            return HasTag("WeaponMod") || m_itemType == Red::gamedataItemType::Prt_Program;
+        }
+
+        bool IsAllowedType() const
+        {
+            using Red::gamedataItemType;
+            switch (m_itemType)
+            {
+            case gamedataItemType::Con_Edible:
+            case gamedataItemType::Gen_DataBank:
+            case gamedataItemType::CyberwareStatsShard:
+            case gamedataItemType::Gen_Jewellery:
+            case gamedataItemType::Gen_Junk:
+            case gamedataItemType::Gen_Keycard:
+            case gamedataItemType::Gen_MoneyShard:
+            case gamedataItemType::Gen_Misc:
+            case gamedataItemType::Gen_Readable:
+            case gamedataItemType::Prt_Receiver:
+            case gamedataItemType::Prt_Magazine:
+            case gamedataItemType::Prt_ScopeRail:
+            case gamedataItemType::Prt_Stock:
+            case gamedataItemType::Gen_Tarot:
+            case gamedataItemType::VendorToken:
+            case gamedataItemType::Wea_Fists:
+            case gamedataItemType::Wea_VehicleMissileLauncher:
+            case gamedataItemType::Wea_VehiclePowerWeapon:
+            case gamedataItemType::Invalid:
+            case gamedataItemType::Grenade_Core:    
+                return false;
+            }
+
+            return true;
+        }
+
+        bool HasTag(Red::CName aTag) const
+        {
+            return m_tags.Contains(aTag);
+        }
+    };
+
+    ExtendedItemData CreateExtendedData(const cyberpunk::ItemInfo& aItem, Red::Handle<Red::IScriptable>& aRecord)
+    {
+        ExtendedItemData ret{};
+
+        ret.m_itemId = aItem.itemId;
+        ret.m_tdbId = ret.m_itemId.tdbid;
+        ret.m_itemRecord = aRecord;
+        ret.m_itemType = Red::gamedataItemType::Invalid;
+        ret.m_itemCategory = "";
+        
+        Red::CallVirtual(aRecord, "Tags", ret.m_tags);
+
+        Red::Handle<Red::gamedataItemType_Record> itemTypeHandle;
+        Red::CallVirtual(aRecord, "ItemTypeHandle", itemTypeHandle);
+
+        if (itemTypeHandle)
+        {
+            Red::CallVirtual(itemTypeHandle, "Type", ret.m_itemType);
+        }
+
+        Red::Handle<Red::gamedataItemCategory_Record> itemCategoryHandle;
+        Red::CallVirtual(aRecord, "ItemCategoryHandle", itemCategoryHandle);
+
+        if (itemCategoryHandle)
+        {
+            Red::CallVirtual(itemCategoryHandle, "Name", ret.m_itemCategory);
+        }
+
+        return ret;
+    }
+
+    void ProcessAttachments(const cyberpunk::ItemSlotPart& aSlotPart, Red::DynArray<RedItemData>& aTargetList)
+    {
+        // Don't bother doing iconic weapon mods
+        if (aSlotPart.attachmentSlotTdbId == "AttachmentSlots.IconicWeaponModLegendary" ||
+            aSlotPart.attachmentSlotTdbId == "AttachmentSlots.IconicMeleeWeaponMod1")
+        {
+            return;
+        }
+
+        auto itemId = aSlotPart.itemInfo.itemId;
+        auto record = m_tweakDb->GetRecord(itemId.tdbid);
+
+        if (!record)
+        {
+            return;
+        }
+
+        auto extendedData = CreateExtendedData(aSlotPart.itemInfo, record);
+
+        if (extendedData.IsAllowedType() && !extendedData.IsHiddenInUI() && extendedData.IsValidAttachment())
+        {
+            RedItemData itemData{};
+
+            itemData.m_itemId = itemId;
+            itemData.m_itemQuantity = 1;
+
+            constexpr auto showAddedMods = false;
+
+            if constexpr (showAddedMods)
+            {
+                Red::CString str{};
+		        Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, extendedData.m_tdbId);
+                
+                PluginContext::Spew(std::format("Added mod {} to inventory!", str.c_str()));
+            }
+
+            aTargetList.PushBack(itemData);
+        }
+
+        for (const auto& child : aSlotPart.children)
+        {
+            ProcessAttachments(child, aTargetList);   
+        }
+    }
+
+    void AddItemToInventory(const ExtendedItemData& aExtendedData, const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList)
     {
         // Sorry, but these REALLY annoy me
         static constexpr auto bannedTdbIds = std::array<RED4ext::TweakDBID, 32>{
@@ -487,216 +617,70 @@ private:
             RED4ext::TweakDBID{"Items.q003_chip_cracked"}, RED4ext::TweakDBID{"Items.q003_chip_cracked_funds"},
             RED4ext::TweakDBID{"Items.Preset_Q001_Lexington"}};
 
-        if (std::find(bannedTdbIds.begin(), bannedTdbIds.end(), aItemId.tdbid) != bannedTdbIds.end())
-        {
-            return false;
-        }
-
-        auto itemRecord = aTweakDb->GetRecord(aItemId.tdbid);
-
-        if (!itemRecord)
-        {
-            return false;
-        }
-
-        Red::Handle<Red::gamedataItemType_Record> itemType;
-        Red::CallVirtual(itemRecord, "ItemTypeHandle", itemType);
-
-        if (!itemType)
-        {
-            return false;
-        }
-
-        Red::gamedataItemType type{};
-        Red::CallVirtual(itemType, "Type", type);
-
-        using Red::gamedataItemType;
-        switch (type)
-        {
-        case gamedataItemType::Con_Edible:
-        case gamedataItemType::Gen_DataBank: // Sorry, Saburo shard, you were getting in the way.
-        case gamedataItemType::CyberwareStatsShard:
-        case gamedataItemType::Gen_Jewellery:
-        case gamedataItemType::Gen_Junk:
-        case gamedataItemType::Gen_Keycard:
-        case gamedataItemType::Gen_MoneyShard:
-        case gamedataItemType::Gen_Readable:
-        case gamedataItemType::Gen_Tarot:
-        case gamedataItemType::VendorToken:
-        case gamedataItemType::Wea_Fists:
-        case gamedataItemType::Wea_VehicleMissileLauncher:
-        case gamedataItemType::Wea_VehiclePowerWeapon:
-            return false;
-        }
-
-        return true;
-    }
-
-    // This is really dumb code IMO
-    // But if it works...
-    bool IsItemMod(RED4ext::TweakDB* aTweakDb, RED4ext::TweakDBID aTdbId)
-    {
-        auto itemRecord = aTweakDb->GetRecord(aTdbId);
-
-        if (!itemRecord)
-        {
-            return false;
-        }
-
-        Red::Handle<Red::gamedataItemCategory_Record> itemCategoryHandle;
-        Red::CallVirtual(itemRecord, "ItemCategoryHandle", itemCategoryHandle);
-
-        if (!itemCategoryHandle)
-        {
-            return false;
-        }
-
-        Red::CName name;
-        Red::CallVirtual(itemCategoryHandle, "Name", name);
-
-        return name == Red::CName{"WeaponMod"};
-    }
-
-    bool IsItemQuickhack(RED4ext::TweakDB* aTweakDb, RED4ext::TweakDBID aTdbId)
-    {
-        auto itemRecord = aTweakDb->GetRecord(aTdbId);
-
-        if (!itemRecord)
-        {
-            return false;
-        }
-
-        Red::Handle<Red::gamedataItemType_Record> itemTypeHandle{};
-        Red::CallVirtual(itemRecord, "ItemTypeHandle", itemTypeHandle);
-
-        if (!itemTypeHandle)
-        {
-            return false;
-        }
-
-        Red::gamedataItemType type{};
-        Red::CallVirtual(itemTypeHandle, "Type", type);
-
-        return type == Red::gamedataItemType::Prt_Program;
-    }
-
-    bool RecordHasTag(Red::Handle<Red::IScriptable>& aRecord, Red::CName aTag)
-    {
-        bool hasTag{};
-        Red::CallVirtual(aRecord, "TagsContains", hasTag, aTag);
-
-        return hasTag;
-    }
-
-    bool IsItemIconic(RED4ext::TweakDB* aTweakDb, RED4ext::TweakDBID aTdbId)
-    {
-        auto itemRecord = aTweakDb->GetRecord(aTdbId);
-
-        if (!itemRecord)
-        {
-            return false;
-        }
-
-        return RecordHasTag(itemRecord, RED4ext::CName{"IconicWeapon"});
-    }
-
-    bool IsItemCyberdeck(Red::TweakDB* aTweakDb, Red::TweakDBID aTdbId)
-    {
-        auto itemRecord = aTweakDb->GetRecord(aTdbId);
-
-        if (!itemRecord)
-        {
-            return false;
-        }
-
-        return RecordHasTag(itemRecord, RED4ext::CName{"Cyberdeck"});
-    }
-
-    void ParseAttachments(RED4ext::TweakDB* aTweakDb, const cyberpunk::ItemSlotPart& aItemSlotPart, bool aIsCarStash)
-    {
-        if (IsItemMod(aTweakDb, aItemSlotPart.itemInfo.itemId.tdbid) || IsItemQuickhack(aTweakDb, aItemSlotPart.itemInfo.itemId.tdbid))
-        {   
-            RedItemData itemData{};
-            itemData.m_itemId = aItemSlotPart.itemInfo.itemId;
-            itemData.m_itemQuantity = 1;
-
-            if (!aIsCarStash)
-            {
-                m_saveData.m_playerItems.PushBack(itemData);
-            }
-            else
-            {
-                m_saveData.m_playerStashItems.PushBack(itemData);
-            }
-        }
-
-        for (const auto& childItem : aItemSlotPart.children)
-        {
-            ParseAttachments(aTweakDb, childItem, aIsCarStash);
-        }
-    }
-
-    void ParseItem(RED4ext::TweakDB* aTweakDb, const cyberpunk::ItemData& aItemData, bool aIsCarStash)
-    {
-        auto& itemInfo = aItemData.itemInfo;
-        if (!ShouldAddItemToInventory(aTweakDb, itemInfo.itemId))
+        if (std::find(bannedTdbIds.begin(), bannedTdbIds.end(), aExtendedData.m_tdbId) != bannedTdbIds.end())
         {
             return;
         }
 
-        static constexpr auto moneyItemTDBID = Red::TweakDBID{"Items.money"};
-
-        if (aItemData.itemInfo.itemId.tdbid == moneyItemTDBID)
+        if (aExtendedData.m_tdbId == "Items.money")
         {
-            m_saveData.m_playerMoney += aItemData.itemQuantity;
+            m_saveData.m_playerMoney += aItem.itemQuantity;
+            return;
+        }
+
+        if (!aExtendedData.IsAllowedType())
+        {
+            return;
+        }
+
+        if (aExtendedData.IsHiddenInUI())
+        {
+            // We don't need something like that
             return;
         }
 
         RedItemData itemData{};
 
-        itemData.m_itemId = itemInfo.itemId;
-        itemData.m_itemQuantity = aItemData.hasQuantity() ? aItemData.itemQuantity : 1;
+        itemData.m_itemId = aExtendedData.m_itemId;
+        itemData.m_itemQuantity = aItem.hasQuantity() ? aItem.itemQuantity : 1;
 
-        if (!aIsCarStash)
+        aTargetList.PushBack(itemData);
+
+        if (aItem.hasExtendedData())
         {
-            m_saveData.m_playerItems.PushBack(itemData);
+            ProcessAttachments(aItem.itemSlotPart, aTargetList);
         }
-        else
-        {
-            m_saveData.m_playerStashItems.PushBack(itemData);
-        }
-
-        if (!aItemData.hasExtendedData())
-        {
-            return;
-        }
-
-        // Iconics don't get mods anymore :(
-        if (IsItemIconic(aTweakDb, itemInfo.itemId.tdbid) && !IsItemCyberdeck(aTweakDb, itemInfo.itemId.tdbid))
-        {
-            return;
-        }
-
-        const auto& itemSlotPart = aItemData.itemSlotPart;
-
-        ParseAttachments(aTweakDb, itemSlotPart, aIsCarStash);
     }
 
-    void LoadInventory(cyberpunk::InventoryNode* const aInventory)
+    void ProcessItem(const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList)
     {
-        auto tweakDb = RED4ext::TweakDB::Get();
+        auto record = m_tweakDb->GetRecord(aItem.itemInfo.itemId.tdbid);
 
+        if (!record)
+        {
+            return;
+        }
+
+        auto extendedItemData = CreateExtendedData(aItem.itemInfo, record);
+
+        AddItemToInventory(extendedItemData, aItem, aTargetList);
+    }
+
+    void LoadInventoryNew(cyberpunk::InventoryNode* const aInventory)
+    {
         auto& inventoryLocal = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdLocal);
         auto& inventoryCarStash = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdCarStash);
 
-        for (auto item : inventoryLocal.inventoryItems)
+        m_tweakDb = Red::TweakDB::Get();
+
+        for (const auto& item : inventoryLocal.inventoryItems)
         {
-            ParseItem(tweakDb, item, false);
+            ProcessItem(item, m_saveData.m_playerItems);
         }
 
-        for (auto item : inventoryCarStash.inventoryItems)
+        for (const auto& item : inventoryCarStash.inventoryItems)
         {
-            ParseItem(tweakDb, item, true);
+            ProcessItem(item, m_saveData.m_playerStashItems);
         }
     }
 
@@ -710,15 +694,14 @@ private:
             RED4ext::TweakDBID{"Vehicle.v_sportbike2_arch_jackie_player"}, RED4ext::TweakDBID{"Vehicle.v_sportbike2_arch_jackie_tuned_player"}};
 
         
-        for (auto unlockedVehicle : aVehicleGarage["unlockedVehicleArray"].Cast<redRTTI::RTTIArray>())
+        for (auto unlockedVehicle : aVehicleGarage["unlockedVehicleArray"].AsArray())
         {
-            auto vehicleId = unlockedVehicle["vehicleID"];
-            auto vehicleRecordId = vehicleId["recordID"].Cast<Red::TweakDBID>();
+            auto vehicleId = unlockedVehicle["vehicleID"]["recordID"].AsTweakDBID();
 
-            if (std::find(blacklistedVehicles.begin(), blacklistedVehicles.end(), vehicleRecordId) ==
+            if (std::find(blacklistedVehicles.begin(), blacklistedVehicles.end(), vehicleId) ==
                 blacklistedVehicles.end())
             {
-                m_saveData.m_playerVehicleGarage.PushBack(vehicleRecordId);
+                m_saveData.m_playerVehicleGarage.PushBack(vehicleId);
             }
         }
 
@@ -747,6 +730,8 @@ private:
     bool m_isAttached{};
     PlayerSaveData m_saveData{};
     std::string m_lastError{};
+
+    Red::TweakDB* m_tweakDb;
 
     RTTI_IMPL_TYPEINFO(TopSecretSystem);
     RTTI_IMPL_ALLOCATOR();

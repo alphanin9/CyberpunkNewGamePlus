@@ -13,14 +13,14 @@ namespace parser {
 		std::vector<cyberpunk::NodeEntry*> m_nodeList;
 		std::vector<std::byte> m_fileStream;
 
-		void calculateTrueSizes(std::vector<cyberpunk::NodeEntry*>& nodes, int maxLength);
-		void findChildren(cyberpunk::NodeEntry& node, int maxNextId);
+		void CalculateTrueSizes(std::vector<cyberpunk::NodeEntry*>& nodes, int maxLength);
+		void FindChildren(cyberpunk::NodeEntry& node, int maxNextId);
 
-		std::vector<std::byte> decompressFile();
-		bool loadNodes(std::vector<std::byte>& decompressedData);
+		std::vector<std::byte> DecompressFile();
+		bool LoadNodes(std::vector<std::byte>& decompressedData);
 	public:
-		bool parseMetadata(std::filesystem::path aMetadataPath);
-		bool parseSavegame(std::filesystem::path aSavePath);
+		bool ParseMetadata(std::filesystem::path aMetadataPath);
+		bool ParseSavegame(std::filesystem::path aSavePath);
 
 		cyberpunk::NodeEntry* LookupNode(std::wstring_view aNodeName);
 	};

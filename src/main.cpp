@@ -18,8 +18,8 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 	{
 	case RED4ext::EMainReason::Load:
 	{
-		pluginContext::m_redPlugin = aHandle;
-		pluginContext::m_redSdk = aSdk;
+		PluginContext::m_redPlugin = aHandle;
+		PluginContext::m_redSdk = aSdk;
 
 		Red::TypeInfoRegistrar::RegisterDiscovered();
 

@@ -4,6 +4,7 @@
 
 #include <RED4ext/RED4ext.hpp>
 #include "../interfaceNodeData.hpp"
+#include "../../../../context/context.hpp"
 
 namespace cyberpunk {
 	struct ItemInfo {
@@ -149,7 +150,7 @@ namespace cyberpunk {
 		static constexpr std::wstring_view nodeName = L"itemData";
 
 		ItemData itemData;
-		virtual void readData(FileCursor& cursor, NodeEntry& node) {
+		virtual void ReadData(FileCursor& cursor, NodeEntry& node) {
 			itemData.itemInfo = ItemInfo::fromCursor(cursor);
 
 			itemData.itemFlags = cursor.readValue<ItemData::ItemFlags>();
@@ -189,12 +190,12 @@ namespace cyberpunk {
 			for (auto i = 0; i < count; i++) {
 				auto nextItemInfo = ItemInfo::fromCursor(cursor);
 
-				cyberpunk::parseNode(cursor, *node.nodeChildren.at(offset + i));
+				cyberpunk::ParseNode(cursor, *node.nodeChildren.at(offset + i));
 
 				auto itemInfoActual = reinterpret_cast<ItemDataNode*>(node.nodeChildren.at(offset + i)->nodeData.get());
 				
 				if (itemInfoActual->itemData.itemInfo != nextItemInfo) {
-					std::println("Item info parsing failed!");
+                    PluginContext::Error("Item info parsing error, itemInfoActual->itemData.itemInfo != nextItemInfo");
 				}
 				
 				ret.inventoryItems.push_back(itemInfoActual->itemData);
@@ -203,7 +204,7 @@ namespace cyberpunk {
 			return ret;
 		}
 	public:
-		virtual void readData(FileCursor& cursor, NodeEntry& node) {
+		virtual void ReadData(FileCursor& cursor, NodeEntry& node) {
 			const auto count = cursor.readInt();
 			auto offset = 0;
 

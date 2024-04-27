@@ -6,6 +6,6 @@
 #include "../../cursorDef.hpp"
 
 namespace cyberpunk {
-	void parseNode(FileCursor& cursor, NodeEntry& node);
-	void parseChildren(FileCursor& cursor, std::vector<cyberpunk::NodeEntry*>& nodeChildren);
+	void ParseNode(FileCursor& cursor, NodeEntry& node);
+	void ParseChildren(FileCursor& cursor, std::vector<cyberpunk::NodeEntry*>& nodeChildren);
 }

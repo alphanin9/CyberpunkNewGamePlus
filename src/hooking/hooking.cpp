@@ -20,7 +20,7 @@ namespace hooking {
 		SelectGameDefinition m_originalFn = nullptr;
 
 		uint64_t* __fastcall m_detourFn(uint64_t* aDepotPath, GamedefType aGamedefType) {
-			if (!pluginContext::m_isSecretOverrideActivated || !pluginContext::m_isInStartNewGame) {
+			if (!PluginContext::m_isSecretOverrideActivated || !PluginContext::m_isInStartNewGame) {
 				return m_originalFn(aDepotPath, aGamedefType);
 			}
 
@@ -28,9 +28,9 @@ namespace hooking {
 				return m_originalFn(aDepotPath, aGamedefType);
 			}
 
-			*aDepotPath = pluginContext::m_ngPlusGameDefinitionHash;
+			*aDepotPath = PluginContext::m_ngPlusGameDefinitionHash;
 
-			pluginContext::m_isSecretOverrideActivated = false;
+			PluginContext::m_isSecretOverrideActivated = false;
 			return aDepotPath;
 		}
 	}
@@ -42,9 +42,9 @@ namespace hooking {
 		StartNewGame m_originalFn = nullptr;
 
 		void __fastcall m_detourFn(uintptr_t aState) {
-			pluginContext::m_isInStartNewGame = true;
+			PluginContext::m_isInStartNewGame = true;
 			m_originalFn(aState);
-			pluginContext::m_isInStartNewGame = false;
+			PluginContext::m_isInStartNewGame = false;
 		}
 	}
 
@@ -53,9 +53,9 @@ namespace hooking {
 			RED4ext::UniversalRelocPtr<uintptr_t>(SelectGameDefinition::m_fnHash).GetAddr();
 		const auto addrStartNewGame = RED4ext::UniversalRelocPtr<uintptr_t>(StartNewGame::m_fnHash).GetAddr();
 
-		auto hookStatus = pluginContext::m_redSdk->hooking->Attach(pluginContext::m_redPlugin, addrSelectGameDefinition, SelectGameDefinition::m_detourFn, reinterpret_cast<void**>(&SelectGameDefinition::m_originalFn));
+		auto hookStatus = PluginContext::m_redSdk->hooking->Attach(PluginContext::m_redPlugin, addrSelectGameDefinition, SelectGameDefinition::m_detourFn, reinterpret_cast<void**>(&SelectGameDefinition::m_originalFn));
 
-		hookStatus = hookStatus && pluginContext::m_redSdk->hooking->Attach(pluginContext::m_redPlugin, addrStartNewGame, StartNewGame::m_detourFn, reinterpret_cast<void**>(&StartNewGame::m_originalFn));
+		hookStatus = hookStatus && PluginContext::m_redSdk->hooking->Attach(PluginContext::m_redPlugin, addrStartNewGame, StartNewGame::m_detourFn, reinterpret_cast<void**>(&StartNewGame::m_originalFn));
 
 		return hookStatus;
 	}
@@ -65,6 +65,6 @@ namespace hooking {
 			RED4ext::UniversalRelocPtr<uintptr_t>(SelectGameDefinition::m_fnHash).GetAddr();
 		const auto addrStartNewGame = RED4ext::UniversalRelocPtr<uintptr_t>(StartNewGame::m_fnHash).GetAddr();
 
-		return pluginContext::m_redSdk->hooking->Detach(pluginContext::m_redPlugin, addrSelectGameDefinition) && pluginContext::m_redSdk->hooking->Detach(pluginContext::m_redPlugin, addrStartNewGame);
+		return PluginContext::m_redSdk->hooking->Detach(PluginContext::m_redPlugin, addrSelectGameDefinition) && PluginContext::m_redSdk->hooking->Detach(PluginContext::m_redPlugin, addrStartNewGame);
 	}
 }

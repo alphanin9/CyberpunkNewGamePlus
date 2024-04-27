@@ -293,7 +293,7 @@ public:
 		}
         catch (std::exception e)
         {
-            std::println("scriptable::ReadClass EXCEPTION: {}", e.what());
+            PluginContext::Error(std::format("scriptable::ReadClass EXCEPTION: {}", e.what()));
             return retValue;
 		}
 

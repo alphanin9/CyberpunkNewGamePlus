@@ -127,7 +127,7 @@ namespace cyberpunk {
 		std::vector<RedChunk> chunks;
 
 	private:
-		RedImport readImport(FileCursor& cursor, RedPackageImportHeader importHeader) {
+		RedImport ReadImport(FileCursor& cursor, RedPackageImportHeader importHeader) {
 			RedImport ret{};
 
 			ret.importFlags = importHeader.isSync() ? RedImport::ImportFlags::Obligatory : RedImport::ImportFlags::Default;
@@ -136,7 +136,7 @@ namespace cyberpunk {
 			return ret;
 		}
 
-		void readChunk(RED4ext::CRTTISystem* aRtti, FileCursor& aCursor, RedChunk& chunk) {
+		void ReadChunk(RED4ext::CRTTISystem* aRtti, FileCursor& aCursor, RedChunk& chunk) {
             scriptable::ScriptableReader reader{names};
 
 			redRTTI::RTTIValue wrapper{};
@@ -158,7 +158,7 @@ namespace cyberpunk {
 			chunk.m_redClass = chunkValue;*/
 		}
 	public:
-		virtual void readData(FileCursor& cursor, NodeEntry& node) {
+		virtual void ReadData(FileCursor& cursor, NodeEntry& node) {
 			const auto dataSize = cursor.readInt();
 			auto dataBuffer = cursor.readBytes(dataSize);
 			{
@@ -208,7 +208,7 @@ namespace cyberpunk {
 
 				for (auto ref : refDesc) {
 					cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + ref.offset());
-					imports.push_back(readImport(cursor, ref));
+					imports.push_back(ReadImport(cursor, ref));
 				}
 
 				const auto nameCount = (header.namePoolDataOffset - header.namePoolDescOffset) / sizeof(RedPackageNameHeader);
@@ -268,7 +268,7 @@ namespace cyberpunk {
 
 					auto expected = cursorOffset + chunkSize;
 
-					readChunk(rttiSystem, cursor, chunk);
+					ReadChunk(rttiSystem, cursor, chunk);
 
 					if (cursor.offset != expected) {
 						// Fix up chunk offset, we read something wrong, better be in the right place for the next chunk

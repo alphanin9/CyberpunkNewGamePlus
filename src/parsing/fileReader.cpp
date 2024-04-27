@@ -23,46 +23,15 @@
 #include <nlohmann/json.hpp>
 #include <RedLib.hpp>
 
+#include "../context/context.hpp"
+
 // Copypasted from WolvenKit :(
 namespace parser {
-	bool Parser::parseMetadata(std::filesystem::path aMetadataPath) {
-		/*
-		const auto bufferSize = std::filesystem::file_size(aMetadataPath);
-		
-		if (bufferSize == 0) {
-			return false;
-		}
-
-		auto str = std::string{};
-		{
-			str.reserve(bufferSize);
-			auto file = std::ifstream{ aMetadataPath };
-
-			str.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-		}
-		
-		auto data = nlohmann::json::parse(str);
-
-		if (data["RootType"].get<std::string_view>() != "saveMetadataContainer") {
-			return false;
-		}
-		*/
-
-		// auto saveMetadata = data["Data"]["metadata"];
-
-		// constexpr auto baseAttributePointCount = 7;
-		// const auto attributePointCount = baseAttributePointCount + saveMetadata["level"].get<float>() - 1;
-		// OK but fuck parsing PDD
-		// const auto perkPointCount = saveMetadata["level"].get<float>() + 20; // LOL
-		// const auto addedPerkPoints = 10; // Reward for NG+? Maybe add a few Cyberware Cap shards too just to make sure equipment slots don't get megafucked (NEVERMIND WE CAN'T ACTUALLY PARSE WHERE EQUIPMENT IS PLACED LOL)
-
-		// std::println("{}", saveMetadata["trackedQuestEntry"].get<std::string_view>());
-		// std::println("Attribute points: {}", attributePointCount);
-
+	bool Parser::ParseMetadata(std::filesystem::path aMetadataPath) {
 		return true;
 	}
 
-	bool Parser::parseSavegame(std::filesystem::path aSavePath) {
+	bool Parser::ParseSavegame(std::filesystem::path aSavePath) {
 
 		const auto bufferSize = std::filesystem::file_size(aSavePath);
 
@@ -119,39 +88,44 @@ namespace parser {
 
 		// std::println("Finished reading flat nodes");
 
-		auto decompressedData = decompressFile();
+		auto decompressedData = DecompressFile();
 
 		// std::println("Buffer size: {}", decompressedData.size());
 
-		return loadNodes(decompressedData);
+		return LoadNodes(decompressedData);
 	}
 
 	void DumpItemInfo(cyberpunk::ItemInfo& aItemInfo, int aIndentation) {
-		for (auto i = 0; i < aIndentation; i++) {
-			std::print("\t");
-		}
+        std::string padding{};
+        for (auto i = 0; i < aIndentation; i++)
+        {
+            padding.push_back(' ');
+        }
 
 		Red::CString str;
 		Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aItemInfo.itemId.tdbid);
 		
-		std::println("{}", str.c_str());
+		PluginContext::Spew(std::format("{}{}", padding, str.c_str()));
 	}
 
 	void DumpItemSlotParts(cyberpunk::ItemSlotPart& aItemSlotPart, int aIndentation) {
 		if (!aItemSlotPart.isValid) {
 			return;
 		}
+        std::string padding{};
 
-		DumpItemInfo(aItemSlotPart.itemInfo, aIndentation);
-		for (auto i = 0; i < aIndentation; i++) {
-			std::print("\t");
+		for (auto i = 0; i < aIndentation; i++)
+        {
+            padding.push_back(' ');
 		}
+
 		Red::CString str;
 		Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aItemSlotPart.attachmentSlotTdbId);
 
-		std::println("Attachment slot {}",	str.c_str());
+		PluginContext::Spew(std::format("{}Attachment slot {}", padding, str.c_str()));
+        DumpItemInfo(aItemSlotPart.itemInfo, aIndentation + 1);
 		for (auto& i : aItemSlotPart.children) {
-			DumpItemSlotParts(i, aIndentation + 1);
+			DumpItemSlotParts(i, aIndentation + 2);
 		}
 	}
 
@@ -161,14 +135,14 @@ namespace parser {
 
 		const auto itemQuantity = aItemData.hasQuantity() ? aItemData.itemQuantity : 1;
 
-		std::println("{}, qty {}", str.c_str(), itemQuantity);
+		PluginContext::Spew(std::format("{}, qty {}", str.c_str(), itemQuantity));
 		
 		if (aItemData.hasExtendedData()) {
 			DumpItemSlotParts(aItemData.itemSlotPart, 1);
 		}
 	}
 
-	std::vector<std::byte> Parser::decompressFile() {
+	std::vector<std::byte> Parser::DecompressFile() {
 		// RETARDED CODE ALERT
 		// THIS IS COMPLETELY FUCKED
 		auto compressionTablePosition = 0ll;
@@ -295,7 +269,7 @@ namespace parser {
 		return decompressionResult;
 	}
 
-	void Parser::findChildren(cyberpunk::NodeEntry& node, int maxNextId) {
+	void Parser::FindChildren(cyberpunk::NodeEntry& node, int maxNextId) {
 		if (node.childId > -1) {
 			auto nextId = node.nextId;
 
@@ -310,7 +284,7 @@ namespace parser {
 
 				if (possibleChild != m_flatNodes.end()) {
 					if (possibleChild->childId > -1) {
-						findChildren(*possibleChild, nextId);
+						FindChildren(*possibleChild, nextId);
 						node.addChild(&*possibleChild);
 					}
 					else {
@@ -324,7 +298,7 @@ namespace parser {
 		}
 	}
 
-	void Parser::calculateTrueSizes(std::vector<cyberpunk::NodeEntry*>& nodes, int maxLength) {
+	void Parser::CalculateTrueSizes(std::vector<cyberpunk::NodeEntry*>& nodes, int maxLength) {
 		for (auto i = 0ull; i < nodes.size(); i++) {
 			cyberpunk::NodeEntry* currentNode = nodes.at(i);
 			cyberpunk::NodeEntry* nextNode = nullptr;
@@ -339,7 +313,7 @@ namespace parser {
 				auto blobSize = nextChild->offset - currentNode->offset;
 				currentNode->dataSize = blobSize;
 
-				calculateTrueSizes(currentNode->nodeChildren, maxLength);
+				CalculateTrueSizes(currentNode->nodeChildren, maxLength);
 			}
 			else {
 				currentNode->dataSize = currentNode->size;
@@ -389,7 +363,7 @@ namespace parser {
 	}
 
 	// The most reasonable course of action is keeping flatNodes allocated as long as possible, and making the actual node list hold ptrs to nodes in flatNodes
-	bool Parser::loadNodes(std::vector<std::byte>& decompressedData) {
+	bool Parser::LoadNodes(std::vector<std::byte>& decompressedData) {
 		auto cursor = FileCursor{ decompressedData.data(), decompressedData.size() };
 
 		//std::println("Assigning nodeids...");
@@ -404,7 +378,7 @@ namespace parser {
 
 		for (auto& node : m_flatNodes) {
 			if (!node.isChild) {
-				findChildren(node, m_flatNodes.size());
+				FindChildren(node, m_flatNodes.size());
 			}
 			if (node.nextId > -1) {
 				node.nextNode = &*std::find_if(m_flatNodes.begin(), m_flatNodes.end(), [&node](cyberpunk::NodeEntry& aNode) {
@@ -423,13 +397,13 @@ namespace parser {
 
 		//std::println("Calculating real sizes...");
 
-		calculateTrueSizes(m_nodeList, decompressedData.size());
+		CalculateTrueSizes(m_nodeList, decompressedData.size());
 
 		//std::println("Beginning node parsing...");
 
 		for (auto& node : m_flatNodes) {
 			if (!node.isReadByParent) {
-				cyberpunk::parseNode(cursor, node);
+				cyberpunk::ParseNode(cursor, node);
 
 				const auto readSize = cursor.offset - node.offset;
 				auto expectedSize = node.size;
@@ -441,50 +415,20 @@ namespace parser {
 				if (readSize != expectedSize) {
 					// HACK: itemData gets really fucked by this, even on a known good implementation
 					if (node.name != L"itemData") {
-						std::println("Node {} expected size {} != read size {}", node.id, expectedSize, readSize);
+						PluginContext::Error(std::format("Node {} expected size {} != read size {}", node.id, expectedSize, readSize));
 					}
 				}
 			}
 		}
 
-		//std::println("Finished parsing nodes...");
 		constexpr auto shouldDumpInventory = false;
 
 		if constexpr (shouldDumpInventory) {
-			auto inventory = std::find_if(m_nodeList.begin(), m_nodeList.end(), [](cyberpunk::NodeEntry* node) {
-				return node->name == L"inventory";
-				});
-
-			if (inventory == m_nodeList.end()) {
-				return false;
-			}
-
-			auto inventoryData = reinterpret_cast<cyberpunk::InventoryNode*>((*inventory)->nodeData.get());
-
-			//std::println("V's inventories @ {:#010x}...", reinterpret_cast<uintptr_t>(inventoryData));
-
-			auto inventoryNames = std::array<std::tuple<std::uint64_t, std::string>, 5u>{
-				std::make_tuple(0x1, "V's inventory"),
-					std::make_tuple(0xF4240, "V's car stash"),
-					std::make_tuple(0x896368, "Johnny's Inventory"),
-					std::make_tuple(9014340, "Kurtz's Inventory"),
-					std::make_tuple(0x7901DE03D136A5AF, "V's Wardrobe"),
-			};
-
-			const auto tweakDb = RED4ext::TweakDB::Get();
+			auto inventory = LookupNode(L"inventory");
+			auto inventoryData = reinterpret_cast<cyberpunk::InventoryNode*>(inventory->nodeData.get());
 
 			for (auto& subInventory : inventoryData->subInventories) {
-				auto inventoryName = std::find_if(inventoryNames.begin(), inventoryNames.end(), [&subInventory](std::tuple<std::uint64_t, std::string>& tuple) {
-					return std::get<0>(tuple) == subInventory.inventoryId;
-					});
-
-				if (inventoryName != inventoryNames.end()) {
-					std::println("Inventory \"{}\", {} items", std::get<1>(*inventoryName), subInventory.inventoryItems.size());
-				}
-				else {
-					std::println("Inventory {:#010x}, {} items", subInventory.inventoryId, subInventory.inventoryItems.size());
-				}
-
+                PluginContext::Spew(std::format("Inventory {}", subInventory.inventoryId));
 				for (auto& inventoryItem : subInventory.inventoryItems) {
 					DumpItem(inventoryItem);
 				}
@@ -499,7 +443,10 @@ namespace parser {
 			return aNode->name == aNodeName;
 		});
 
-		assert(node != m_nodeList.end());
+		if (node == m_nodeList.end())
+        {
+            throw std::runtime_error{"Failed to find node!"};
+		}
 
 		return *node;
 	}

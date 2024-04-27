@@ -12,76 +12,80 @@
 #include "../nodeEntry.hpp"
 #include "../../cursorDef.hpp"
 
-using parseNodeFn = std::unique_ptr<cyberpunk::NodeDataInterface>(*)(FileCursor& cursor, cyberpunk::NodeEntry& node);
+using ParseNodeFn = std::unique_ptr<cyberpunk::NodeDataInterface>(*)(FileCursor& cursor, cyberpunk::NodeEntry& node);
 
-std::unique_ptr<cyberpunk::NodeDataInterface> defaultParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
+std::unique_ptr<cyberpunk::NodeDataInterface> DefaultParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
 	auto dataPtr = std::make_unique<cyberpunk::DefaultNodeData>();
 
-	dataPtr->readData(cursor, node);
+	dataPtr->ReadData(cursor, node);
 
 	return dataPtr;
 }
 
-std::unique_ptr<cyberpunk::NodeDataInterface> inventoryParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
+std::unique_ptr<cyberpunk::NodeDataInterface> InventoryParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
 	auto dataPtr = std::make_unique<cyberpunk::InventoryNode>();
 
-	dataPtr->readData(cursor, node);
+	dataPtr->ReadData(cursor, node);
 
 	return dataPtr;
 }
 
-std::unique_ptr<cyberpunk::NodeDataInterface> itemInfoParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
+std::unique_ptr<cyberpunk::NodeDataInterface> ItemInfoParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
 	auto dataPtr = std::make_unique<cyberpunk::ItemDataNode>();
 
-	dataPtr->readData(cursor, node);
+	dataPtr->ReadData(cursor, node);
 
 	return dataPtr;
 }
 
-std::unique_ptr<cyberpunk::NodeDataInterface> scriptableSystemsContainerParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
+std::unique_ptr<cyberpunk::NodeDataInterface> ScriptableSystemsContainerParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
 	auto dataPtr = std::make_unique<cyberpunk::ScriptableSystemsContainerNode>();
 
-	dataPtr->readData(cursor, node);
+	dataPtr->ReadData(cursor, node);
 
 	return dataPtr;
 }
 
-std::unique_ptr<cyberpunk::NodeDataInterface> persistencySystemParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
+std::unique_ptr<cyberpunk::NodeDataInterface> PersistencySystemParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
 	auto dataPtr = std::make_unique<cyberpunk::PersistencySystemNode>();
 
-	dataPtr->readData(cursor, node);
+	dataPtr->ReadData(cursor, node);
 	
 	return dataPtr;
 }
 
-parseNodeFn findParser(std::wstring_view nodeName) {
-	if (nodeName == cyberpunk::InventoryNode::nodeName) {
-		return inventoryParser;
+ParseNodeFn FindParser(std::wstring_view aNodeName) {
+    if (aNodeName == cyberpunk::InventoryNode::nodeName)
+    {
+		return InventoryParser;
 	}
-	else if (nodeName == cyberpunk::ItemDataNode::nodeName) {
-		return itemInfoParser;
+    else if (aNodeName == cyberpunk::ItemDataNode::nodeName)
+    {
+		return ItemInfoParser;
 	}
-	else if (nodeName == cyberpunk::ScriptableSystemsContainerNode::nodeName) {
-		return scriptableSystemsContainerParser;
+    else if (aNodeName == cyberpunk::ScriptableSystemsContainerNode::nodeName)
+    {
+		return ScriptableSystemsContainerParser;
 	}
-	else if (nodeName == cyberpunk::PersistencySystemNode::nodeName) {
-		return persistencySystemParser;
+    else if (aNodeName == cyberpunk::PersistencySystemNode::nodeName)
+    {
+		return PersistencySystemParser;
 	}
 
-	return defaultParser;
+	return DefaultParser;
 }
 
-void cyberpunk::parseChildren(FileCursor& cursor, std::vector<cyberpunk::NodeEntry*>& nodeChildren) {
+void cyberpunk::ParseChildren(FileCursor& cursor, std::vector<cyberpunk::NodeEntry*>& nodeChildren) {
 	for (auto pNode : nodeChildren) {
-		cyberpunk::parseNode(cursor, *pNode);
+		cyberpunk::ParseNode(cursor, *pNode);
 		pNode->isReadByParent = true;
 	}
 }
 
-void cyberpunk::parseNode(FileCursor& cursor, cyberpunk::NodeEntry& node) {
-	const auto parserFn = findParser(node.name);
+void cyberpunk::ParseNode(FileCursor& cursor, cyberpunk::NodeEntry& node) {
+	const auto parserFn = FindParser(node.name);
 
-	cursor.offset = node.offset;
+	cursor.offset = node.offset; // cursor.seekTo(FileCursor::SeekTo::Start, node.offset);
 	cursor.readInt();
 
 	node.nodeData = parserFn(cursor, node);

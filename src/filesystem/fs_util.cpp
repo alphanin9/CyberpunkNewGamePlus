@@ -98,13 +98,6 @@ std::filesystem::path GetLatestPointOfNoReturnSave()
               [](const SaveData& aLhs, const SaveData& aRhs)
               { return aLhs.m_time.time_since_epoch() > aRhs.m_time.time_since_epoch(); });
 
-    constexpr auto printLoadingFile = false;
-
-    if constexpr (printLoadingFile)
-    {
-        std::println("Loading file {}...", vecSavePaths.at(0).m_path.string());
-    }
-
     return vecSavePaths.at(0).m_path;
 }
 

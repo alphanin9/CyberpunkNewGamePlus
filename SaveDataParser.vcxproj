@@ -197,7 +197,6 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReader.hpp" />
     <ClInclude Include="src\parsing\fileReader.hpp" />
-    <ClInclude Include="src\redscript_api\callback_system\eventCallback.hpp" />
     <ClInclude Include="src\redscript_api\redscriptBindings.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
