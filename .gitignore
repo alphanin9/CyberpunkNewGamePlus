@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# WolvenKit artifacts
+.zip
+
+# Staging directory artifacts
+tools/distribution/staging

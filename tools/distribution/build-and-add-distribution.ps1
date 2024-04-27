@@ -1,0 +1,1 @@
+param ($ReleaseBin, $ProjectName = "NewGamePlus")
