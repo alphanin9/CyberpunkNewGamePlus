@@ -20,7 +20,7 @@ namespace hooking {
 		SelectGameDefinition m_originalFn = nullptr;
 
 		uint64_t* __fastcall m_detourFn(uint64_t* aDepotPath, GamedefType aGamedefType) {
-			if (!PluginContext::m_isSecretOverrideActivated || !PluginContext::m_isInStartNewGame) {
+			if (!PluginContext::m_isNewGamePlusActive || !PluginContext::m_isInStartNewGame) {
 				return m_originalFn(aDepotPath, aGamedefType);
 			}
 
@@ -30,7 +30,7 @@ namespace hooking {
 
 			*aDepotPath = PluginContext::m_ngPlusGameDefinitionHash;
 
-			PluginContext::m_isSecretOverrideActivated = false;
+			PluginContext::m_isNewGamePlusActive = false;
 			return aDepotPath;
 		}
 	}

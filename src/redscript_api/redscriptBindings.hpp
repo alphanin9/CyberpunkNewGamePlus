@@ -138,27 +138,22 @@ enum class ENewGamePlusStartType
     Invalid
 };
 
-class TopSecretSystem : public Red::IGameSystem
+class NewGamePlusSystem : public Red::IGameSystem
 {
 public:
-    bool IsAttached() const
-    {
-        return m_isAttached;
-    }
-
     PlayerSaveData GetSaveData()
     {
         return m_saveData;
     }
 
-    bool GetSecretVariableState() const
+    bool GetNewGamePlusState() const
     {
-        return PluginContext::m_isSecretOverrideActivated;
+        return PluginContext::m_isNewGamePlusActive;
     }
 
-    void SetSecretVariableState(bool aNewState)
+    void SetNewGamePlusState(bool aNewState)
     {
-        PluginContext::m_isSecretOverrideActivated = aNewState;
+        PluginContext::m_isNewGamePlusActive = aNewState;
     }
 
     void SetNewGamePlusGameDefinition(ENewGamePlusStartType aStartType)
@@ -240,16 +235,6 @@ public:
     }
 
 private:
-    void OnWorldAttached(Red::world::RuntimeScene* aScene)
-    {
-        m_isAttached = true;
-    }
-
-    void OnWorldDetached(Red::world::RuntimeScene* aScene)
-    {
-        m_isAttached = false;
-    }
-
     // CRINGE (AND SLOW) CODE AHEAD (It's actually not too slow in the release configuration)
     // This is the result of not using proper RTTI classes...
     void LoadPlayerDevelopmentData(const redRTTI::RTTIValue& aPlayerDevelopmentData)
@@ -704,48 +689,25 @@ private:
                 m_saveData.m_playerVehicleGarage.PushBack(vehicleId);
             }
         }
-
-        /*
-        auto root = std::any_cast<redRTTI::persistent::RedClassMap>(aClassMap());
-        // Really need a typedef for arrays
-        // Some sort of .at_as<>(std::string_view aProperty) method for class maps as well
-        // But that's a lot of refactoring....
-
-        for (auto unlockedVehicle :
-             std::any_cast<std::vector<redRTTI::persistent::RedValueWrapper>>(root.at("unlockedVehicleArray")()))
-        {
-            auto unlockedVehicleData = std::any_cast<redRTTI::persistent::RedClassMap>(unlockedVehicle());
-            auto vehicleIdData = std::any_cast<redRTTI::persistent::RedClassMap>(unlockedVehicleData.at("vehicleID")());
-            auto vehicleRecordId = std::any_cast<RED4ext::TweakDBID>(vehicleIdData.at("recordID")());
-
-            if (std::find(blacklistedVehicles.begin(), blacklistedVehicles.end(), vehicleRecordId) ==
-                blacklistedVehicles.end())
-            {
-                m_saveData.m_playerVehicleGarage.PushBack(vehicleRecordId);
-            }
-        }
-        */ 
     }
 
-    bool m_isAttached{};
     PlayerSaveData m_saveData{};
     std::string m_lastError{};
 
     Red::TweakDB* m_tweakDb;
 
-    RTTI_IMPL_TYPEINFO(TopSecretSystem);
+    RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
     RTTI_IMPL_ALLOCATOR();
 };
 } // namespace redscript
 
 RTTI_DEFINE_ENUM(redscript::ENewGamePlusStartType);
 
-RTTI_DEFINE_CLASS(redscript::TopSecretSystem, {
-    RTTI_METHOD(IsAttached);
+RTTI_DEFINE_CLASS(redscript::NewGamePlusSystem, {
     RTTI_METHOD(ParsePointOfNoReturnSaveData);
     RTTI_METHOD(HasPointOfNoReturnSave);
-    RTTI_METHOD(GetSecretVariableState);
-    RTTI_METHOD(SetSecretVariableState);
+    RTTI_METHOD(GetNewGamePlusState);
+    RTTI_METHOD(SetNewGamePlusState);
     RTTI_METHOD(GetSaveData);
     RTTI_METHOD(SetNewGamePlusGameDefinition);
     RTTI_METHOD(IsSaveValidForNewGamePlus);

@@ -6,7 +6,7 @@
 
 namespace PluginContext {
 	inline bool m_isInStartNewGame{};
-	inline bool m_isSecretOverrideActivated{};
+	inline bool m_isNewGamePlusActive{};
 
 	inline Red::PluginHandle m_redPlugin;
 	inline const Red::Sdk* m_redSdk;

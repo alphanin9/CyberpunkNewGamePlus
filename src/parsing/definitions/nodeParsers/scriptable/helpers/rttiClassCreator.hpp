@@ -260,20 +260,29 @@ public:
         {
             for (auto fieldDesc : fieldDescriptors)
             {
-                aCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + fieldDesc.m_offset);
-
-				auto& fieldName = m_names.at(fieldDesc.m_nameId);
-                const auto prop = classType->GetProperty(fieldName.c_str());
-				
-				if (!prop)
+                try
                 {
-					// Something went very wrong - maybe it's a mod that was uninstalled between making the save and us parsing it?
-                    throw std::runtime_error{
-                        std::format("Class {} does not have property {}", classType->GetName().ToString(), fieldName)};
-				}
+                    aCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + fieldDesc.m_offset);
 
-				retValue[fieldName] = ReadValue(aCursor, prop->type);
-                usedProps.insert(prop->name);
+                    auto& fieldName = m_names.at(fieldDesc.m_nameId);
+                    const auto prop = classType->GetProperty(fieldName.c_str());
+
+                    if (!prop)
+                    {
+                        // Something went very wrong - maybe it's a mod that was uninstalled between making the save and
+                        // us parsing it?
+                        // In any case, with scriptable systems we're in a better state, as we know the next field's offset
+                        throw std::runtime_error{std::format("Class {} does not have property {}",
+                                                             classType->GetName().ToString(), fieldName)};
+                    }
+
+                    retValue[fieldName] = ReadValue(aCursor, prop->type);
+                    usedProps.insert(prop->name);
+                }
+                catch (std::exception e)
+                {
+                    PluginContext::Error(std::format("scriptable::ReadClass->fieldDesc: {}, skipping to next field", e.what()));
+                }                
 			}
 
 			for (auto prop : properties)
@@ -293,7 +302,7 @@ public:
 		}
         catch (std::exception e)
         {
-            PluginContext::Error(std::format("scriptable::ReadClass EXCEPTION: {}", e.what()));
+            PluginContext::Error(std::format("scriptable::ReadClass: {}", e.what()));
             return retValue;
 		}
 
