@@ -363,7 +363,7 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # WolvenKit artifacts
-.zip
+*.zip
 
 # Staging directory artifacts
 tools/distribution/staging
