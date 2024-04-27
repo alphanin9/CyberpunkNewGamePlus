@@ -24,6 +24,7 @@
     <ProjectGuid>{1dd1e650-8868-4484-a085-7ab5849f58e4}</ProjectGuid>
     <RootNamespace>SaveDataParser</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>NewGamePlus</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
