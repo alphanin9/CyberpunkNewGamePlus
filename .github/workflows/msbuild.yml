@@ -62,7 +62,7 @@ jobs:
 
           # Copy the license and third-party licenses.
           Copy-Item -Path ./LICENSE -Destination $packagingDir/red4ext/plugins/NewGamePlus/LICENSE
-          Copy-Item -Path ./THIRD_PARTY_LICENSES.md -Destination $packagingDir/red4ext/plugins/NewGamePlus/THIRD_PARTY_LICENSES
+          Copy-Item -Path ./THIRDPARTY_LICENSES -Destination $packagingDir/red4ext/plugins/NewGamePlus/THIRD_PARTY_LICENSES
 
           # Create the ZIP file.
           7z a NewGamePlus.zip $packagingDir/*
