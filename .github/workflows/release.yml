@@ -11,9 +11,6 @@ env:
   BUILD_CONFIGURATION: Release
   BUILD_PLATFORM: x64
 
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: windows-latest
