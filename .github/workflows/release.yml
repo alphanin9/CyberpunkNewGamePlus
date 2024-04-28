@@ -11,6 +11,9 @@ env:
   BUILD_CONFIGURATION: Release
   BUILD_PLATFORM: x64
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -79,6 +82,7 @@ jobs:
       uses: softprops/action-gh-release@v2.0.4
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      
       with:
         append_body: true
         body: |
