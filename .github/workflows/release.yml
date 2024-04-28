@@ -80,7 +80,7 @@ jobs:
         echo "NGPLUS_SHA256=${only_hash}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
 
     - name: Upload build to releases
-      uses: softprops/action-gh-release@2.0.4
+      uses: softprops/action-gh-release@v2.0.4
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       with:
