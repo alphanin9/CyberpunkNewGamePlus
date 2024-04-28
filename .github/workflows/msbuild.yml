@@ -73,13 +73,13 @@ jobs:
           Copy-Item -Path ./LICENSE -Destination $packagingDir/red4ext/plugins/NewGamePlus/LICENSE
           Copy-Item -Path ./THIRDPARTY_LICENSES -Destination $packagingDir/red4ext/plugins/NewGamePlus/THIRD_PARTY_LICENSES
 
+          # DLL hash generation
+          Get-FileHash -Algorithm SHA256 -Path $packagingDir/red4ext/plugins/NewGamePlus/NewGamePlus.dll | Out-File: $packagingDir/red4ext/plugins/NewGamePlus/DLLHash.txt
+          Get-FileHash -Algorithm SHA256 -Path $packagingDir/red4ext/plugins/NewGamePlus/NewGamePlus.pdb | Out-File: $packagingDir/red4ext/plugins/NewGamePlus/PDBHash.txt
+          
           # Create the ZIP file.
           7z a NewGamePlus.zip $packagingDir/*
 
-    - name: Debugging thing
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: |
-        Tree /F
     - name: Upload build
       uses: actions/upload-artifact@v3
       with:
