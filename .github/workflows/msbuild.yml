@@ -76,8 +76,12 @@ jobs:
           # Create the ZIP file.
           7z a NewGamePlus.zip $packagingDir/*
 
+    - name: Debugging thing
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: |
+        Tree /F
     - name: Upload build
       uses: actions/upload-artifact@v3
       with:
         name: newgameplus_${{ env.NGPLUS_COMMIT_SHA }}
-        path: ${{env.GITHUB_WORKSPACE}}/_packaging/
+        path: _packaging/
