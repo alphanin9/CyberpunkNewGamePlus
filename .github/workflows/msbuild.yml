@@ -8,8 +8,6 @@ name: MSBuild
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 env:
   # Path to the solution file relative to the root of the project.
@@ -33,6 +31,11 @@ jobs:
       with:
         submodules: 'recursive'
 
+    - name: Create environment variables
+      run: |
+          $commitSha = (git rev-parse --short $env:GITHUB_SHA)
+          echo "NGPLUS_COMMIT_SHA=${commitSha}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
+      
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
 
@@ -42,8 +45,6 @@ jobs:
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
       run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=${{env.BUILD_PLATFORM}} ${{env.SOLUTION_FILE_PATH}}
 
     - name: Prepare ZIP
@@ -51,18 +52,32 @@ jobs:
       run: |
           $packagingDir = "./_packaging"
 
-          # Create the necessary directories.
+          # Create the necessary directories
           New-Item -ItemType directory -Path $packagingDir/red4ext
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus
-
-          # Copy the build artifacts.
+          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/redscript
+          # Copy the build artifacts
+          
           Copy-Item -Path ./x64/Release/NewGamePlus.dll -Destination $packagingDir/red4ext/plugins/NewGamePlus
           Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $packagingDir/red4ext/plugins/NewGamePlus
 
-          # Copy the license and third-party licenses.
+          # Copy over Redscript
+          Copy-Item -Path ./scripting/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/redscript -Recurse
+
+          # Copy over archive and .xl file (TODO: pack .archive dynamically)
+          Copy-Item -Path ./wolvenkit/packed/archive/pc/mod/NewGamePlus.archive -Destination $packagingDir/red4ext/plugins/NewGamePlus
+          Copy-Item -Path ./wolvenkit/packed/archive/pc/mod/NewGamePlus.archive.xl -Destination $packagingDir/red4ext/plugins/NewGamePlus
+
+          # Copy the license and third-party licenses
           Copy-Item -Path ./LICENSE -Destination $packagingDir/red4ext/plugins/NewGamePlus/LICENSE
           Copy-Item -Path ./THIRDPARTY_LICENSES -Destination $packagingDir/red4ext/plugins/NewGamePlus/THIRD_PARTY_LICENSES
 
           # Create the ZIP file.
           7z a NewGamePlus.zip $packagingDir/*
+
+    - name: Upload build
+      uses: actions/upload-artifact@v3
+      with:
+        name: newgameplus_${{ env.NGPLUS_COMMIT_SHA }}
+        path: ${{env.GITHUB_WORKSPACE}}/_packaging/
