@@ -74,8 +74,8 @@ jobs:
           Copy-Item -Path ./THIRDPARTY_LICENSES -Destination $packagingDir/red4ext/plugins/NewGamePlus/THIRD_PARTY_LICENSES
 
           # DLL hash generation
-          Get-FileHash -Algorithm SHA256 -Path $packagingDir/red4ext/plugins/NewGamePlus/NewGamePlus.dll | Out-File: $packagingDir/red4ext/plugins/NewGamePlus/DLLHash.txt
-          Get-FileHash -Algorithm SHA256 -Path $packagingDir/red4ext/plugins/NewGamePlus/NewGamePlus.pdb | Out-File: $packagingDir/red4ext/plugins/NewGamePlus/PDBHash.txt
+          Get-FileHash -Algorithm SHA256 -Path $packagingDir/red4ext/plugins/NewGamePlus/NewGamePlus.dll | Out-File -FilePath $packagingDir/red4ext/plugins/NewGamePlus/DLLHash.txt -Width 512
+          Get-FileHash -Algorithm SHA256 -Path $packagingDir/red4ext/plugins/NewGamePlus/NewGamePlus.pdb | Out-File -FilePath $packagingDir/red4ext/plugins/NewGamePlus/PDBHash.txt -Width 512
           
           # Create the ZIP file.
           7z a NewGamePlus.zip $packagingDir/*
