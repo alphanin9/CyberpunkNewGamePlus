@@ -82,11 +82,10 @@ jobs:
       uses: softprops/action-gh-release@v2.0.4
       env:
         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      
       with:
         append_body: true
         body: |
           ### SHA256 of release:
           - ${{env.NGPLUS_SHA256}}
         files: | 
-          _packaging/NewGamePlus_${{env.NGPLUS_VERSION }}.zip
+          NewGamePlus_${{env.NGPLUS_VERSION }}.zip
