@@ -17,16 +17,41 @@
 
 namespace cyberpunk {
 	struct RedPackageHeader {
-		std::byte version;
-		std::byte unk1;
-		std::uint16_t numSections;
-		std::uint32_t numComponents;
-		std::uint32_t refPoolDescOffset;
-		std::uint32_t refPoolDataOffset;
-		std::uint32_t namePoolDescOffset;
-		std::uint32_t namePoolDataOffset;
-		std::uint32_t chunkDescOffset;
-		std::uint32_t chunkDataOffset;
+		std::byte m_version;
+		std::byte m_unk1;
+		std::uint16_t m_numSections;
+		std::uint32_t m_numComponents;
+		std::uint32_t m_refPoolDescOffset;
+		std::uint32_t m_refPoolDataOffset;
+		std::uint32_t m_namePoolDescOffset;
+		std::uint32_t m_namePoolDataOffset;
+		std::uint32_t m_chunkDescOffset;
+		std::uint32_t m_chunkDataOffset;
+
+		static RedPackageHeader FromCursor(FileCursor& aCursor)
+        {
+            RedPackageHeader header{};
+
+			header.m_version = static_cast<std::byte>(aCursor.readByte());
+            header.m_unk1 = static_cast<std::byte>(aCursor.readByte());
+
+            header.m_numSections = aCursor.readUShort();
+            header.m_numComponents = aCursor.readUInt();
+
+            if (header.m_numSections == 7)
+            {
+                header.m_refPoolDescOffset = aCursor.readUInt();
+                header.m_refPoolDataOffset = aCursor.readUInt();
+            }
+
+            header.m_namePoolDescOffset = aCursor.readUInt();
+            header.m_namePoolDataOffset = aCursor.readUInt();
+
+            header.m_chunkDescOffset = aCursor.readUInt();
+            header.m_chunkDataOffset = aCursor.readUInt();
+
+			return header;
+		}
 	};
 
 	struct RedPackageImportHeader {
@@ -53,7 +78,7 @@ namespace cyberpunk {
 
 		}
 
-		static RedPackageImportHeader fromCursor(FileCursor& cursor) {
+		static RedPackageImportHeader FromCursor(FileCursor& cursor) {
 			return RedPackageImportHeader{ cursor.readUInt() };
 		}
 	};
@@ -77,7 +102,7 @@ namespace cyberpunk {
 
 		}
 
-		static RedPackageNameHeader fromCursor(FileCursor& cursor) {
+		static RedPackageNameHeader FromCursor(FileCursor& cursor) {
 			return RedPackageNameHeader{ cursor.readUInt() };
 		}
 	};
@@ -101,7 +126,7 @@ namespace cyberpunk {
 		std::uint32_t typeId;
 		std::uint32_t offset;
 
-		static RedPackageChunkHeader fromCursor(FileCursor& cursor) {
+		static RedPackageChunkHeader FromCursor(FileCursor& cursor) {
 			auto ret = RedPackageChunkHeader{};
 
 			ret.typeId = cursor.readUInt();
@@ -112,7 +137,7 @@ namespace cyberpunk {
 	};
 
 	struct RedChunk {
-		std::string m_typeName;
+		Red::CName m_typeName;
         redRTTI::RTTIValue m_redClass;
 		bool m_isUsed; // For handles, maybe, sometime later...
 	};
@@ -121,9 +146,11 @@ namespace cyberpunk {
 	public:
 		static constexpr std::wstring_view nodeName = L"ScriptableSystemsContainer";
 
-		RedPackageHeader header;
-		std::vector<RED4ext::CRUID> rootCruids;
-		std::vector<std::string> names;
+		RedPackageHeader m_header;
+		std::vector<Red::CRUID> m_rootCruids;
+		std::vector<Red::CName> m_names;
+        std::vector<RedImport> m_imports;
+        std::vector<RedPackageChunkHeader> m_chunkHeaders;
 		std::vector<RedChunk> chunks;
 
 	private:
@@ -136,151 +163,89 @@ namespace cyberpunk {
 			return ret;
 		}
 
-		void ReadChunk(RED4ext::CRTTISystem* aRtti, FileCursor& aCursor, RedChunk& chunk) {
-            scriptable::ScriptableReader reader{names};
-
-			redRTTI::RTTIValue wrapper{};
-
-			wrapper.m_typeName = Red::CName{chunk.m_typeName.c_str()};
-            wrapper.m_typeIndex = Red::ERTTIType::Class;
-            wrapper.m_value = reader.ReadClass(aCursor, aRtti->GetClass(wrapper.m_typeName));
-
-			chunk.m_redClass = wrapper;
-
-			/*auto chunkValue = redRTTI::RedValueWrapper{};
-
-			chunkValue.m_typeName = RED4ext::CName{ chunk.m_typeName.c_str() };
-			chunkValue.m_typeIndex = RED4ext::ERTTIType::Class;
-			chunkValue.m_value = redRTTI::reader::readClass(aCursor, aRtti, chunk.m_typeName, names);
-
-			redRTTI::dumper::dumpClass(chunkValue);
-			
-			chunk.m_redClass = chunkValue;*/
-		}
 	public:
 		virtual void ReadData(FileCursor& cursor, NodeEntry& node) {
 			const auto dataSize = cursor.readInt();
+            if (dataSize == 0)
+            {
+                return;
+			}
+
 			auto dataBuffer = cursor.readBytes(dataSize);
 			{
 				auto cursor = FileCursor{ dataBuffer.data(), dataBuffer.size() };
 
-				if (dataSize == 0) {
-					return;
-				}
-
-				header.version = static_cast<std::byte>(cursor.readByte());
-				header.unk1 = static_cast<std::byte>(cursor.readByte());
-
-				header.numSections = cursor.readUShort();
-				header.numComponents = cursor.readUInt();
-
-				if (header.numSections == 7) {
-					header.refPoolDescOffset = cursor.readUInt();
-					header.refPoolDataOffset = cursor.readUInt();
-				}
-
-				header.namePoolDescOffset = cursor.readUInt();
-				header.namePoolDataOffset = cursor.readUInt();
-
-				header.chunkDescOffset = cursor.readUInt();
-				header.chunkDataOffset = cursor.readUInt();
+				m_header = RedPackageHeader::FromCursor(cursor);
 
 				const auto numCruids = cursor.readUInt();
 
-				rootCruids.reserve(numCruids);
 				for (auto i = 0; i < numCruids; i++) {
-					rootCruids.push_back(cursor.readCruid());
+                    m_rootCruids.push_back(cursor.readCruid());
 				}
 
 				const auto baseOffset = cursor.offset;
-				const auto refCount = (header.refPoolDataOffset - header.refPoolDescOffset) / sizeof(RedPackageImportHeader);
 
-				auto refDesc = std::vector<RedPackageImportHeader>{};
+				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_refPoolDescOffset);
 
-				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + header.refPoolDescOffset);
-
-				for (auto i = 0; i < refCount; i++) {
-					refDesc.push_back(RedPackageImportHeader::fromCursor(cursor));
-				}
-
-				auto imports = std::vector<RedImport>{};
-				imports.reserve(refCount);
+				const auto refDesc = cursor.ReadMultipleClasses<RedPackageImportHeader>(
+                    (m_header.m_refPoolDataOffset - m_header.m_refPoolDescOffset) / sizeof(RedPackageImportHeader));
 
 				for (auto ref : refDesc) {
 					cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + ref.offset());
-					imports.push_back(ReadImport(cursor, ref));
+					m_imports.push_back(ReadImport(cursor, ref));
 				}
 
-				const auto nameCount = (header.namePoolDataOffset - header.namePoolDescOffset) / sizeof(RedPackageNameHeader);
-				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + header.namePoolDescOffset);
-				auto nameDesc = std::vector<RedPackageNameHeader>{};
-				nameDesc.reserve(nameCount);
-
-				for (auto i = 0; i < nameCount; i++) {
-					nameDesc.push_back(RedPackageNameHeader::fromCursor(cursor));
-				}
-
-				//auto dumpTarget = std::ofstream{ "RTTIClassDump.txt" };
+				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_namePoolDescOffset);
+                const auto nameDesc = cursor.ReadMultipleClasses<RedPackageNameHeader>(
+                    (m_header.m_namePoolDataOffset - m_header.m_namePoolDescOffset) / sizeof(RedPackageNameHeader));
 
 				for (auto name : nameDesc) {
 					cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + name.offset());
-					names.push_back(cursor.readNullTerminatedString());
+					m_names.push_back(cursor.ReadCName());
 				}
 
-				//for (auto& name : names) {
-				//	dumpTarget << name << "\n";
-				//}
+				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_chunkDescOffset);
 
-				const auto chunkCount = (header.chunkDataOffset - header.chunkDescOffset) / sizeof(RedPackageChunkHeader);
-				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + header.chunkDescOffset);
+				m_chunkHeaders = cursor.ReadMultipleClasses<RedPackageChunkHeader>(
+                    (m_header.m_chunkDataOffset - m_header.m_chunkDescOffset) / sizeof(RedPackageChunkHeader));
 
-				auto chunkHeaders = std::vector<RedPackageChunkHeader>{};
-
-				for (auto i = 0; i < chunkCount; i++) {
-					chunkHeaders.push_back(RedPackageChunkHeader::fromCursor(cursor));
-				}
-				auto rttiSystem = RED4ext::CRTTISystem::Get();
-				const auto chunkPos = cursor.offset;
+				scriptable::ScriptableReader reader{m_names};
 				
-				for (auto chunkHeader : chunkHeaders) {
-					auto chunk = RedChunk{};
-					chunk.m_typeName = names.at(chunkHeader.typeId);
+				for (RedPackageChunkHeader chunkHeader : m_chunkHeaders) {
+                    RedChunk chunk{};
 
-					//dumpRttiClassData(dumpTarget, rttiSystem, rttiSystem->GetClass(RED4ext::CName{ chunk.m_typeName.c_str() }), 0);
+					chunk.m_typeName = m_names.at(chunkHeader.typeId);
 					
+					auto chunkType = PluginContext::m_rtti->GetType(chunk.m_typeName);
+
+					// We don't know the chunk's type, blame mods
+                    if (!chunkType)
+                    {
+                        PluginContext::Error(std::format(
+                            "ScriptableSystemParser: Tried to load chunk {} with no RTTI representation, skipping to next chunk...",
+                            chunk.m_typeName.ToString()));
+                        continue;
+					}
+
+					// Don't care about the chunk size actually
+					cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + chunkHeader.offset);
+
+					redRTTI::RTTIValue classWrapper{};
+
+					classWrapper.m_typeIndex = chunkType->GetType();
+                    classWrapper.m_typeName = chunk.m_typeName;
+                    classWrapper.m_value = reader.ReadClass(cursor, chunkType);
+					
+					chunk.m_redClass = classWrapper;
+
 					chunks.push_back(chunk);
-				}
-
-				cursor.seekTo(FileCursor::SeekTo::Start, chunkPos); // Makes no sense, given we don't read anything
-				// But do as Seberoth does
-
-				for (auto i = 0; i < chunks.size(); i++) {
-					auto& chunk = chunks.at(i);
-					auto chunkSize = 0;
-					auto cursorOffset = cursor.offset;
-
-					if (i == chunks.size() - 1) {
-						chunkSize = cursor.size - cursor.offset;
-					}
-					else {
-						chunkSize = (baseOffset + chunkHeaders.at(i + 1).offset) - cursor.offset;
-					}
-
-					auto expected = cursorOffset + chunkSize;
-
-					ReadChunk(rttiSystem, cursor, chunk);
-
-					if (cursor.offset != expected) {
-						// Fix up chunk offset, we read something wrong, better be in the right place for the next chunk
-						cursor.seekTo(FileCursor::SeekTo::Start, expected);
-					}
 				}
 			}
 		}
 
 		const RedChunk& LookupChunk(std::string_view aChunkType) const {
 			auto chunkIter = std::find_if(chunks.begin(), chunks.end(), [aChunkType](const RedChunk& aChunk) {
-				return aChunk.m_typeName == aChunkType;
+				return aChunk.m_typeName == aChunkType.data();
 			});
 
 			if (chunkIter == chunks.end())

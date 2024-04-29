@@ -5,6 +5,16 @@
 #include <string>
 
 #include <RED4ext/RED4ext.hpp>
+#include <RedLib.hpp>
+
+struct FileCursor;
+
+template<typename ReadableClass>
+concept IsClassReadable = requires(ReadableClass cl, FileCursor& aCursor) {
+    {
+        ReadableClass::FromCursor(aCursor)
+    } -> std::same_as<ReadableClass>;
+};
 
 // Dumb and unsafe code
 struct FileCursor {
@@ -219,6 +229,16 @@ struct FileCursor {
         return ret;
     }
 
+    Red::CName ReadCName()
+    {
+        // Dumb code, I hate it
+        std::string_view data = reinterpret_cast<const char*>(baseAddress + offset);
+        
+        offset += data.length();
+
+        return Red::CName{data.data()};
+    }
+
     int64_t findByteSequence(std::string_view bytes) const {
         auto start = reinterpret_cast<char*>(baseAddress + offset);
         auto end = start + size;
@@ -234,5 +254,27 @@ struct FileCursor {
 
     std::ptrdiff_t getRemaining() const {
         return size - offset;
+    }
+
+    template<typename ReadableClass>
+    requires IsClassReadable<ReadableClass>
+    ReadableClass ReadClass()
+    {
+        return ReadableClass::FromCursor(*this);
+    }
+
+    template<typename ReadableClass>
+    requires IsClassReadable<ReadableClass>
+    std::vector<ReadableClass> ReadMultipleClasses(std::size_t aCount)
+    {
+        std::vector<ReadableClass> ret{};
+        ret.reserve(aCount);
+
+        for (std::size_t i = 0u; i < aCount; i++)
+        {
+            ret.push_back(ReadClass<ReadableClass>());
+        }
+
+        return ret;
     }
 };

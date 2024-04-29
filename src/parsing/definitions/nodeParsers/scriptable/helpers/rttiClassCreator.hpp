@@ -18,7 +18,7 @@ struct RedPackageFieldHeader
     std::uint16_t m_typeId;
     std::uint32_t m_offset;
 
-    inline static RedPackageFieldHeader fromCursor(FileCursor& cursor)
+    inline static RedPackageFieldHeader FromCursor(FileCursor& cursor)
     {
         auto ret = RedPackageFieldHeader{};
 
@@ -30,10 +30,27 @@ struct RedPackageFieldHeader
     }
 };
 
+struct OptimizedFieldHeader
+{
+    Red::CName m_name;
+    Red::CName m_type;
+    std::uint32_t m_offset;
+
+    inline static OptimizedFieldHeader Make(RedPackageFieldHeader aHeader, const std::vector<Red::CName>& aNames)
+    {
+        OptimizedFieldHeader ret{};
+        ret.m_name = aNames.at(aHeader.m_nameId);
+        ret.m_type = aNames.at(aHeader.m_typeId);
+        ret.m_offset = aHeader.m_offset;
+
+        return ret;
+    }
+};
+
 class ScriptableReader : public redRTTI::RTTIReader
 {
 private:
-    std::vector<std::string> m_names;
+    std::vector<Red::CName> m_names;
 
 	virtual Red::TweakDBID ReadTweakDBID(FileCursor& aCursor)
     {
@@ -62,7 +79,7 @@ private:
             return Red::CName{};
 		}
 
-		return Red::CName{m_names.at(index).c_str()};
+		return m_names.at(index);
 	}
 
 	virtual Red::CName ReadEnum(FileCursor& aCursor, Red::CBaseRTTIType* aType)
@@ -231,86 +248,82 @@ private:
         }
 
         return retValue;
-	}
-
+    }
 public:
+    // HACK, lambda needs access to m_names
+    OptimizedFieldHeader MakeOptimizedHeader(RedPackageFieldHeader aHeader)
+    {
+        return OptimizedFieldHeader::Make(aHeader, m_names);
+    }
+
     virtual redRTTI::RTTIClass ReadClass(FileCursor& aCursor, Red::CBaseRTTIType* aType)
     {
         const auto baseOffset = aCursor.offset;
         const auto fieldCount = aCursor.readUShort();
 
-		std::vector<RedPackageFieldHeader> fieldDescriptors{};
+		auto fieldDescriptors = aCursor.ReadMultipleClasses<RedPackageFieldHeader>(fieldCount);
+        std::unordered_map<Red::CName, OptimizedFieldHeader> fieldDescMap{};
 
-		fieldDescriptors.reserve(fieldCount);
-
-		for (auto i = 0; i < fieldCount; i++)
-        {
-            fieldDescriptors.push_back(RedPackageFieldHeader::fromCursor(aCursor));
-		}
+        std::transform(fieldDescriptors.begin(), fieldDescriptors.end(),
+                       std::inserter(fieldDescMap, fieldDescMap.end()),
+                       [this](RedPackageFieldHeader aHeader)
+                       { 
+                            auto optimized = this->MakeOptimizedHeader(aHeader); 
+                            return std::make_pair(optimized.m_name, optimized);
+                       });
 
 		auto classType = static_cast<Red::CClass*>(aType);
-		auto properties = Red::DynArray<Red::CProperty*>{};
+        Red::DynArray<Red::CProperty*> properties{};
 
 		classType->GetProperties(properties);
-        std::unordered_set<Red::CName> usedProps{};
-
 		redRTTI::RTTIClass retValue{};
 
-		try
+        try
         {
-            for (auto fieldDesc : fieldDescriptors)
+            for (auto prop : properties)
             {
-                try
+                if (prop->flags.isSavable == 0 && prop->flags.isPersistent == 0)
                 {
-                    aCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + fieldDesc.m_offset);
-
-                    auto& fieldName = m_names.at(fieldDesc.m_nameId);
-                    const auto prop = classType->GetProperty(fieldName.c_str());
-
-                    if (!prop)
-                    {
-                        // Something went very wrong - maybe it's a mod that was uninstalled between making the save and
-                        // us parsing it?
-                        // In any case, with scriptable systems we're in a better state, as we know the next field's offset
-                        throw std::runtime_error{std::format("Class {} does not have property {}",
-                                                             classType->GetName().ToString(), fieldName)};
-                    }
-
-                    retValue[fieldName] = ReadValue(aCursor, prop->type);
-                    usedProps.insert(prop->name);
+                    continue;
                 }
-                catch (std::exception e)
+                auto saveProp = fieldDescMap.find(prop->name);
+                
+                // We don't have it stored, this is normal behavior, use the default value (generally 0 is fine)
+                if (saveProp == fieldDescMap.end())
                 {
-                    PluginContext::Error(std::format("scriptable::ReadClass->fieldDesc: {}, skipping to next field", e.what()));
-                }                
-			}
-
-			for (auto prop : properties)
-            {
-                if (prop->flags.isPersistent == 0 && prop->flags.isSavable == 0)
-                {
+                    retValue[prop->name.ToString()] = GetDefaultValue(prop->type);
                     continue;
-				}
+                }
 
-				if (usedProps.contains(prop->name))
+                // Verify prop type
+                auto storedType = PluginContext::m_rtti->GetType(saveProp->second.m_type);
+
+                if (!storedType || prop->type != storedType)
                 {
+                    PluginContext::Error(
+                        std::format("scriptable::ReadClass, class {}, property type mismatch - {} != {}",
+                                    classType->GetName().ToString(), saveProp->second.m_type.ToString(),
+                                    prop->type->GetName().ToString()));
+                    retValue[prop->name.ToString()] = GetDefaultValue(prop->type);
                     continue;
-				}
+                }
 
-				retValue[prop->name.ToString()] = GetDefaultValue(prop->type);
-			}
-		}
+                aCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + saveProp->second.m_offset);
+
+                retValue[prop->name.ToString()] = ReadValue(aCursor, prop->type);
+            }
+        }
         catch (std::exception e)
         {
             PluginContext::Error(std::format("scriptable::ReadClass: {}", e.what()));
             return retValue;
-		}
+        }
 
-		retValue.SetFullyLoaded(true);
+        retValue.SetFullyLoaded(true);
         return retValue;
 	}
 
-	ScriptableReader(const std::vector<std::string>& aNames)
+	ScriptableReader(const std::vector<Red::CName>& aNames)
     {
         m_names = aNames;
 	}

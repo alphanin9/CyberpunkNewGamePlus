@@ -12,6 +12,7 @@ namespace PluginContext {
 	inline const Red::Sdk* m_redSdk;
 
 	inline std::uint64_t m_ngPlusGameDefinitionHash = Red::FNV1a64("base\\quest\\newgameplus.gamedef");
+    inline Red::CRTTISystem* m_rtti;
 
     inline void Spew(std::string_view aStr)
     {

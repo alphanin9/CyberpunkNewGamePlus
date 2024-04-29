@@ -42,6 +42,8 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 		if (!hooking::InitializeHooking()) {
 			return false;
 		}
+
+		PluginContext::m_rtti = Red::CRTTISystem::Get();
 		break;
 	}
 	case RED4ext::EMainReason::Unload:
