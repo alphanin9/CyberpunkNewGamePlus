@@ -59,15 +59,19 @@ private:
 
 	virtual Red::NodeRef ReadNodeRef(FileCursor& aCursor)
     {
-        const auto str = aCursor.readLengthPrefixedString();
-        const auto lengthNeeded =
-            WideCharToMultiByte(CP_UTF8, 0, &str.at(0), str.size(), nullptr, 0, nullptr, nullptr);
+        // string_view does not actually work for this, as null terminators don't get preserved
+        // Thus, we have to do expensive std::string
+        const auto size = aCursor.readUShort();
+        const auto name = aCursor.readString(size);
 
-        std::string ascii(lengthNeeded, 0);
+        constexpr auto shouldDumpNodeRefs = false;
 
-        WideCharToMultiByte(CP_UTF8, 0, &str.at(0), str.size(), &ascii.at(0), lengthNeeded, nullptr, nullptr);
-
-        return Red::NodeRef{ascii.c_str()};
+        if constexpr (shouldDumpNodeRefs)
+        {
+            PluginContext::Spew(std::format("NodeRef {}", name));
+        }
+        
+        return name.c_str();
 	}
 	
 	virtual Red::CName ReadCName(FileCursor& aCursor)

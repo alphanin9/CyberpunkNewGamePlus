@@ -4,13 +4,16 @@ import NGPlus.SpawnTags.NewGamePlusSpawnTagController
 
 class PlayerProgressionLoader {
     private let m_ngPlusPlayerSaveData: PlayerSaveData;
+    private let m_ngPlusSystem: ref<NewGamePlusSystem>;
     private let m_player: ref<PlayerPuppet>;
     private let m_equipmentSystem: ref<ScriptableSystem>;
 
     public func LoadPlayerProgression(player: ref<PlayerPuppet>) -> Void {
         // Has some bugs during the Q001 start, iron them out later!
-        this.m_ngPlusPlayerSaveData = GameInstance.GetNewGamePlusSystem().GetSaveData();
+        this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
+        this.m_ngPlusPlayerSaveData = this.m_ngPlusSystem.GetSaveData();
         if !this.m_ngPlusPlayerSaveData.isValid {
+            this.m_ngPlusSystem.Error("PlayerProgressionLoader::LoadPlayerProgression, save data invalid!");
             return;
         }
         this.m_player = player;
@@ -27,6 +30,8 @@ class PlayerProgressionLoader {
         playerDevelopmentData.ScaleNPCsToPlayerLevel();
 
         NewGamePlusSpawnTagController.RestoreSpawnTags();
+
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerProgression done!");
     }
 
     private func LoadFacts() {
@@ -36,6 +41,8 @@ class PlayerProgressionLoader {
         questsSystem.SetFactStr("sq032_johnny_friend", 1);
         questsSystem.SetFactStr("q003_jackie_motorcycle_upgraded", 1);
         questsSystem.SetFactStr("q000_patch_2_0_new_game", 1);
+
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadFacts done!");
     }   
 
     private func LoadPlayerDevelopment() {
@@ -106,6 +113,7 @@ class PlayerProgressionLoader {
             .GetQuestsSystem(this.m_player.GetGame())
             .SetFact(n"ep1_tree_unlocked", 1);
         playerDevelopmentData.m_isInNgPlus = false;
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerDevelopment done!");
     }
 
     private final static func GetBigStatValue() -> Float {
@@ -128,6 +136,8 @@ class PlayerProgressionLoader {
             transactionSystem
                 .GiveItem(this.m_player, inventoryItem.itemId, inventoryItem.itemQuantity);
         }
+
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerInventory done!");
     }
     
     // Problem: by the time we call this function, the stash is not loaded in yet?
@@ -151,6 +161,7 @@ class PlayerProgressionLoader {
             transactionSystem
                 .GiveItem(stashEntity, inventoryItem.itemId, inventoryItem.itemQuantity);
         }
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerStash done!");
     }
 
     private func EquipCyberware(item: ItemID, addToInventory: Bool) {
@@ -189,6 +200,8 @@ class PlayerProgressionLoader {
         let subdermalArmorId = ItemID.FromTDBID(t"Items.AdvancedBoringPlatingLegendaryPlusPlus");
 
         this.EquipCyberware(subdermalArmorId, true); // Might as well add it to inventory as well, free NG+ gift LMAO
+
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerEquippedCyberware done!");
     }
 
     private func LoadPlayerGarage() {
@@ -208,21 +221,44 @@ class PlayerProgressionLoader {
         if !addedQuadra {
             vehicleSystem.EnablePlayerVehicleID(quadraTdbid, true, false);
         }
+
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerGarage done!");
     }
 }
 
-@addField(PlayerPuppet)
-let m_hasAppliedSavegameProgression: Bool;
+class NewGamePlusProgressionLoader extends ScriptableSystem {
+    private let m_questsSystem: ref<QuestsSystem>;
+    private let m_ngPlusSystem: ref<NewGamePlusSystem>;
+    private let m_progressionLoaderListenerId: Uint32;
 
-@addMethod(PlayerPuppet)
-protected cb func OnNewGamePlusLoadProgressionEvent(event: ref<ActionEvent>) {
-    if NotEquals(event.eventAction, n"OnProgressionLoading") {
-        return;
+    private final func OnAttach() -> Void {
+        this.m_questsSystem = GameInstance.GetQuestsSystem(GetGameInstance());
+        this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
+        
+        this.m_progressionLoaderListenerId = this.m_questsSystem.RegisterListener(n"ngplus_apply_progression", this, n"OnProgressionTransferCalled");
     }
-    if this.m_hasAppliedSavegameProgression {
-        return;
+
+    public final func OnProgressionTransferCalled(factValue: Int32) -> Void {
+        this.m_ngPlusSystem.Spew(s"NewGamePlusProgressionLoader::OnProgressionTransferCalled \(factValue)");
+        if(factValue != 1) {
+            return;
+        }
+
+        let player = GameInstance.GetPlayerSystem(GetGameInstance()).GetLocalPlayerMainGameObject() as PlayerPuppet;
+
+        if !IsDefined(player) {
+            this.m_ngPlusSystem.Error("NewGamePlusProgressionLoader::OnProgressionTransferCalled, player not found");
+            return;
+        }
+
+        let loader = new PlayerProgressionLoader();
+
+        loader.LoadPlayerProgression(player);
+
+        this.m_questsSystem.SetFactStr("ngplus_apply_progression", 0);
     }
-    this.m_hasAppliedSavegameProgression = true;
-    let progressionLoader = new PlayerProgressionLoader();
-    progressionLoader.LoadPlayerProgression(this);
+
+    private final func OnDetach() -> Void {
+        this.m_questsSystem.UnregisterListener(n"ngplus_apply_progression", this.m_progressionLoaderListenerId);
+    }
 }

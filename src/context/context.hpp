@@ -17,7 +17,7 @@ namespace PluginContext {
     inline void Spew(std::string_view aStr)
     {
         Red::Log::Debug("{}", aStr);
-        m_redSdk->logger->Trace(m_redPlugin, aStr.data());
+        m_redSdk->logger->Info(m_redPlugin, aStr.data());
 	}
 
     inline void Error(std::string_view aStr)

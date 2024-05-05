@@ -229,14 +229,30 @@ struct FileCursor {
         return ret;
     }
 
+    std::string_view ReadStringView()
+    {
+        std::string_view data = reinterpret_cast<const char*>(baseAddress + offset);
+        offset += data.length();
+        return data;
+    }
+
+    // This does not actually own the memory, so it'll get fucked the moment the container deallocates...
+    // No real problem
+    std::string_view ReadStringView(std::size_t aLength)
+    {
+        std::string_view data{reinterpret_cast<const char*>(baseAddress + offset), aLength};
+        offset += aLength;
+        return data;
+    }
+
     Red::CName ReadCName()
     {
-        // Dumb code, I hate it
-        std::string_view data = reinterpret_cast<const char*>(baseAddress + offset);
-        
-        offset += data.length();
+        return Red::CName{ReadStringView().data()};
+    }
 
-        return Red::CName{data.data()};
+    Red::CName ReadCNameHash()
+    {
+        return Red::CName{readUInt64()};
     }
 
     int64_t findByteSequence(std::string_view bytes) const {
@@ -274,6 +290,16 @@ struct FileCursor {
         {
             ret.push_back(ReadClass<ReadableClass>());
         }
+
+        return ret;
+    }
+
+    // Returns a cursor pointing to current offset with size = aSize, increments size
+    FileCursor CreateSubCursor(std::size_t aSize)
+    {
+        const FileCursor ret{baseAddress + offset, aSize};
+
+        offset += aSize;
 
         return ret;
     }

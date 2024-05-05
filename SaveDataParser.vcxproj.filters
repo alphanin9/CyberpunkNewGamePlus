@@ -74,5 +74,17 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReaderNative.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\nativeScriptableReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\playerDevelopmentData.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\nativePersistencyReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

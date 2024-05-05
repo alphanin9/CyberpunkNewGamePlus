@@ -1,18 +1,19 @@
 #pragma once
 
-// Parsing scriptable systems seems too difficult to be worth it to do it in native code
-// So into the trash it goes (for now)
-// Someone else can improve it
-
+#include <format>
+#include <fstream>
 #include <print>
 #include <stdexcept>
 #include <unordered_map>
 #include <vector>
-#include <fstream>
+
 #include <RED4ext/RED4ext.hpp>
+#include <RED4ext/Package.hpp>
 #include <RedLib.hpp>
 
 #include "helpers/rttiClassCreator.hpp"
+#include "helpers/nativeScriptableReader.hpp"
+#include "helpers/classDefinitions/playerDevelopmentData.hpp"
 #include "../defaultNodeData.hpp"
 
 namespace cyberpunk {
@@ -145,6 +146,9 @@ namespace cyberpunk {
 	class ScriptableSystemsContainerNode : public NodeDataInterface {
 	public:
 		static constexpr std::wstring_view nodeName = L"ScriptableSystemsContainer";
+        static constexpr auto m_enableImports = false;
+        static constexpr auto m_testNativeReader = false;
+        static constexpr auto m_dumpEnumSizes = false;
 
 		RedPackageHeader m_header;
 		std::vector<Red::CRUID> m_rootCruids;
@@ -171,42 +175,49 @@ namespace cyberpunk {
                 return;
 			}
 
-			auto dataBuffer = cursor.readBytes(dataSize);
 			{
-				auto cursor = FileCursor{ dataBuffer.data(), dataBuffer.size() };
+				// Test of less allocation-happy sub-FileCursor creation
+                auto subCursor = cursor.CreateSubCursor(dataSize);
 
-				m_header = RedPackageHeader::FromCursor(cursor);
+				m_header = RedPackageHeader::FromCursor(subCursor);
 
-				const auto numCruids = cursor.readUInt();
+				const auto numCruids = subCursor.readUInt();
 
-				for (auto i = 0; i < numCruids; i++) {
-                    m_rootCruids.push_back(cursor.readCruid());
+				for (auto i = 0u; i < numCruids; i++) {
+                    m_rootCruids.push_back(subCursor.readCruid());
 				}
 
-				const auto baseOffset = cursor.offset;
+				const auto baseOffset = subCursor.offset;
 
-				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_refPoolDescOffset);
+				if constexpr (m_enableImports)
+                {
+                    subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_refPoolDescOffset);
 
-				const auto refDesc = cursor.ReadMultipleClasses<RedPackageImportHeader>(
-                    (m_header.m_refPoolDataOffset - m_header.m_refPoolDescOffset) / sizeof(RedPackageImportHeader));
+                    const auto refDesc = subCursor.ReadMultipleClasses<RedPackageImportHeader>(
+                        (m_header.m_refPoolDataOffset - m_header.m_refPoolDescOffset) / sizeof(RedPackageImportHeader));
 
-				for (auto ref : refDesc) {
-					cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + ref.offset());
-					m_imports.push_back(ReadImport(cursor, ref));
+                    for (auto ref : refDesc)
+                    {
+                        subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + ref.offset());
+                        m_imports.push_back(ReadImport(subCursor, ref));
+                    }
 				}
 
-				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_namePoolDescOffset);
-                const auto nameDesc = cursor.ReadMultipleClasses<RedPackageNameHeader>(
-                    (m_header.m_namePoolDataOffset - m_header.m_namePoolDescOffset) / sizeof(RedPackageNameHeader));
+				subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_namePoolDescOffset);
+                //const auto nameDesc = subCursor.ReadMultipleClasses<RedPackageNameHeader>(
+                //    (m_header.m_namePoolDataOffset - m_header.m_namePoolDescOffset) / sizeof(RedPackageNameHeader));
 
-				for (auto name : nameDesc) {
-					cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + name.offset());
-					m_names.push_back(cursor.ReadCName());
+				for (auto name : subCursor.ReadMultipleClasses<RedPackageNameHeader>(
+                         (m_header.m_namePoolDataOffset - m_header.m_namePoolDescOffset) /
+                         sizeof(RedPackageNameHeader)))
+                {
+                    subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + name.offset());
+                    m_names.push_back(subCursor.ReadCName());
 				}
 
-				cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_chunkDescOffset);
+				subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_chunkDescOffset);
 
-				m_chunkHeaders = cursor.ReadMultipleClasses<RedPackageChunkHeader>(
+				m_chunkHeaders = subCursor.ReadMultipleClasses<RedPackageChunkHeader>(
                     (m_header.m_chunkDataOffset - m_header.m_chunkDescOffset) / sizeof(RedPackageChunkHeader));
 
 				scriptable::ScriptableReader reader{m_names};
@@ -228,17 +239,73 @@ namespace cyberpunk {
 					}
 
 					// Don't care about the chunk size actually
-					cursor.seekTo(FileCursor::SeekTo::Start, baseOffset + chunkHeader.offset);
+                    subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + chunkHeader.offset);
 
 					redRTTI::RTTIValue classWrapper{};
 
 					classWrapper.m_typeIndex = chunkType->GetType();
                     classWrapper.m_typeName = chunk.m_typeName;
-                    classWrapper.m_value = reader.ReadClass(cursor, chunkType);
+                    classWrapper.m_value = reader.ReadClass(subCursor, chunkType);
 					
 					chunk.m_redClass = classWrapper;
 
 					chunks.push_back(chunk);
+
+					if constexpr (m_testNativeReader)
+                    {
+                        
+						// Seek back to the start, we'll reread it using our new tech
+                        subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + chunkHeader.offset);
+
+						auto instance = static_cast<Red::CClass*>(chunkType)->CreateInstance(true);
+
+						scriptable::native::ScriptableReader nativeReader{&m_names};
+
+						nativeReader.ReadClass(subCursor, instance, chunkType);
+                        if (classWrapper.m_typeName == "PlayerDevelopmentData")
+                        {
+                            // We're only interested in PDD for testing...
+                            scriptable::native::test::PlayerDevelopmentData testClass{instance};
+
+                            for (auto attribute : testClass.GetAttributes())
+                            {
+                                const auto name = static_cast<std::uint32_t>(attribute.GetAttributeName());
+                                const auto value = attribute.GetValue();
+
+                                PluginContext::Spew(std::format("Attribute {} value {}", name, value));
+                            }
+                        }
+
+						// Later we'll incorporate that into RedChunk destructor
+						static_cast<Red::CClass*>(chunkType)->Destruct(instance);
+                        static_cast<Red::CClass*>(chunkType)->GetAllocator()->Free(instance);
+					}
+				}
+				
+				// Test what enum sizes actually show up during scriptable reads
+                if constexpr (m_testNativeReader && m_dumpEnumSizes)
+                {
+                    for (auto size : scriptable::native::ScriptableReader::s_enumSizes)
+                    {
+                        PluginContext::Spew(std::format("Size {}", static_cast<int>(size)));
+					}
+
+					std::unordered_set<std::uint8_t> globalEnumSizes{};
+
+					PluginContext::m_rtti->types.ForEach([&globalEnumSizes](Red::CName aName, Red::CBaseRTTIType* aType)
+                        {
+                            if (aType->GetType() == Red::ERTTIType::Enum)
+                            {
+                                globalEnumSizes.insert(static_cast<Red::CEnum*>(aType)->actualSize);
+							}
+                        });
+
+					PluginContext::Spew("Enum sizes across all RTTI");
+
+					for (auto size : globalEnumSizes)
+                    {
+                        PluginContext::Spew(std::format("Size {}", static_cast<int>(size)));
+                    }
 				}
 			}
 		}

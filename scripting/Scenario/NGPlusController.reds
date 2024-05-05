@@ -147,14 +147,14 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
 
     private final func OnSelectedSave(controller: ref<LoadListItem>) -> Void {
         let saveName = this.m_saves[controller.Index()];
-
-        LogChannel(n"DEBUG", s"Loading save \(saveName) for player progression transfer...");
-
+        this.m_ngPlusSystem.Spew(s"Loading save \(saveName) for player progression transfer...");
+        
         // Need to add code for working with save data here
         // Also maybe add something for exception handling?
 
         let result = this.m_ngPlusSystem.ParsePointOfNoReturnSaveData(saveName);
-        LogChannel(n"DEBUG", s"Result: \(result)");
+
+        this.m_ngPlusSystem.Spew(s"Progression loader result: \(result)");
 
         if !result {
             controller.SetInvalid("Failed to parse progression data!\nTry going into a game and making a Point Of No Return save.");

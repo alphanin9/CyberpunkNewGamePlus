@@ -154,135 +154,135 @@ protected:
     virtual RTTIValue ReadWeakHandle(FileCursor& aCursor, Red::CBaseRTTIType* aType) = 0;
 
     virtual RTTIValue ReadValue(FileCursor& aCursor, Red::CBaseRTTIType* aType) = 0;
+public:
+    virtual RTTIClass ReadClass(FileCursor& aCursor, Red::CBaseRTTIType* aType) = 0;
+    // This should be fine to include in the abstract class
     virtual RTTIValue GetDefaultValue(Red::CBaseRTTIType* aType)
-    {
-        RTTIValue retValue{};
+        {
+            RTTIValue retValue{};
 
-        retValue.m_typeIndex = aType->GetType();
-        retValue.m_typeName = aType->GetName();
+            retValue.m_typeIndex = aType->GetType();
+            retValue.m_typeName = aType->GetName();
 
-        using Red::ERTTIType;
-        
-        if (aType->GetType() == ERTTIType::Name)
-        {
-            if (aType->GetName() == Red::CName{"CName"})
-            {
-                retValue.m_value = Red::CName{};
-            }
-        }
-        else if (aType->GetType() == ERTTIType::Fundamental)
-        {
-            if (aType->GetName() == Red::CName{"Int8"})
-            {
-                retValue.m_value = std::int8_t{};
-            }
-            else if (aType->GetName() == Red::CName{"Uint8"})
-            {
-                retValue.m_value = std::uint8_t{};
-            }
-            else if (aType->GetName() == Red::CName{"Int16"})
-            {
-                retValue.m_value = std::int16_t{};
-            }
-            else if (aType->GetName() == Red::CName{"Uint16"})
-            {
-                retValue.m_value = std::uint16_t{};
-            }
-            else if (aType->GetName() == Red::CName{"Int32"})
-            {
-                retValue.m_value = std::int32_t{};
-            }
-            else if (aType->GetName() == Red::CName{"Uint32"})
-            {
-                retValue.m_value = std::uint32_t{};
-            }
-            else if (aType->GetName() == Red::CName{"Int64"})
-            {
-                retValue.m_value = std::int64_t{};
-            }
-            else if (aType->GetName() == Red::CName{"Uint64"})
-            {
-                retValue.m_value = std::uint64_t{};
-            }
-            else if (aType->GetName() == Red::CName{"Float"})
-            {
-                retValue.m_value = float{};
-            }
-            else if (aType->GetName() == Red::CName{"Double"})
-            {
-                retValue.m_value = double{};
-            }
-            else if (aType->GetName() == Red::CName{"Bool"})
-            {
-                retValue.m_value = false;
-            }
-        }
-        else if (aType->GetType() == ERTTIType::Simple)
-        {
-            if (aType->GetName() == Red::CName{"TweakDBID"})
-            {
-                retValue.m_value = Red::TweakDBID{};
-            }
-            else if (aType->GetName() == Red::CName{"NodeRef"})
-            {
-                retValue.m_value = Red::NodeRef{};
-            }
-        }
-        else if (aType->GetType() == ERTTIType::Enum)
-        {
-            auto typeEnum = static_cast<Red::CEnum*>(aType);
-            if (typeEnum->hashList.size > 0)
-            {
-                retValue.m_value = typeEnum->hashList[0];
-            }
-            else
-            {
-                retValue.m_value = Red::CName{};
-            }
-        }
-        else if (aType->GetType() == ERTTIType::Array || aType->GetType() == ERTTIType::StaticArray)
-        {
-            retValue.m_value = RTTIArray{};
-        }
-        else if (aType->GetType() == ERTTIType::Class)
-        {
-            auto classType = static_cast<Red::CClass*>(aType);
-            RTTIClass defaultValue{};
+            using Red::ERTTIType;
 
-            Red::DynArray<Red::CProperty*> classProps{};
-
-            classType->GetProperties(classProps);
-
-            for (auto prop : classProps)
+            if (aType->GetType() == ERTTIType::Name)
             {
-                if (prop->flags.isPersistent == 0 && prop->flags.isSavable == 0)
+                if (aType->GetName() == Red::CName{"CName"})
                 {
-                    continue;
+                    retValue.m_value = Red::CName{};
+                }
+            }
+            else if (aType->GetType() == ERTTIType::Fundamental)
+            {
+                if (aType->GetName() == Red::CName{"Int8"})
+                {
+                    retValue.m_value = std::int8_t{};
+                }
+                else if (aType->GetName() == Red::CName{"Uint8"})
+                {
+                    retValue.m_value = std::uint8_t{};
+                }
+                else if (aType->GetName() == Red::CName{"Int16"})
+                {
+                    retValue.m_value = std::int16_t{};
+                }
+                else if (aType->GetName() == Red::CName{"Uint16"})
+                {
+                    retValue.m_value = std::uint16_t{};
+                }
+                else if (aType->GetName() == Red::CName{"Int32"})
+                {
+                    retValue.m_value = std::int32_t{};
+                }
+                else if (aType->GetName() == Red::CName{"Uint32"})
+                {
+                    retValue.m_value = std::uint32_t{};
+                }
+                else if (aType->GetName() == Red::CName{"Int64"})
+                {
+                    retValue.m_value = std::int64_t{};
+                }
+                else if (aType->GetName() == Red::CName{"Uint64"})
+                {
+                    retValue.m_value = std::uint64_t{};
+                }
+                else if (aType->GetName() == Red::CName{"Float"})
+                {
+                    retValue.m_value = float{};
+                }
+                else if (aType->GetName() == Red::CName{"Double"})
+                {
+                    retValue.m_value = double{};
+                }
+                else if (aType->GetName() == Red::CName{"Bool"})
+                {
+                    retValue.m_value = false;
+                }
+            }
+            else if (aType->GetType() == ERTTIType::Simple)
+            {
+                if (aType->GetName() == Red::CName{"TweakDBID"})
+                {
+                    retValue.m_value = Red::TweakDBID{};
+                }
+                else if (aType->GetName() == Red::CName{"NodeRef"})
+                {
+                    retValue.m_value = Red::NodeRef{};
+                }
+            }
+            else if (aType->GetType() == ERTTIType::Enum)
+            {
+                auto typeEnum = static_cast<Red::CEnum*>(aType);
+                if (typeEnum->hashList.size > 0)
+                {
+                    retValue.m_value = typeEnum->hashList[0];
+                }
+                else
+                {
+                    retValue.m_value = Red::CName{};
+                }
+            }
+            else if (aType->GetType() == ERTTIType::Array || aType->GetType() == ERTTIType::StaticArray)
+            {
+                retValue.m_value = RTTIArray{};
+            }
+            else if (aType->GetType() == ERTTIType::Class)
+            {
+                auto classType = static_cast<Red::CClass*>(aType);
+                RTTIClass defaultValue{};
+
+                Red::DynArray<Red::CProperty*> classProps{};
+
+                classType->GetProperties(classProps);
+
+                for (auto prop : classProps)
+                {
+                    if (prop->flags.isPersistent == 0 && prop->flags.isSavable == 0)
+                    {
+                        continue;
+                    }
+
+                    defaultValue[prop->name.ToString()] = GetDefaultValue(prop->type);
                 }
 
-                defaultValue[prop->name.ToString()] = GetDefaultValue(prop->type);
+                retValue.m_value = defaultValue;
+            }
+            else if (aType->GetType() == ERTTIType::Handle || aType->GetType() == ERTTIType::WeakHandle)
+            {
+                retValue.m_value = int{};
+            }
+            else if (aType->GetType() == ERTTIType::WeakHandle)
+            {
+                retValue.m_value = int{};
             }
 
-            retValue.m_value = defaultValue;
-        }
-        else if (aType->GetType() == ERTTIType::Handle || aType->GetType() == ERTTIType::WeakHandle)
-        {
-            retValue.m_value = int{};
-        }
-        else if (aType->GetType() == ERTTIType::WeakHandle)
-        {
-            retValue.m_value = int{};
-        }
+            if (!retValue.m_value.has_value())
+            {
+                retValue.m_value = std::string{"Unknown value"};
+            }
 
-        if (!retValue.m_value.has_value())
-        {
-            retValue.m_value = std::string{"Unknown value"};
+            return retValue;
         }
-
-        return retValue;
-    }
-
-    public:
-    virtual RTTIClass ReadClass(FileCursor& aCursor, Red::CBaseRTTIType* aType) = 0;
 };
 }

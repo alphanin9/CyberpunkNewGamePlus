@@ -132,8 +132,6 @@ private final func AddTutorialItemsToVendorNgPlus() {
         transactionSystem.GiveItem(vendor.GetVendorObject(), itemStack.itemID, itemStack.quantity);
     }
 
-    LogChannel(n"DEBUG", "Added tutorial cyberware!");
-
     this.m_questSystem.SetFact(n"tutorial_ripperdoc_items_added", 1);
 }
 
@@ -235,7 +233,6 @@ protected cb func OnInitialize() -> Bool {
     }
 
     if this.m_isTutorial && this.m_questSystem.GetFact(n"ngplus_active") > 0 {
-        LogChannel(n"DEBUG", "RipperDocGameController::OnInitialize, NG+ detected, unsetting tutorial and resolving status effect...");
         this.m_vikTutorial = false;
         this.m_isTutorial = false;
         this.m_mq048TutorialFact = false;

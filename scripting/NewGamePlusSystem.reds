@@ -51,6 +51,11 @@ public native class NewGamePlusSystem extends IGameSystem {
     public native func SetNewGamePlusGameDefinition(startType: ENewGamePlusStartType) -> Void ;
 
     public native func IsSaveValidForNewGamePlus(saveName: script_ref<String>) -> Bool;
+
+    // Since LogChannel is not declared for everybody...
+
+    public native func Spew(str: script_ref<String>) -> Void;
+    public native func Error(str: script_ref<String>) -> Void;
 }
 
 @addMethod(GameInstance)

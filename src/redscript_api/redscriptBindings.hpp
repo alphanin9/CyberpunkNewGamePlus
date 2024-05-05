@@ -211,17 +211,26 @@ public:
             const auto scriptableSystemsContainerNode = static_cast<cyberpunk::ScriptableSystemsContainerNode*>(
                 parser.LookupNode(cyberpunk::ScriptableSystemsContainerNode::nodeName)->nodeData.get());
 
+            // TODO: refactor scriptable bits to use native classes instead of the current method!
+            // The current method is dumb
             const auto& equipmentSystemPlayerData =
                 scriptableSystemsContainerNode->LookupChunk("EquipmentSystemPlayerData").m_redClass;
             const auto& playerDevelopmentData =
                 scriptableSystemsContainerNode->LookupChunk("PlayerDevelopmentData").m_redClass;
-            const auto& vehicleGarageData = persistencySystemNode->LookupChunk("vehicleGarageComponentPS").m_redClass;
+
+            // Vehicle garage can technically not be present in a savegame
+
+            if (persistencySystemNode->HasChunk("vehicleGarageComponentPS"))
+            {
+                const auto& vehicleGarageData =
+                    persistencySystemNode->LookupChunk("vehicleGarageComponentPS").m_redClass;
+
+                LoadGarage(vehicleGarageData);
+            }
 
             LoadPlayerDevelopmentData(playerDevelopmentData);
             LoadEquipmentSystemPlayerData(equipmentSystemPlayerData);
-            //LoadInventory(inventoryNode);
             LoadInventoryNew(inventoryNode);
-            LoadGarage(vehicleGarageData);
         }
         catch (std::exception e)
         {
@@ -234,6 +243,16 @@ public:
         return true;
     }
 
+    // Some users don't have LogChannel defined :P
+    void Spew(Red::ScriptRef<Red::CString>& aStr)
+    {
+        PluginContext::Spew(aStr->c_str());
+    }
+
+    void Error(Red::ScriptRef<Red::CString>& aStr)
+    {
+        PluginContext::Error(aStr->c_str());
+    }
 private:
     // CRINGE (AND SLOW) CODE AHEAD (It's actually not too slow in the release configuration)
     // This is the result of not using proper RTTI classes...
@@ -711,4 +730,6 @@ RTTI_DEFINE_CLASS(redscript::NewGamePlusSystem, {
     RTTI_METHOD(GetSaveData);
     RTTI_METHOD(SetNewGamePlusGameDefinition);
     RTTI_METHOD(IsSaveValidForNewGamePlus);
+    RTTI_METHOD(Spew);
+    RTTI_METHOD(Error);
 });

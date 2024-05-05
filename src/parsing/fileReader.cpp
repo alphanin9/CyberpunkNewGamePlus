@@ -143,7 +143,6 @@ namespace parser {
 	}
 
 	std::vector<std::byte> Parser::DecompressFile() {
-		// RETARDED CODE ALERT
 		// THIS IS COMPLETELY FUCKED
 		auto compressionTablePosition = 0ll;
 		{
@@ -176,12 +175,13 @@ namespace parser {
 					if (fileCursor.readUInt() == compression::COMPRESSION_BLOCK_MAGIC) {
 						fileCursor.readInt();
 
-						auto inBuffer = fileCursor.readBytes(chunkInfo.compressedSize - 8);
-						// RETARDED CODE
+						// auto inBuffer = fileCursor.readBytes(chunkInfo.compressedSize - 8);
+                        auto subCursor = fileCursor.CreateSubCursor(chunkInfo.compressedSize - 8);
 						// NEEDS TO HAVE A BETTER, FASTER WAY
 						outBuffer.resize(chunkInfo.decompressedSize);
 
-						LZ4_decompress_safe(reinterpret_cast<char*>(inBuffer.data()), reinterpret_cast<char*>(outBuffer.data()), inBuffer.size(), outBuffer.size());
+						//LZ4_decompress_safe(reinterpret_cast<char*>(inBuffer.data()), reinterpret_cast<char*>(outBuffer.data()), inBuffer.size(), outBuffer.size());
+                        LZ4_decompress_safe(reinterpret_cast<char*>(subCursor.baseAddress + subCursor.offset), reinterpret_cast<char*>(outBuffer.data()), subCursor.size, outBuffer.size());
 					}
 					else {
 						fileCursor.offset -= 4;
