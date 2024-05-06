@@ -43,6 +43,7 @@ mod\quest\newgameplus\new_q101\q101p2vroom.questphase
 mod\quest\newgameplus\new_q101\Q101P2VRoom.questphase
 mod\quest\newgameplus\new_q101\q101setjohnnystuff.questphase
 mod\quest\newgameplus\new_q101\Q101SetJohnnyStuff.questphase
+mod\quest\newgameplus\restorehud.questphase
 mod\quest\newgameplus\RestoreHUD.questphase
 mod\quest\newgameplus\SetBandageOutfit.questphase
 mod\quest\newgameplus\setplayerprogression.questphase

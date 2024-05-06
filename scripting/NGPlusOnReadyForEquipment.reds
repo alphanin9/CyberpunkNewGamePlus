@@ -98,7 +98,7 @@ class PlayerProgressionLoader {
                 levelGainReason,
                 true
             );
-        playerDevelopmentData.SetDevelopmentsPoint(gamedataDevelopmentPointType.Attribute, 0);
+        playerDevelopmentData.SetDevelopmentsPoint(gamedataDevelopmentPointType.Attribute, this.m_ngPlusPlayerSaveData.playerAttributePoints);
         playerDevelopmentData
             .SetDevelopmentsPoint(
                 gamedataDevelopmentPointType.Primary,
@@ -164,14 +164,14 @@ class PlayerProgressionLoader {
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerStash done!");
     }
 
-    private func EquipCyberware(item: ItemID, addToInventory: Bool) {
+    private func EquipCyberware(item: ItemID, addToInventory: Bool, slotIndex: Int32) {
         if ItemID.IsValid(item) {
             let equipRequest = new EquipRequest();
 
             equipRequest.addToInventory = addToInventory;
             equipRequest.itemID = item;
             equipRequest.owner = this.m_player;
-            equipRequest.slotIndex = 0;
+            equipRequest.slotIndex = slotIndex;
 
             this.m_equipmentSystem.QueueRequest(equipRequest);
         }
@@ -190,16 +190,23 @@ class PlayerProgressionLoader {
         // Also, cyberware capacity would fuck me over
         // Maybe a new character creation screen where the player can equip their own cyberware selection? Nah, pain in the ass
 
-        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedOperatingSystem, false);
-        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedKiroshis, false);
-        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedArmCyberware, false);
-        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedLegCyberware, false);
+        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedOperatingSystem, false, 0);
+        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedKiroshis, false, 0);
+        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedArmCyberware, false, 0);
+        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedLegCyberware, false, 0);
+
+        let i = 0;
+        // This may fail with Cyberware-EX and other mods that fuck with equip slots?
+        for cardiovascularCw in this.m_ngPlusPlayerSaveData.playerEquippedCardiacSystemCW {
+            this.EquipCyberware(cardiovascularCw, false, i);
+            i += 1;
+        }
 
         // After testing the Q001 start I've come to the conclusion Q001 is too much of a pain in the ass to do at Level 50 without armor
         // So we add a little bit
         let subdermalArmorId = ItemID.FromTDBID(t"Items.AdvancedBoringPlatingLegendaryPlusPlus");
 
-        this.EquipCyberware(subdermalArmorId, true); // Might as well add it to inventory as well, free NG+ gift LMAO
+        this.EquipCyberware(subdermalArmorId, true, 0); // Might as well add it to inventory as well, free NG+ gift LMAO
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerEquippedCyberware done!");
     }

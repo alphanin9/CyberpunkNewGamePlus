@@ -140,14 +140,33 @@ namespace cyberpunk {
 	struct RedChunk {
 		Red::CName m_typeName;
         redRTTI::RTTIValue m_redClass;
+
+		// I do not believe anything non-serializable can be inside scriptablesystem :P
+		Red::ISerializable* m_instance;
+
 		bool m_isUsed; // For handles, maybe, sometime later...
+
+		// Clean the pointer up
+		~RedChunk()
+        {
+            if (!m_instance)
+            {
+                return;
+			}
+
+			if (m_instance->CanBeDestructed())
+            {
+                m_instance->GetType()->Destruct(m_instance);
+			}
+
+			m_instance->GetAllocator()->Free(m_instance);
+		}
 	};
 
 	class ScriptableSystemsContainerNode : public NodeDataInterface {
 	public:
 		static constexpr std::wstring_view nodeName = L"ScriptableSystemsContainer";
         static constexpr auto m_enableImports = false;
-        static constexpr auto m_testNativeReader = false;
         static constexpr auto m_dumpEnumSizes = false;
 
 		RedPackageHeader m_header;
@@ -155,7 +174,7 @@ namespace cyberpunk {
 		std::vector<Red::CName> m_names;
         std::vector<RedImport> m_imports;
         std::vector<RedPackageChunkHeader> m_chunkHeaders;
-		std::vector<RedChunk> chunks;
+		std::vector<RedChunk> m_chunks;
 
 	private:
 		RedImport ReadImport(FileCursor& cursor, RedPackageImportHeader importHeader) {
@@ -220,70 +239,39 @@ namespace cyberpunk {
 				m_chunkHeaders = subCursor.ReadMultipleClasses<RedPackageChunkHeader>(
                     (m_header.m_chunkDataOffset - m_header.m_chunkDescOffset) / sizeof(RedPackageChunkHeader));
 
-				scriptable::ScriptableReader reader{m_names};
-				
-				for (RedPackageChunkHeader chunkHeader : m_chunkHeaders) {
-                    RedChunk chunk{};
+                scriptable::native::ScriptableReader nativeReader{&m_names};
 
-					chunk.m_typeName = m_names.at(chunkHeader.typeId);
-					
+				m_chunks.resize(m_chunkHeaders.size());
+
+				for (auto i = 0u; i < m_chunkHeaders.size(); i++)
+                {
+                    auto header = m_chunkHeaders.at(i);
+                    auto& chunk = m_chunks.at(i);
+
+					chunk.m_typeName = m_names.at(header.typeId);
+
 					auto chunkType = PluginContext::m_rtti->GetType(chunk.m_typeName);
 
-					// We don't know the chunk's type, blame mods
-                    if (!chunkType)
+					// We don't know the chunk's type (or the type is wacky), blame mods
+                    if (!chunkType || chunkType->GetType() != Red::ERTTIType::Class)
                     {
-                        PluginContext::Error(std::format(
-                            "ScriptableSystemParser: Tried to load chunk {} with no RTTI representation, skipping to next chunk...",
-                            chunk.m_typeName.ToString()));
+                        PluginContext::Error(std::format("ScriptableSystemParser: Tried to load chunk {} with no RTTI "
+                                                         "representation, skipping to next chunk...",
+                                                         chunk.m_typeName.ToString()));
                         continue;
-					}
+                    }
 
-					// Don't care about the chunk size actually
-                    subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + chunkHeader.offset);
+					subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + header.offset);
 
-					redRTTI::RTTIValue classWrapper{};
+					auto instance = static_cast<Red::CClass*>(chunkType)->CreateInstance();
 
-					classWrapper.m_typeIndex = chunkType->GetType();
-                    classWrapper.m_typeName = chunk.m_typeName;
-                    classWrapper.m_value = reader.ReadClass(subCursor, chunkType);
-					
-					chunk.m_redClass = classWrapper;
+					nativeReader.ReadClass(subCursor, instance, chunkType);
 
-					chunks.push_back(chunk);
-
-					if constexpr (m_testNativeReader)
-                    {
-                        
-						// Seek back to the start, we'll reread it using our new tech
-                        subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + chunkHeader.offset);
-
-						auto instance = static_cast<Red::CClass*>(chunkType)->CreateInstance(true);
-
-						scriptable::native::ScriptableReader nativeReader{&m_names};
-
-						nativeReader.ReadClass(subCursor, instance, chunkType);
-                        if (classWrapper.m_typeName == "PlayerDevelopmentData")
-                        {
-                            // We're only interested in PDD for testing...
-                            scriptable::native::test::PlayerDevelopmentData testClass{instance};
-
-                            for (auto attribute : testClass.GetAttributes())
-                            {
-                                const auto name = static_cast<std::uint32_t>(attribute.GetAttributeName());
-                                const auto value = attribute.GetValue();
-
-                                PluginContext::Spew(std::format("Attribute {} value {}", name, value));
-                            }
-                        }
-
-						// Later we'll incorporate that into RedChunk destructor
-						static_cast<Red::CClass*>(chunkType)->Destruct(instance);
-                        static_cast<Red::CClass*>(chunkType)->GetAllocator()->Free(instance);
-					}
+					chunk.m_instance = reinterpret_cast<Red::ISerializable*>(instance);
 				}
 				
 				// Test what enum sizes actually show up during scriptable reads
-                if constexpr (m_testNativeReader && m_dumpEnumSizes)
+                if constexpr (m_dumpEnumSizes)
                 {
                     for (auto size : scriptable::native::ScriptableReader::s_enumSizes)
                     {
@@ -310,12 +298,14 @@ namespace cyberpunk {
 			}
 		}
 
-		const RedChunk& LookupChunk(std::string_view aChunkType) const {
-			auto chunkIter = std::find_if(chunks.begin(), chunks.end(), [aChunkType](const RedChunk& aChunk) {
+		RedChunk& LookupChunk(std::string_view aChunkType) {
+            auto chunkIter =
+                std::find_if(m_chunks.begin(), m_chunks.end(),
+                             [aChunkType](const RedChunk& aChunk) {
 				return aChunk.m_typeName == aChunkType.data();
 			});
 
-			if (chunkIter == chunks.end())
+			if (chunkIter == m_chunks.end())
             {
                 throw std::runtime_error{std::format("Failed to find chunk {}", aChunkType)};
 			}

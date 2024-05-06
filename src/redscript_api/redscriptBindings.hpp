@@ -14,6 +14,29 @@
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemCategory_Record.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType_Record.hpp>
+#include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
+
+#include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/equipmentSystem.hpp"
+#include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/playerDevelopmentData.hpp"
+
+#include <chrono>
+
+// NOT A GOOD IDEA TO HAVE IN A HEADER
+// But who cares?
+
+using scriptable::native::EquipmentSystem::EquipmentSystemPlayerData;
+
+using scriptable::native::PlayerDevelopment::PlayerDevelopmentData;
+// Enums
+using scriptable::native::PlayerDevelopment::AttributeDataType;
+using scriptable::native::PlayerDevelopment::EspionageMilestonePerks;
+
+// Wrappers
+using scriptable::native::PlayerDevelopment::SAttribute;
+using scriptable::native::PlayerDevelopment::SAttributeData;
+using scriptable::native::PlayerDevelopment::SDevelopmentPoints;
+using scriptable::native::PlayerDevelopment::SNewPerk;
+using scriptable::native::PlayerDevelopment::SProficiency;
 
 namespace redscript
 {
@@ -87,7 +110,8 @@ struct PlayerSaveData
     Red::ItemID m_playerEquippedKiroshis{};
     Red::ItemID m_playerEquippedLegCyberware{};
     Red::ItemID m_playerEquippedArmCyberware{};
-    // Maybe add Blood Pump and biomon here as well? Not sure :D
+
+    Red::DynArray<Red::ItemID> m_playerEquippedCardiacSystemCW;
 
     // Filter this from quest vehicles?
     // (Quadra, Demiurge, ETC)
@@ -125,6 +149,7 @@ RTTI_DEFINE_CLASS(redscript::PlayerSaveData, {
     RTTI_PROPERTY(m_playerEquippedKiroshis);
     RTTI_PROPERTY(m_playerEquippedLegCyberware);
     RTTI_PROPERTY(m_playerEquippedArmCyberware);
+    RTTI_PROPERTY(m_playerEquippedCardiacSystemCW);
     RTTI_PROPERTY(m_playerVehicleGarage);
 });
 
@@ -193,6 +218,8 @@ public:
         static const auto basePath = files::GetCpSaveFolder();
         const auto fullPath = basePath / aSaveName->c_str();
 
+        auto start = std::chrono::high_resolution_clock{}.now();
+
         try
         {
             parser::Parser parser{};
@@ -204,28 +231,37 @@ public:
                 return false;
             }
 
+            m_tweakDb = Red::TweakDB::Get();
+
             const auto inventoryNode = static_cast<cyberpunk::InventoryNode*>(
                 parser.LookupNode(cyberpunk::InventoryNode::nodeName)->nodeData.get());
-            const auto persistencySystemNode = static_cast<cyberpunk::PersistencySystemNode*>(
+            auto persistencySystemNode = static_cast<cyberpunk::PersistencySystemNode*>(
                 parser.LookupNode(cyberpunk::PersistencySystemNode::nodeName)->nodeData.get());
-            const auto scriptableSystemsContainerNode = static_cast<cyberpunk::ScriptableSystemsContainerNode*>(
+            auto scriptableSystemsContainerNode = static_cast<cyberpunk::ScriptableSystemsContainerNode*>(
                 parser.LookupNode(cyberpunk::ScriptableSystemsContainerNode::nodeName)->nodeData.get());
 
             // TODO: refactor scriptable bits to use native classes instead of the current method!
             // The current method is dumb
-            const auto& equipmentSystemPlayerData =
-                scriptableSystemsContainerNode->LookupChunk("EquipmentSystemPlayerData").m_redClass;
-            const auto& playerDevelopmentData =
-                scriptableSystemsContainerNode->LookupChunk("PlayerDevelopmentData").m_redClass;
+
+            PlayerDevelopmentData playerDevelopmentData
+            {
+                scriptableSystemsContainerNode->LookupChunk("PlayerDevelopmentData").m_instance
+            };
+
+            EquipmentSystemPlayerData equipmentSystemPlayerData{
+                scriptableSystemsContainerNode->LookupChunk("EquipmentSystemPlayerData").m_instance
+            };
 
             // Vehicle garage can technically not be present in a savegame
-
             if (persistencySystemNode->HasChunk("vehicleGarageComponentPS"))
             {
-                const auto& vehicleGarageData =
-                    persistencySystemNode->LookupChunk("vehicleGarageComponentPS").m_redClass;
+                auto redRepresentation = persistencySystemNode->LookupChunk("vehicleGarageComponentPS")
+                                             .m_classInstance.As<Red::GarageComponentPS>();
 
-                LoadGarage(vehicleGarageData);
+                if (redRepresentation)
+                {
+                    LoadGarageNative(redRepresentation);
+                }
             }
 
             LoadPlayerDevelopmentData(playerDevelopmentData);
@@ -238,6 +274,12 @@ public:
             m_lastError = e.what();
             return false;
         }
+
+        auto end = std::chrono::high_resolution_clock{}.now();
+
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+        PluginContext::Spew(std::format("Time taken: {}", duration));
 
         m_saveData.m_isValid = true;
         return true;
@@ -254,161 +296,193 @@ public:
         PluginContext::Error(aStr->c_str());
     }
 private:
+    void HandleUselessStatPoints()
+    {
+        constexpr auto minAttributeValue = 3;
+        constexpr auto attributeCount = 5;
+
+        constexpr auto maxAttributePointCount = (20 - minAttributeValue) * attributeCount;
+
+        const auto allocatedAttributePoints =
+            (m_saveData.m_playerBodyAttribute + m_saveData.m_playerReflexAttribute + m_saveData.m_playerTechAttribute +
+             m_saveData.m_playerIntelligenceAttribute + m_saveData.m_playerCoolAttribute) -
+            minAttributeValue * attributeCount;
+
+        const auto totalAttributePoints = allocatedAttributePoints + m_saveData.m_playerAttributePoints;
+
+        if (totalAttributePoints >= maxAttributePointCount)
+        {
+            m_saveData.m_playerPerkPoints += m_saveData.m_playerAttributePoints;
+            m_saveData.m_playerAttributePoints = 0;
+        }
+
+        constexpr auto maxRelicPoints = 15;
+
+        if (m_saveData.m_playerRelicPoints > maxRelicPoints)
+        {
+            m_saveData.m_playerPerkPoints += (m_saveData.m_playerRelicPoints - maxRelicPoints);
+            m_saveData.m_playerRelicPoints = maxRelicPoints;
+        }
+
+        // https://old.reddit.com/r/LowSodiumCyberpunk/comments/1690oq4/mathed_out_the_new_perk_trees_coming_in_20_over/
+        constexpr auto maxPerkPointCount = 41 + 46 + 44 + 42 + 46;
+
+        if (m_saveData.m_playerPerkPoints > maxPerkPointCount)
+        {
+            m_saveData.m_playerMoney += (1000 * (m_saveData.m_playerPerkPoints - maxPerkPointCount));
+            m_saveData.m_playerPerkPoints = maxPerkPointCount;
+        }
+    }
+
     // CRINGE (AND SLOW) CODE AHEAD (It's actually not too slow in the release configuration)
     // This is the result of not using proper RTTI classes...
-    void LoadPlayerDevelopmentData(const redRTTI::RTTIValue& aPlayerDevelopmentData)
+    void LoadPlayerDevelopmentData(PlayerDevelopmentData aPlayerDevelopmentData)
     {
-        // Load unspent points? Kinda useless, TBH (Also completely broken with progression builds)
-        // Maybe useful for Relic? Or wraparound into perk points for attribute points that can't be spent anymore
-        for (auto& devPointData : aPlayerDevelopmentData["devPoints"].AsArray())
-        {
-            const auto pointType = devPointData["type"].AsCName();
-            const auto unspentPointCount = devPointData["unspent"].AsInt();
+        auto pSaveData = &m_saveData;
 
-            if (pointType == "Espionage")
+        const auto developmentPointIterator = [pSaveData](SDevelopmentPoints aDevPoints)
+        { 
+            auto spentCount = aDevPoints.GetSpent();
+            auto unspentCount = aDevPoints.GetUnspent();
+
+            switch (aDevPoints.GetType())
             {
-                m_saveData.m_playerRelicPoints = unspentPointCount + devPointData["spent"].AsInt();
+            case Red::gamedataDevelopmentPointType::Espionage: // Relic
+                pSaveData->m_playerRelicPoints += unspentCount;
+                break;
+            case Red::gamedataDevelopmentPointType::Attribute:
+                pSaveData->m_playerAttributePoints += unspentCount;
+                break;
+            case Red::gamedataDevelopmentPointType::Primary: // Perks
+                pSaveData->m_playerPerkPoints += unspentCount;
+                break;
+            default:
+                break;
+            }
+        };
 
-                // 3 milestone perks - 9 points
-                // 4 cyberarm perks - 4 points
-                // 1 additional perk for stealth
-                // 1 additional perk for weakspots
-                constexpr auto MAX_RELIC_POINTS = 15;
+        aPlayerDevelopmentData.IterateOverDevPoints(developmentPointIterator);
 
-                const auto relicPointSpillover = m_saveData.m_playerRelicPoints - MAX_RELIC_POINTS;
+        const auto attributeDataIterator = [pSaveData](SAttributeData aAttributeData) 
+        { 
+            auto isEspionage = aAttributeData.GetType() == AttributeDataType::EspionageAttributeData;
 
-                if (relicPointSpillover > 0)
+            const auto newPerkIterator = [pSaveData, isEspionage](SNewPerk aNewPerk) 
+            {
+                auto currLevel = aNewPerk.GetCurrLevel();
+
+                if (currLevel == 0)
                 {
-                    m_saveData.m_playerPerkPoints += relicPointSpillover;
-                    m_saveData.m_playerRelicPoints = MAX_RELIC_POINTS;
+                    return;
                 }
-            }
-            else if (pointType == "Primary")
-            {                                                       // Perks
-                m_saveData.m_playerPerkPoints += unspentPointCount; // Fill the unspent points
-            }
-        }
 
-        auto perkPointsSpent = 0;
-
-        for (auto& attributePerkData : aPlayerDevelopmentData["attributesData"].AsArray())
-        {
-            auto unlockedPerks = attributePerkData["unlockedPerks"].AsArray();
-
-            if (attributePerkData["type"].Equals(Red::CName{"EspionageAttributeData"}))
-            {
-                // We already process Espionage
-                continue;
-            }
-
-            for (auto& perk : unlockedPerks)
-            {
-                perkPointsSpent += perk["currLevel"].AsInt();
-            }
-        }
-
-        m_saveData.m_playerPerkPoints += perkPointsSpent;
-
-        for (auto& proficiency : aPlayerDevelopmentData["proficiencies"].AsArray())
-        {
-            auto proficiencyLevel = proficiency["currentLevel"].AsInt();
-            auto proficiencyType = proficiency["type"].AsCName();
-
-            if (proficiencyType == "Level")
-            {
-                m_saveData.m_playerLevel = std::clamp(proficiencyLevel, 1, 50);
-            }
-            else if (proficiencyType == "StreetCred")
-            {
-                m_saveData.m_playerStreetCred = proficiencyLevel;
-            }
-            else if (proficiencyType == "StrengthSkill")
-            {
-                m_saveData.m_playerBodySkillLevel = proficiencyLevel;
-            }
-            else if (proficiencyType == "ReflexesSkill")
-            {
-                m_saveData.m_playerReflexSkillLevel = proficiencyLevel;
-            }
-            else if (proficiencyType == "TechnicalAbilitySkill")
-            {
-                m_saveData.m_playerTechSkillLevel = proficiencyLevel;
-            }
-            else if (proficiencyType == "IntelligenceSkill")
-            {
-                m_saveData.m_playerIntelligenceSkillLevel = proficiencyLevel;
-            }
-            else if (proficiencyType == "CoolSkill")
-            {
-                m_saveData.m_playerCoolSkillLevel = proficiencyLevel;
-            }
-        }
-        for (auto& attribute : aPlayerDevelopmentData["attributes"].AsArray())
-        {
-            auto attributeLevel = attribute["value"].AsInt();
-            auto attributeName = attribute["attributeName"].AsCName();
-
-            if (attributeName == "Strength")
-            {
-                m_saveData.m_playerBodyAttribute = attributeLevel;
-            }
-            else if (attributeName == "Reflexes")
-            {
-                m_saveData.m_playerReflexAttribute = attributeLevel;
-            }
-            else if (attributeName == "TechnicalAbility")
-            {
-                m_saveData.m_playerTechAttribute = attributeLevel;
-            }
-            else if (attributeName == "Intelligence")
-            {
-                m_saveData.m_playerIntelligenceAttribute = attributeLevel;
-            }
-            else if (attributeName == "Cool")
-            {
-                m_saveData.m_playerCoolAttribute = attributeLevel;
-            }
-        }
-    }
-
-    RED4ext::ItemID GetItemIDFromClassMap(const redRTTI::RTTIValue& aItemId)
-    {
-        RED4ext::ItemID id{};
-        // HACK
-        if (aItemId.AsClass().IsEmpty())
-        {
-            return id;
-        }
-
-        id.tdbid = aItemId["id"].AsTweakDBID();
-        id.rngSeed = aItemId["rngSeed"].AsUint();
-        id.uniqueCounter = aItemId["uniqueCounter"].AsUshort();
-        id.flags = aItemId["flags"].AsUbyte();
-
-        return id;
-    }
-
-    void LoadEquipmentSystemPlayerData(const redRTTI::RTTIValue& aEquipmentSystemPlayerData)
-    {
-        // Get rid of the behavioral imprint
-        auto tweakDb = RED4ext::TweakDB::Get();
-
-        auto loadoutData = aEquipmentSystemPlayerData["equipment"];
-
-        for (auto& equipArea : loadoutData["equipAreas"].AsArray())
-        {
-            auto equipAreaType = equipArea["areaType"].AsCName();
-            auto equipSlots = equipArea["equipSlots"].AsArray();
-
-            if (equipAreaType == RED4ext::CName{"EyesCW"})
-            {
-                // Fuck the mask
-                for (auto& equippedItemData : equipSlots)
+                if (isEspionage)
                 {
-                    auto equippedItem = equippedItemData["itemID"];
-                    auto gameItem = GetItemIDFromClassMap(equippedItem);
+                    // Espionage doesn't have levels
+                    pSaveData->m_playerRelicPoints += aNewPerk.IsEspionageMilestonePerk() ? 3 : 1;
+                }
+                else
+                {
+                    pSaveData->m_playerPerkPoints += currLevel;
+                }
+            };
 
-                    auto tweakRecord = tweakDb->GetRecord(gameItem.tdbid);
+            aAttributeData.IterateOverUnlockedPerks(newPerkIterator);
+        };
+
+        aPlayerDevelopmentData.IterateOverAttributesData(attributeDataIterator);
+
+        const auto proficiencyIterator = [pSaveData](SProficiency aProficiency) 
+        {
+            const auto currLevel = aProficiency.GetCurrentLevel();
+            using Red::gamedataProficiencyType;
+            switch (aProficiency.GetType())
+            {
+            case gamedataProficiencyType::Level:
+                pSaveData->m_playerLevel = std::clamp(currLevel, 1, 50);
+                break;
+            case gamedataProficiencyType::StreetCred:
+                pSaveData->m_playerStreetCred = currLevel;
+                break;
+            case gamedataProficiencyType::StrengthSkill:
+                pSaveData->m_playerBodySkillLevel = currLevel;
+                break;
+            case gamedataProficiencyType::ReflexesSkill:
+                pSaveData->m_playerReflexSkillLevel = currLevel;
+                break;
+            case gamedataProficiencyType::TechnicalAbilitySkill:
+                pSaveData->m_playerTechSkillLevel = currLevel;
+                break;
+            case gamedataProficiencyType::IntelligenceSkill:
+                pSaveData->m_playerIntelligenceSkillLevel = currLevel;
+                break;
+            case gamedataProficiencyType::CoolSkill:
+                pSaveData->m_playerCoolSkillLevel = currLevel;
+                break;
+            }
+        };
+
+        aPlayerDevelopmentData.IterateOverProficiencies(proficiencyIterator);
+
+        const auto attributeIterator = [pSaveData](SAttribute aAttribute) 
+        {
+            const auto currLevel = aAttribute.GetValue();
+
+            using Red::gamedataStatType;
+
+            switch (aAttribute.GetAttributeName())
+            {
+            case gamedataStatType::Strength:
+                pSaveData->m_playerBodyAttribute = currLevel;
+                break;
+            case gamedataStatType::Reflexes:
+                pSaveData->m_playerReflexAttribute = currLevel;
+                break;
+            case gamedataStatType::TechnicalAbility:
+                pSaveData->m_playerTechAttribute = currLevel;
+                break;
+            case gamedataStatType::Intelligence:
+                pSaveData->m_playerIntelligenceAttribute = currLevel;
+                break;
+            case gamedataStatType::Cool:
+                pSaveData->m_playerCoolAttribute = currLevel;
+                break;
+            }
+        };
+
+        aPlayerDevelopmentData.IterateOverAttributes(attributeIterator);
+
+        HandleUselessStatPoints();
+    }
+
+    void LoadEquipmentSystemPlayerData(EquipmentSystemPlayerData aEquipmentSystemPlayerData)
+    {
+        auto loadoutData = aEquipmentSystemPlayerData.GetLoadout();
+
+        if (!loadoutData)
+        {
+            PluginContext::Error("NewGamePlusSystem::LoadEquipmentSystemPlayerData, loadoutData is null");
+            return;
+        }
+
+        using Red::gamedataEquipmentArea;
+
+        for (auto& area : loadoutData->equipAreas)
+        {
+            switch (area.areaType)
+            {
+            case gamedataEquipmentArea::EyesCW:
+                for (auto& equippedItemData : area.equipSlots)
+                {
+                    // We need to get rid of the cybermask
+                    auto& itemId = equippedItemData.itemID;
+
+                    if (!itemId.IsValid())
+                    {
+                        continue;
+                    }
+
+                    auto tweakRecord = m_tweakDb->GetRecord(itemId.tdbid);
 
                     if (!tweakRecord)
                     {
@@ -416,55 +490,72 @@ private:
                     }
 
                     bool isMask{};
-                    Red::CName tagName = Red::CName{"MaskCW"};
+                    Red::CName tagName = "MaskCW";
 
                     Red::CallVirtual(tweakRecord, "TagsContains", isMask, tagName);
 
                     if (!isMask)
                     {
-                        m_saveData.m_playerEquippedKiroshis = gameItem;
+                        m_saveData.m_playerEquippedKiroshis = itemId;
                         break;
                     }
                 }
-            }
-            else if (equipAreaType == "SystemReplacementCW")
-            {
-                for (auto& slot : equipSlots)
+                break;
+            case gamedataEquipmentArea::SystemReplacementCW:
+                for (auto& equippedItemData : area.equipSlots)
                 {
-                    auto equippedItem = slot["itemID"];
-                    m_saveData.m_playerEquippedOperatingSystem = GetItemIDFromClassMap(equippedItem);
+                    auto& itemId = equippedItemData.itemID;
 
-                    if (m_saveData.m_playerEquippedOperatingSystem.IsValid())
+                    if (!itemId.IsValid())
                     {
-                        break;
+                        continue;
                     }
+
+                    m_saveData.m_playerEquippedOperatingSystem = itemId;
+                    break;
                 }
-            }
-            else if (equipAreaType == "ArmsCW")
-            {
-                for (auto& slot : equipSlots)
+                break;
+            case gamedataEquipmentArea::CardiovascularSystemCW:
+                for (auto& equippedItemData : area.equipSlots)
                 {
-                    auto equippedItem = slot["itemID"];
-                    m_saveData.m_playerEquippedArmCyberware = GetItemIDFromClassMap(equippedItem);
+                    auto& itemId = equippedItemData.itemID;
 
-                    if (m_saveData.m_playerEquippedArmCyberware.IsValid())
+                    if (!itemId.IsValid())
                     {
-                        break;
+                        continue;
                     }
+
+                    m_saveData.m_playerEquippedCardiacSystemCW.PushBack(itemId);
                 }
-            }
-            else if (equipAreaType == "LegsCW")
-            {
-                for (auto& slot : equipSlots)
+                break;
+            case gamedataEquipmentArea::ArmsCW:
+                for (auto& equippedItemData : area.equipSlots)
                 {
-                    auto equippedItem = slot["itemID"];
-                    m_saveData.m_playerEquippedLegCyberware = GetItemIDFromClassMap(equippedItem);
+                    auto& itemId = equippedItemData.itemID;
 
-                    if (m_saveData.m_playerEquippedLegCyberware.IsValid())
+                    if (!itemId.IsValid())
                     {
-                        break;
+                        continue;
                     }
+
+                    m_saveData.m_playerEquippedArmCyberware = itemId;
+                    break;
                 }
+                break;
+            case gamedataEquipmentArea::LegsCW:
+                for (auto& equippedItemData : area.equipSlots)
+                {
+                    auto& itemId = equippedItemData.itemID;
+
+                    if (!itemId.IsValid())
+                    {
+                        continue;
+                    }
+
+                    m_saveData.m_playerEquippedLegCyberware = itemId;
+                    break;
+                }
+                break;
             }
         }
     }
@@ -675,7 +766,7 @@ private:
         auto& inventoryLocal = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdLocal);
         auto& inventoryCarStash = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdCarStash);
 
-        m_tweakDb = Red::TweakDB::Get();
+        
 
         for (const auto& item : inventoryLocal.inventoryItems)
         {
@@ -688,24 +779,21 @@ private:
         }
     }
 
-    void LoadGarage(const redRTTI::RTTIValue& aVehicleGarage)
+    void LoadGarageNative(Red::GarageComponentPS* aGarage)
     {
-        // Good enough
-        // I'd include the V-Tech, but I actually like that one.
-        static constexpr auto blacklistedVehicles =
-            std::array<RED4ext::TweakDBID, 32>{RED4ext::TweakDBID{"Vehicle.v_utility4_thorton_mackinaw_bmf_player"},
-            RED4ext::TweakDBID{"Vehicle.v_sport2_quadra_type66_nomad_tribute"},
-            RED4ext::TweakDBID{"Vehicle.v_sportbike2_arch_jackie_player"}, RED4ext::TweakDBID{"Vehicle.v_sportbike2_arch_jackie_tuned_player"}};
+        static constexpr std::array<Red::TweakDBID, 32> blacklistedVehicles =
+                                            {Red::TweakDBID{"Vehicle.v_utility4_thorton_mackinaw_bmf_player"},
+                                           Red::TweakDBID{"Vehicle.v_sport2_quadra_type66_nomad_tribute"},
+                                           Red::TweakDBID{"Vehicle.v_sportbike2_arch_jackie_player"},
+                                           Red::TweakDBID{"Vehicle.v_sportbike2_arch_jackie_tuned_player"}};
 
-        
-        for (auto unlockedVehicle : aVehicleGarage["unlockedVehicleArray"].AsArray())
+        auto& unlockedVehicles = aGarage->unlockedVehicleArray;
+
+        for (auto& unlockedVehicle : unlockedVehicles)
         {
-            auto vehicleId = unlockedVehicle["vehicleID"]["recordID"].AsTweakDBID();
-
-            if (std::find(blacklistedVehicles.begin(), blacklistedVehicles.end(), vehicleId) ==
-                blacklistedVehicles.end())
+            if (std::find(blacklistedVehicles.begin(), blacklistedVehicles.end(), unlockedVehicle.vehicleID.recordID) == blacklistedVehicles.end())
             {
-                m_saveData.m_playerVehicleGarage.PushBack(vehicleId);
+                m_saveData.m_playerVehicleGarage.PushBack(unlockedVehicle.vehicleID.recordID);
             }
         }
     }

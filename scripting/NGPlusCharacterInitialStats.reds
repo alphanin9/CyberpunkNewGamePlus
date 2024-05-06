@@ -5,7 +5,7 @@ let m_ngPlusSaveData: PlayerSaveData;
 
 @addMethod(CharacterCreationGenderSelectionMenu)
 private final func SetNGPlusAttributePreset() -> Void {
-    this.m_characterCustomizationState.SetAttributePointsAvailable(0u);
+    this.m_characterCustomizationState.SetAttributePointsAvailable(Cast<Uint32>(this.m_ngPlusSaveData.playerAttributePoints));
     this
         .m_characterCustomizationState
         .SetAttribute(

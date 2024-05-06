@@ -28,6 +28,7 @@ public native struct PlayerSaveData {
     native let playerEquippedKiroshis: ItemID;
     native let playerEquippedLegCyberware: ItemID;
     native let playerEquippedArmCyberware: ItemID;
+    native let playerEquippedCardiacSystemCW: array<ItemID>;
     native let playerVehicleGarage: array<TweakDBID>;
 }
 

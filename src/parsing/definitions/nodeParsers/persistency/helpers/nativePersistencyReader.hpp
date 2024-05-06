@@ -88,9 +88,16 @@ protected:
 
         ReadValue(aCursor, instance, innerType);
 
-        using HandleType = Red::Handle<Red::ISerializable>;
+        // Deallocate it immediately afterwards
+        // This actually crashes
+        // Not a problem for our usecase :P
 
-        *reinterpret_cast<HandleType*>(aOut) = HandleType{reinterpret_cast<Red::ISerializable*>(instance)};
+        innerType->Destruct(instance);
+        innerType->GetAllocator()->Free(instance);
+
+        //using HandleType = Red::Handle<Red::ISerializable>;
+
+        //*reinterpret_cast<HandleType*>(aOut) = HandleType{reinterpret_cast<Red::ISerializable*>(instance)};
     }
 
     virtual void ReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) final
@@ -130,6 +137,12 @@ public:
                 }
 
                 auto valuePtr = propInfo->GetValuePtr<std::remove_pointer_t<Red::ScriptInstance>>(aOut);
+
+                if (!valuePtr)
+                {
+                    throw std::runtime_error{std::format("Failed to get value pointer for {}.{}",
+                                                         classType->GetName().ToString(), propInfo->name.ToString())};
+                }
 
                 ReadValue(aCursor, valuePtr, propInfo->type);
             }

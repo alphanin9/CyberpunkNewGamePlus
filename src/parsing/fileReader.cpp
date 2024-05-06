@@ -39,7 +39,6 @@ namespace parser {
 		{
 			auto file = std::ifstream{ aSavePath, std::ios_base::binary };
 			file.read(reinterpret_cast<char*>(m_fileStream.data()), bufferSize);
-			// std::println("Read file!");
 		}
 
 		{
@@ -60,7 +59,6 @@ namespace parser {
 		
 		auto infoStart = 0;
 		{
-			auto reverseCursorPtr = m_fileStream.data() + m_fileStream.size() - 8u;
 			auto reverseCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
 
 			reverseCursor.seekTo(FileCursor::SeekTo::End, -8);
@@ -70,8 +68,6 @@ namespace parser {
 				return false;
 			}
 		}
-
-		// std::println("Info start: {}", infoStart);
 
 		auto fileCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
 		fileCursor.seekTo(FileCursor::SeekTo::Start, infoStart);
@@ -86,11 +82,7 @@ namespace parser {
 			m_flatNodes.push_back(cyberpunk::NodeEntry::fromCursor(fileCursor));
 		}
 
-		// std::println("Finished reading flat nodes");
-
 		auto decompressedData = DecompressFile();
-
-		// std::println("Buffer size: {}", decompressedData.size());
 
 		return LoadNodes(decompressedData);
 	}
@@ -146,8 +138,6 @@ namespace parser {
 		// THIS IS COMPLETELY FUCKED
 		auto compressionTablePosition = 0ll;
 		{
-			auto fileCursorPtr = m_fileStream.data();
-			auto fileSize = m_fileStream.size();
 			auto fileCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
 			
 			compressionTablePosition = fileCursor.findByteSequence("FZLC");
@@ -165,12 +155,16 @@ namespace parser {
 			const auto tableEntriesCount = compressionHeader.maxEntries;
 			const auto chunkSize = tableEntriesCount == 0x100 ? 0x00040000 : 0x00080000;
 			{
+                constexpr auto LARGE_SAVE_SIZE = 0x400000u;
 				auto decompressionBuffer = std::vector<std::byte>{ };
+                decompressionBuffer.reserve(LARGE_SAVE_SIZE);
 
 				for (auto& chunkInfo : compressionHeader.dataChunkInfo) {
 					assert(fileCursor.offset == chunkInfo.offset);
 
 					auto outBuffer = std::vector<std::byte>{};
+
+					outBuffer.reserve(chunkSize);
 
 					if (fileCursor.readUInt() == compression::COMPRESSION_BLOCK_MAGIC) {
 						fileCursor.readInt();
@@ -185,7 +179,6 @@ namespace parser {
 					}
 					else {
 						fileCursor.offset -= 4;
-
 						outBuffer = fileCursor.readBytes(chunkInfo.compressedSize);
 					}
 
@@ -200,7 +193,10 @@ namespace parser {
 
 					auto chunks = std::vector<compression::DataChunkInfo>();
 
+					// Just throw in a few reserve() calls for """optimization"""
 					auto processedBuffer = std::vector<std::byte>{};
+                    processedBuffer.reserve(decompressionBuffer.size() * 2);
+
 					{
 						auto inBuffer = std::vector<std::byte>{};
 

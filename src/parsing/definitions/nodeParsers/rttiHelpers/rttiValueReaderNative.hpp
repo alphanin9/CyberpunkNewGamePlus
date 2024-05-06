@@ -75,18 +75,11 @@ protected:
 
         arrayType->Resize(aOut, arraySize);
 
-        // THIS IS LIKELY WRONG
         for (auto i = 0; i < arraySize; i++)
         {
-            // Might be leaky, unsure
-            auto instance =
-                arrayType->GetAllocator()->AllocAligned(innerType->GetSize(), innerType->GetAlignment()).memory;
-
-            innerType->Construct(instance);
-
-            ReadValue(aCursor, instance, innerType);
-            
-            innerType->Assign(arrayType->GetElement(aOut, i), instance);
+            // Array elements are constructed on resize, we don't need to create a new instance
+            auto elem = arrayType->GetElement(aOut, i);
+            ReadValue(aCursor, elem, innerType);
         }
     }
 
@@ -99,8 +92,6 @@ protected:
         const auto innerTypeSize = innerType->GetSize();
 
         const auto maxLength = arrayType->GetMaxLength();
-
-        auto outPtr = reinterpret_cast<uintptr_t>(aOut);
 
         for (auto i = 0; i < std::min(arraySize, maxLength - 1); i++)
         {

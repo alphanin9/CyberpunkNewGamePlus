@@ -294,6 +294,22 @@ struct FileCursor {
         return ret;
     }
 
+    // For types not requiring special handling!
+    // Should add a concept? Nah, std::is_pod and std::is_trivial does not work on TDBIDs and stuff
+    template<typename T>
+    std::vector<T> ReadMultiplePOD(std::size_t aCount)
+    {
+        std::vector<T> ret{};
+        ret.reserve(aCount);
+
+        for (auto i = 0u; i < aCount; i++)
+        {
+            ret.push_back(readValue<T>());
+        }
+
+        return ret;
+    }
+
     // Returns a cursor pointing to current offset with size = aSize, increments size
     FileCursor CreateSubCursor(std::size_t aSize)
     {

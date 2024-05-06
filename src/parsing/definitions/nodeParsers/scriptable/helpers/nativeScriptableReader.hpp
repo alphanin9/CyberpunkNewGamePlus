@@ -114,6 +114,8 @@ class ScriptableReader : redRTTI::native::NativeReader
 
         s_enumSizes.insert(enumType->actualSize);
         
+        // Scriptable systems only seem to use actualSize=4
+
         switch (enumType->actualSize)
         {
         case 1u:

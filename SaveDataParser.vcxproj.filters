@@ -86,5 +86,8 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\nativePersistencyReader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\equipmentSystem.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
