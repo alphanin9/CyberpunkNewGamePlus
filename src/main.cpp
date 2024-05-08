@@ -23,8 +23,6 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 
 		Red::TypeInfoRegistrar::RegisterDiscovered();
 
-		// shhhhhhhhhhhhh
-		// Nothing is happening here :)
 		constexpr auto loadDependenciesFromPluginFolder = true;
 		if constexpr (loadDependenciesFromPluginFolder) {
 			if (!ArchiveXL::RegisterArchive(aHandle, L"NewGamePlus.archive")) {
