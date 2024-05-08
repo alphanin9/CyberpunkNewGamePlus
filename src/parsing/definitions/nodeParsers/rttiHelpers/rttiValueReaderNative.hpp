@@ -207,6 +207,10 @@ protected:
         throw std::runtime_error(std::format("NativeReader::ReadValue, unknown value type {}", typeName.ToString()));
     }
 public:
+    virtual ~NativeReader()
+    {
+    
+    }
     virtual void ReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aClass) = 0;
 };
 

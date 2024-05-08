@@ -47,6 +47,7 @@ struct OptimizedFieldHeader
 class ScriptableReader : redRTTI::native::NativeReader
 {
     std::vector<Red::CName>* m_names;
+    static constexpr auto m_reportNonCriticalErrors = false;
 
     Red::CName ReadCNameInternal(FileCursor& aCursor)
     {
@@ -155,6 +156,11 @@ public:
     
     }
 
+    virtual ~ScriptableReader()
+    {
+        
+    }
+
     inline std::vector<Red::CName>* GetNames()
     {
         return m_names;
@@ -167,53 +173,42 @@ public:
         const auto baseOffset = aCursor.offset;
         const auto fieldCount = aCursor.readUShort();
 
-        auto fieldDescriptors = aCursor.ReadMultipleClasses<RedPackageFieldHeader>(fieldCount);
-        std::unordered_map<Red::CName, OptimizedFieldHeader> fieldDescMap{};
-
-        // I'm not sure if this is necessary, given the class will have some default initialization?
-
-        std::transform(fieldDescriptors.begin(), fieldDescriptors.end(),
-                       std::inserter(fieldDescMap, fieldDescMap.end()),
-                       [this](RedPackageFieldHeader aHeader)
-                       {
-                           const auto names = this->GetNames();
-                           auto optimized = OptimizedFieldHeader::Make(aHeader, names);
-                           return std::make_pair(optimized.m_name, optimized);
-                       });
-
-        Red::DynArray<Red::CProperty*> classProps{};
-
-        classType->GetProperties(classProps);
-
-        for (auto propData : classProps)
+        for (auto desc : aCursor.ReadMultipleClasses<RedPackageFieldHeader>(fieldCount))
         {
-            // Only bother with loading savable properties
-            if (propData->flags.isPersistent == 0 && propData->flags.isSavable == 0)
+            const auto propName = m_names->at(desc.m_nameId);
+            const auto propData = classType->GetProperty(propName);
+
+            // No prop...
+            if (!propData)
             {
+                if constexpr (m_reportNonCriticalErrors)
+                {
+                    PluginContext::Error(std::format("NativeScriptableReader::ReadClass, couldn't find {}.{}",
+                                                     classType->GetName().ToString(), propName.ToString()));
+                }
+                
                 continue;
             }
 
-            auto saveProp = fieldDescMap.find(propData->name);
-
-            if (saveProp == fieldDescMap.end())
+            if (propData->type->GetName() != m_names->at(desc.m_typeId))
             {
+                if constexpr (m_reportNonCriticalErrors)
+                {
+                    PluginContext::Error(
+                        std::format("NativeScriptableReader::ReadClass, class {}, property type mismatch - {} != {}",
+                                    classType->GetName().ToString(), propData->type->GetName().ToString(),
+                                    m_names->at(desc.m_typeId).ToString()));
+                }
                 continue;
             }
 
-            auto storedType = PluginContext::m_rtti->GetType(saveProp->second.m_type);
-
-            if (!storedType || propData->type != storedType)
-            {
-                PluginContext::Error(std::format("NativeScriptableReader::ReadClass, class {}, property type mismatch - {} != {}",
-                                                 classType->GetName().ToString(), saveProp->second.m_type.ToString(),
-                                                 propData->type->GetName().ToString()));
-                continue;
-            }
+            aCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + desc.m_offset);
 
             auto propPtr = propData->GetValuePtr<std::remove_pointer_t<Red::ScriptInstance>>(aOut);
+
             try
             {
-                ReadValue(aCursor, propPtr, storedType);
+                ReadValue(aCursor, propPtr, propData->type);
             }
             catch (const std::exception& e)
             {

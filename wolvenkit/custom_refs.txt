@@ -7,6 +7,7 @@ base\gameplay\gui\fullscreen\new_game_plus\newgameplus_stats_adjustment.inkwidge
 base\localization\en-us\new_game_plus\new_game_plus_onscreens.json
 base\localization\en-us\new_game_plus\subtitles\q001\q001_restored_subtitles.json
 base\localization\en-us\new_game_plus\subtitles\q101\q101_restored_subtitles.json
+base\localization\en-us\new_game_plus\subtitles\q116\q116_restored_subtitles.json
 base\localization\en-us\new_game_plus\subtitles\subtitles.json
 base\quest\main_quests\part1\q101\scenes\lipsync\en\q101_08_takemura_v_room\civ_high_f_18_jap_25.anims
 base\quest\main_quests\part1\q101\scenes\lipsync\en\q101_08_takemura_v_room\civ_high_m_20_jap_40.anims
@@ -19,6 +20,10 @@ base\quest\main_quests\part1\q101\scenes\lipsync\en\q101_08_takemura_v_room\civ_
 base\quest\main_quests\part1\q101\scenes\lipsync\en\q101_08_takemura_v_room\johnny.anims
 base\quest\main_quests\part1\q101\scenes\lipsync\en\q101_08_takemura_v_room\takemura.anims
 base\quest\main_quests\part1\q101\scenes\lipsync\en\q101_08_takemura_v_room\v.anims
+base\quest\main_quests\part1\q116\scenes\lipsync\en\q116_05_mikoshi\alt.anims
+base\quest\main_quests\part1\q116\scenes\lipsync\en\q116_05_mikoshi\jackie.anims
+base\quest\main_quests\part1\q116\scenes\lipsync\en\q116_05_mikoshi\johnny.anims
+base\quest\main_quests\part1\q116\scenes\lipsync\en\q116_05_mikoshi\v.anims
 base\quest\NewGamePlus.gamedef
 mod\quest\changedQuests\NewGamePlus_act_1.questphase
 mod\quest\changedQuests\NewGamePlus_additional_game_elements.questphase
