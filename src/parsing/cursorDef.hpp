@@ -35,6 +35,15 @@ struct FileCursor {
 
     }
 
+    // Constructor for cases you don't need to know the size because you'll never seek backwards
+    FileCursor(std::byte* aBaseAddress)
+        : baseAddress(aBaseAddress)
+        , offset(0)
+        , size(std::numeric_limits<std::ptrdiff_t>::max())
+    {
+    
+    }
+
     template<typename T>
     T readValue() {
         const auto ptr = baseAddress + offset;
@@ -318,5 +327,16 @@ struct FileCursor {
         offset += aSize;
 
         return ret;
+    }
+
+    template<typename T>
+    inline static FileCursor FromVec(const std::vector<T>& aVec)
+    {
+        return FileCursor{aVec.data(), aVec.size()};
+    }
+
+    std::byte* GetCurrentPtr()
+    {
+        return baseAddress + offset;
     }
 };

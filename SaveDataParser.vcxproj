@@ -169,6 +169,7 @@
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -186,6 +187,7 @@
     <ClCompile Include="src\parsing\fileReader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="resource.h" />
     <ClInclude Include="src\context\context.hpp" />
     <ClInclude Include="src\dependencies\lz4.h" />
     <ClInclude Include="src\filesystem\fs_util.hpp" />
@@ -204,6 +206,9 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\nativeScriptableReader.hpp" />
     <ClInclude Include="src\parsing\fileReader.hpp" />
     <ClInclude Include="src\redscript_api\redscriptBindings.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="NewGamePlus.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -36,7 +36,7 @@ namespace cyberpunk {
 		// EVIL UGLY CODE AHEAD, WILL LIKELY LEAK MEMORY LIKE CRAZY
 		std::unique_ptr<NodeDataInterface> nodeData;
 
-		void addChild(NodeEntry* child) {
+		inline void addChild(NodeEntry* child) {
 			child->isChild = true;
 			child->parent = this;
 
@@ -57,6 +57,17 @@ namespace cyberpunk {
 			ret.size = fileCursor.readInt();
 
 			return ret;
+		}
+
+		inline int GetExpectedSize() const
+        {
+            auto size = this->size;
+            if (isWritingOwnTrailingSize)
+            {
+                size += trailingSize;				
+			}
+
+			return size;
 		}
 	};
 }

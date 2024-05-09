@@ -157,10 +157,11 @@ struct RedPackageChunkHeader
 struct RedChunk
 {
     Red::CName m_typeName;
-    redRTTI::RTTIValue m_redClass;
-
     // I do not believe anything non-serializable can be inside scriptablesystem :P
     Red::ISerializable* m_instance;
+    Red::CBaseRTTIType* m_type;
+
+    std::byte* m_chunkLocationPtr;
 
     bool m_isUsed; // For handles, maybe, sometime later...
 
@@ -191,7 +192,9 @@ public:
     // Won't implement for now, JobQueue is weird and makes me unhappy
     // There are better places for optimization anyway
     static constexpr auto m_multithreadReading = false;
+    static constexpr auto m_lazyChunkReader = true;
 
+private:
     RedPackageHeader m_header;
     std::vector<Red::CRUID> m_rootCruids;
     std::vector<Red::CName> m_names;
@@ -199,7 +202,11 @@ public:
     std::vector<RedPackageChunkHeader> m_chunkHeaders;
     std::vector<RedChunk> m_chunks;
 
-private:
+    scriptable::native::ScriptableReader m_reader;
+
+    std::byte* m_baseAddress;
+    std::ptrdiff_t m_baseOffset;
+
     RedImport ReadImport(FileCursor& cursor, RedPackageImportHeader importHeader)
     {
         RedImport ret{};
@@ -232,44 +239,49 @@ public:
                 m_rootCruids.push_back(subCursor.readCruid());
             }
 
-            const auto baseOffset = subCursor.offset;
+            m_baseOffset = subCursor.offset;
+            m_baseAddress = subCursor.baseAddress;
 
             if constexpr (m_enableImports)
             {
-                subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_refPoolDescOffset);
+                subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + m_header.m_refPoolDescOffset);
 
                 const auto refDesc = subCursor.ReadMultipleClasses<RedPackageImportHeader>(
                     (m_header.m_refPoolDataOffset - m_header.m_refPoolDescOffset) / sizeof(RedPackageImportHeader));
 
                 for (auto ref : refDesc)
                 {
-                    subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + ref.offset());
+                    subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + ref.offset());
                     m_imports.push_back(ReadImport(subCursor, ref));
                 }
             }
 
-            subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_namePoolDescOffset);
+            subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + m_header.m_namePoolDescOffset);
             // const auto nameDesc = subCursor.ReadMultipleClasses<RedPackageNameHeader>(
             //     (m_header.m_namePoolDataOffset - m_header.m_namePoolDescOffset) / sizeof(RedPackageNameHeader));
 
             for (auto name : subCursor.ReadMultipleClasses<RedPackageNameHeader>(
                      (m_header.m_namePoolDataOffset - m_header.m_namePoolDescOffset) / sizeof(RedPackageNameHeader)))
             {
-                subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + name.offset());
+                subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + name.offset());
                 m_names.push_back(subCursor.ReadCName());
             }
 
-            subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + m_header.m_chunkDescOffset);
+            // Prime the reader to read classes...
+            m_reader.SetNames(&m_names);
+
+            subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + m_header.m_chunkDescOffset);
 
             m_chunkHeaders = subCursor.ReadMultipleClasses<RedPackageChunkHeader>(
                 (m_header.m_chunkDataOffset - m_header.m_chunkDescOffset) / sizeof(RedPackageChunkHeader));
 
-            scriptable::native::ScriptableReader nativeReader{&m_names};
-
+            
             m_chunks.resize(m_chunkHeaders.size());
 
             // We could potentially MT this? Chunks aren't particularly related to each other and we don't process
             // handles
+
+            // Actually, a superior way to do this would be to only read the right chunk (PlayerDevelopmentData/EquipmentWhatever) on demand
 
             for (auto i = 0u; i < m_chunkHeaders.size(); i++)
             {
@@ -277,7 +289,6 @@ public:
                 auto& chunk = m_chunks.at(i);
 
                 chunk.m_typeName = m_names.at(header.typeId);
-
                 auto chunkType = PluginContext::m_rtti->GetType(chunk.m_typeName);
 
                 // We don't know the chunk's type (or the type is wacky), blame mods
@@ -289,13 +300,21 @@ public:
                     continue;
                 }
 
-                subCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + header.offset);
+                chunk.m_type = chunkType;
+                subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + header.offset);
+                
+                chunk.m_chunkLocationPtr = subCursor.GetCurrentPtr();
 
-                auto instance = static_cast<Red::CClass*>(chunkType)->CreateInstance();
+                // Try to read everything ASAP!
+                if constexpr (!m_lazyChunkReader)
+                {
+                    auto instance = static_cast<Red::CClass*>(chunkType)->CreateInstance();
 
-                nativeReader.ReadClass(subCursor, instance, chunkType);
+                    m_reader.ReadClass(subCursor, instance, chunkType);
 
-                chunk.m_instance = reinterpret_cast<Red::ISerializable*>(instance);
+                    chunk.m_instance = reinterpret_cast<Red::ISerializable*>(instance);
+                }
+                // Otherwise, delay until we're done and a chunk is requested
             }
 
             // Test what enum sizes actually show up during scriptable reads
@@ -338,6 +357,33 @@ public:
             throw std::runtime_error{std::format("Failed to find chunk {}", aChunkType)};
         }
 
+        if constexpr (!m_lazyChunkReader)
+        {
+            return *chunkIter;
+        }
+
+        // We've already read this chunk...
+        if (chunkIter->m_instance)
+        {
+            return *chunkIter;
+        }
+
+        // The chunk is bad...
+        if (!chunkIter->m_type)
+        {
+            throw std::runtime_error{std::format("Chunk {} has missing type", aChunkType)};
+        }
+
+        // Not sure if this pointer math checks out
+        // With new stuff, the location pointer should stay valid as long as the parser stays valid
+        FileCursor cursor{chunkIter->m_chunkLocationPtr};
+
+        auto instance = static_cast<Red::CClass*>(chunkIter->m_type)->CreateInstance();
+
+        m_reader.ReadClass(cursor, instance, chunkIter->m_type);
+
+        chunkIter->m_instance = reinterpret_cast<Red::ISerializable*>(instance);
+        
         return *chunkIter;
     }
 };

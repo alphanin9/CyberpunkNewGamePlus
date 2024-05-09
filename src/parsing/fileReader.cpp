@@ -82,9 +82,9 @@ namespace parser {
 			m_flatNodes.push_back(cyberpunk::NodeEntry::fromCursor(fileCursor));
 		}
 
-		auto decompressedData = DecompressFile();
+		DecompressFile();
 
-		return LoadNodes(decompressedData);
+		return LoadNodes();
 	}
 
 	void DumpItemInfo(cyberpunk::ItemInfo& aItemInfo, int aIndentation) {
@@ -134,7 +134,7 @@ namespace parser {
 		}
 	}
 
-	std::vector<std::byte> Parser::DecompressFile() {
+	void Parser::DecompressFile() {
 		// THIS IS COMPLETELY FUCKED
 		auto compressionTablePosition = 0ll;
 		{
@@ -257,12 +257,10 @@ namespace parser {
 					return retBuffer;
 				}();
 
-				decompressionResult = temporaryResult;
-				decompressionResult.insert(decompressionResult.end(), uncompressedData.begin(), uncompressedData.end());
+				m_decompressedData = temporaryResult;
+                m_decompressedData.insert(m_decompressedData.end(), uncompressedData.begin(), uncompressedData.end());
 			}
-		}
-		
-		return decompressionResult;
+		}		
 	}
 
 	void Parser::FindChildren(cyberpunk::NodeEntry& node, int maxNextId) {
@@ -359,8 +357,8 @@ namespace parser {
 	}
 
 	// The most reasonable course of action is keeping flatNodes allocated as long as possible, and making the actual node list hold ptrs to nodes in flatNodes
-	bool Parser::LoadNodes(std::vector<std::byte>& decompressedData) {
-		auto cursor = FileCursor{ decompressedData.data(), decompressedData.size() };
+	bool Parser::LoadNodes() {
+        auto cursor = FileCursor{m_decompressedData.data(), m_decompressedData.size()};
 
 		//std::println("Assigning nodeids...");
 
@@ -393,7 +391,7 @@ namespace parser {
 
 		//std::println("Calculating real sizes...");
 
-		CalculateTrueSizes(m_nodeList, decompressedData.size());
+		CalculateTrueSizes(m_nodeList, m_decompressedData.size());
 
 		//std::println("Beginning node parsing...");
 

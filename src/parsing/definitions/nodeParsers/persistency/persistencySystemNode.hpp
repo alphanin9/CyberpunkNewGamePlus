@@ -58,8 +58,6 @@ struct PersistentBuffer
 {
     std::uint64_t m_id;
     RED4ext::CName m_className;
-    redRTTI::RTTIValue m_redClass;
-
     RedPersistentObject m_classInstance;
 };
 
@@ -77,7 +75,6 @@ public:
 
     virtual void ReadData(FileCursor& aCursor, NodeEntry& node)
     {
-        RED4EXT_UNUSED_PARAMETER(node);
         const auto idCount = aCursor.readInt();
 
         m_ids = aCursor.ReadMultiplePOD<std::uint32_t>(idCount);
@@ -95,23 +92,25 @@ public:
 
         const auto itemCount = aCursor.readInt();
 
-        m_redClasses.resize(itemCount); // Hack to get m_classInstance to be less wonky with moves
-
         for (auto i = 0; i < itemCount; i++)
         {
-            auto& classEntry = m_redClasses.at(i);
-            classEntry.m_id = aCursor.readUInt64();
+            auto classId = aCursor.readUInt64();
 
-            if (classEntry.m_id)
+            if (classId)
             {
                 const auto classHash = aCursor.ReadCNameHash();
                 const auto classSize = aCursor.readUInt();
 
-                classEntry.m_className = classHash;
+                auto startOffset = aCursor.offset;
+
+                if (m_onlyDoVehicleGarage && classHash != "vehicleGarageComponentPS")
+                {
+                    aCursor.seekTo(FileCursor::SeekTo::Start, startOffset + classSize);
+                    continue;
+                }
 
                 const auto type = PluginContext::m_rtti->GetType(classHash);
 
-                auto startOffset = aCursor.offset;
                 // For our purposes we only really want to parse
                 // vehicleGarageComponentPS,
                 // as we don't *really* need any other nodes
@@ -119,24 +118,36 @@ public:
                 // Let's test reading all persistent types for the lulz
                 // Worst case scenario: we'll have a bunch of types with unfinished parsing
                 // NEVERMIND, IT'S UNSTABLE
-                if (type && (!m_onlyDoVehicleGarage || classHash == "vehicleGarageComponentPS"))
+                if (type)
                 {
-                    // Seems to work, will need to refactor Redscript bit later
-
-                    auto subCursor =
-                        aCursor.CreateSubCursor(classSize); // FileCursor{ classBytes.data(), classBytes.size() };
-                    
                     auto instance = static_cast<Red::CClass*>(type)->CreateInstance();
-
-                    classEntry.m_classInstance.SetInstance(instance);
+                    auto subCursor = aCursor.CreateSubCursor(classSize);
 
                     try
                     {
-                        reader.ReadClass(subCursor, classEntry.m_classInstance.Raw(), type);
+                        reader.ReadClass(subCursor, instance, type);
                     }
                     catch (const std::exception& e)
                     {
-                        // Don't do anything
+                        // Don't do anything, pray that it doesn't crash
+                    }
+
+                    m_redClasses.emplace_back();
+
+                    auto& entry = m_redClasses.back();
+
+                    entry.m_classInstance.SetInstance(instance);
+                    entry.m_className = classHash;
+                    entry.m_id = classId;
+
+                    if constexpr (m_onlyDoVehicleGarage)
+                    {
+                        // We're done here LOL
+                        // Seek to the end of the node so LoadNodes doesn't whine
+
+                        aCursor.seekTo(FileCursor::SeekTo::Start, node.offset + node.GetExpectedSize());
+
+                        break;
                     }
                 }
 

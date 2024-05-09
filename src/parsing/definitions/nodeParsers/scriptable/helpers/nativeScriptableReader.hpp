@@ -156,6 +156,9 @@ public:
     
     }
 
+    // This puts the reader into an invalid state by default, as we don't know any names
+    inline ScriptableReader() = default;
+
     virtual ~ScriptableReader()
     {
         
@@ -164,6 +167,11 @@ public:
     inline std::vector<Red::CName>* GetNames()
     {
         return m_names;
+    }
+
+    inline void SetNames(std::vector<Red::CName>* aNames)
+    {
+        m_names = aNames;
     }
 
     inline virtual void ReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) final

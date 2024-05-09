@@ -24,6 +24,11 @@ base\quest\main_quests\part1\q116\scenes\lipsync\en\q116_05_mikoshi\alt.anims
 base\quest\main_quests\part1\q116\scenes\lipsync\en\q116_05_mikoshi\jackie.anims
 base\quest\main_quests\part1\q116\scenes\lipsync\en\q116_05_mikoshi\johnny.anims
 base\quest\main_quests\part1\q116\scenes\lipsync\en\q116_05_mikoshi\v.anims
+base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\dexter.anims
+base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\jackie.anims
+base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\t_bug.anims
+base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\v.anims
+base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\wakako_okada.anims
 base\quest\NewGamePlus.gamedef
 mod\quest\changedQuests\NewGamePlus_act_1.questphase
 mod\quest\changedQuests\NewGamePlus_additional_game_elements.questphase
