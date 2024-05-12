@@ -1,4 +1,3 @@
-
 public native struct RedItemData {
     native let itemId: ItemID;
     native let itemQuantity: Int32;
@@ -53,6 +52,7 @@ public native class NewGamePlusSystem extends IGameSystem {
 
     public native func IsSaveValidForNewGamePlus(saveName: script_ref<String>) -> Bool;
 
+    public native func ResolveNewGamePlusSaves(saves: script_ref<array<String>>) -> array<Int32>;
     // Since LogChannel is not declared for everybody...
 
     public native func Spew(str: script_ref<String>) -> Void;

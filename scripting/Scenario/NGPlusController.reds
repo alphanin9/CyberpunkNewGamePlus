@@ -19,6 +19,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
     private let m_saveToLoadID: Uint64;
     private let m_isInputDisabled: Bool;
     private let m_saves: array<String>;
+    private let m_ngPlusSaveIndices: array<Int32>;
     private let m_saveFilesReady: Bool;
     private let m_systemHandler: wref<inkISystemRequestsHandler>;
     private let m_pendingRegistration: Bool;
@@ -98,14 +99,17 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
     }
 
     private final func SetupLoadItems() -> Void {
-        let i: Int32 = 0;
-        while i < ArraySize(this.m_saves) {
-            if StrBeginsWith(this.m_saves[i], NewGamePlusSelectionController.GetPointOfNoReturnPrefix()) && this.m_ngPlusSystem.IsSaveValidForNewGamePlus(this.m_saves[i]) {
+        //let i: Int32 = 0;
+        for i in this.m_ngPlusSaveIndices {
+            this.CreateLoadItem(i);
+        }
+        /*while i < ArraySize(this.m_saves) {
+            if ArrayContains(this.m_ngPlusSaveIndices, i) {
                 this.CreateLoadItem(i);
             }
             // Preserve save indices!
             i += 1;
-        };
+        };*/
     }
 
     private final func CreateLoadItem(index: Int32) -> Void {
@@ -157,7 +161,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
         this.m_ngPlusSystem.Spew(s"Progression loader result: \(result)");
 
         if !result {
-            controller.SetInvalid("Failed to parse progression data!\nTry going into a game and making a Point Of No Return save.");
+            controller.SetInvalid("Failed to parse progression data!\nTry going into a game and saving again.");
             return;
         }
 
@@ -167,6 +171,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
 
     protected cb func OnSavesForLoadReady(saves: array<String>) -> Bool {
         this.m_saves = saves;
+        this.m_ngPlusSaveIndices = this.m_ngPlusSystem.ResolveNewGamePlusSaves(saves);
         this.m_saveFilesReady = true;
         this.UpdateSavesList();
     }
@@ -177,7 +182,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
             this.StopLoadingAnimation();
             inkCompoundRef.RemoveAllChildren(this.m_list);
             this.SetupLoadItems();
-            let savesCount = ArraySize(this.m_saves);
+            let savesCount = ArraySize(this.m_ngPlusSaveIndices);
             inkWidgetRef.SetVisible(this.m_noSavedGamesLabel, savesCount == 0);
             this.UpdateButtonHints(savesCount);
             this.m_loadComplete = true;
