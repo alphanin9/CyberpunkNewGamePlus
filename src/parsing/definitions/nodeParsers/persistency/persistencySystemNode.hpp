@@ -5,7 +5,6 @@
 
 #include "../interfaceNodeData.hpp"
 #include "helpers/nativePersistencyReader.hpp"
-#include "helpers/persistencyRttiClassCreator.hpp"
 
 #include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
 
@@ -78,17 +77,9 @@ public:
         const auto idCount = aCursor.readInt();
 
         m_ids = aCursor.ReadMultiplePOD<std::uint32_t>(idCount);
-        /* m_ids.reserve(idCount);
-        for (auto i = 0; i < idCount; i++)
-        {
-            m_ids.push_back(aCursor.readUInt());
-        }
-        */
         m_unk1 = aCursor.readUInt();
         
         persistency::native::NativePersistencyReader reader{};
-
-        // std::unordered_set<Red::CName> persistentClassTypes;
 
         const auto itemCount = aCursor.readInt();
 
@@ -132,6 +123,7 @@ public:
                         // Don't do anything, pray that it doesn't crash
                     }
 
+                    // Small optimization: instead of resizing the vector for all the persistent nodes (that we only use one of anyway), we only instantiate the needed one(s)
                     m_redClasses.emplace_back();
 
                     auto& entry = m_redClasses.back();
@@ -154,16 +146,6 @@ public:
                 aCursor.seekTo(FileCursor::SeekTo::Start, startOffset + classSize);
             }
         }
-        // PluginContext::Spew("Persistency used types");
-
-        // for (auto name : persistentClassTypes)
-        //{
-        //     PluginContext::Spew(name.ToString());
-        // }
-
-        // PluginContext::Spew(" ");
-
-        // std::println("{} nodes in PersistencySystem", m_redClasses.size());
     }
 
     PersistentBuffer& LookupChunk(std::string_view aChunkName)

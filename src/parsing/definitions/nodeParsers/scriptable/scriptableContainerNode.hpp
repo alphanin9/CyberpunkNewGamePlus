@@ -5,6 +5,7 @@
 #include <print>
 #include <stdexcept>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <RED4ext/Package.hpp>
@@ -14,7 +15,6 @@
 #include "../defaultNodeData.hpp"
 #include "helpers/classDefinitions/playerDevelopmentData.hpp"
 #include "helpers/nativeScriptableReader.hpp"
-#include "helpers/rttiClassCreator.hpp"
 
 namespace cyberpunk
 {

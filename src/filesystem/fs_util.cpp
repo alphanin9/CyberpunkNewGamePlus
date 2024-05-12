@@ -2,11 +2,17 @@
 #include <filesystem>
 #include <fstream>
 #include <print>
+#include <ranges>
 
 #include "Windows.h"
 #include "shlobj_core.h"
 
-#include <nlohmann/json.hpp>
+#include <simdjson.h>
+
+#include <RED4ext/RED4ext.hpp>
+#include <RedLib.hpp>
+
+#include "fs_util.hpp"
 
 namespace files
 {
@@ -30,81 +36,9 @@ std::filesystem::path GetCpSaveFolder()
     return path;
 }
 
-struct SaveData
-{
-    std::filesystem::file_time_type m_time;
-    std::filesystem::path m_path;
-};
-
-std::filesystem::path GetLatestPointOfNoReturnSave()
-{
-    constexpr auto pointOfNoReturnPrefix = L"PointOfNoReturn";
-    constexpr auto saveMetadataType = "saveMetadataContainer";
-    constexpr auto minSupportedGameVersion = 2000;
-
-    const auto basePath = GetCpSaveFolder();
-
-    auto vecSavePaths = std::vector<SaveData>{};
-
-    for (const auto& dirEntry : std::filesystem::directory_iterator{basePath})
-    {
-        if (!dirEntry.is_directory())
-        {
-            continue;
-        }
-
-        if (!dirEntry.path().stem().native().starts_with(pointOfNoReturnPrefix))
-        {
-            continue;
-        }
-
-        const auto metadataPath = dirEntry.path() / L"metadata.9.json";
-
-        if (!std::filesystem::is_regular_file(metadataPath))
-        {
-            continue;
-        }
-
-        const auto json = nlohmann::json::parse(std::ifstream{metadataPath});
-
-        if (json.empty())
-        {
-            continue;
-        }
-
-        if (json["RootType"].get<std::string_view>() != saveMetadataType)
-        {
-            continue;
-        }
-
-        const auto& saveMetadata = json["Data"]["metadata"];
-
-        if (saveMetadata["gameVersion"].get<std::int64_t>() >= minSupportedGameVersion)
-        {
-            SaveData data{};
-            data.m_path = dirEntry;
-            data.m_time = std::filesystem::last_write_time(metadataPath);
-
-            vecSavePaths.push_back(data);
-        }
-    }
-
-    if (vecSavePaths.empty())
-    {
-        return std::filesystem::path{};
-    }
-
-    std::sort(vecSavePaths.begin(), vecSavePaths.end(),
-              [](const SaveData& aLhs, const SaveData& aRhs)
-              { return aLhs.m_time.time_since_epoch() > aRhs.m_time.time_since_epoch(); });
-
-    return vecSavePaths.at(0).m_path;
-}
-
-constexpr auto pointOfNoReturnPrefix = L"PointOfNoReturn";
-constexpr auto saveMetadataType = "saveMetadataContainer";
 constexpr auto minSupportedGameVersion = 2000;
 
+// No longer checks for PONR, needs a name change
 bool HasValidPointOfNoReturnSave()
 {
     static const auto basePath = GetCpSaveFolder();
@@ -122,39 +56,21 @@ bool HasValidPointOfNoReturnSave()
                                return false;
                            }
 
-                           if (!aDirEntry.path().stem().native().starts_with(pointOfNoReturnPrefix))
-                           {
-                               return false;
-                           }
+                           const auto saveName = aDirEntry.path().stem().string();
 
-                           const auto metadataPath = aDirEntry.path() / L"metadata.9.json";
-
-                           if (!std::filesystem::is_regular_file(metadataPath))
-                           {
-                               return false;
-                           }
-
-                           const auto json = nlohmann::json::parse(std::ifstream{metadataPath});
-
-                           if (json.empty())
-                           {
-                               return false;
-                           }
-
-                           if (json["RootType"].get<std::string_view>() != saveMetadataType)
-                           {
-                               return false;
-                           }
-
-                           const auto& saveMetadata = json["Data"]["metadata"];
-
-                           return saveMetadata["gameVersion"].get<std::int64_t>() >= minSupportedGameVersion;
+                           return IsValidForNewGamePlus(saveName);
                        });
 }
 
-bool IsValidForNewGamePlus(std::string_view aSaveName)
+bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHash)
 {
     static const auto basePath = GetCpSaveFolder();
+
+    if (aSaveName.starts_with("EndGameSave"))
+    {
+        // Hack, not sure if necessary...
+        return false;
+    }
 
     const auto metadataPath = basePath / aSaveName / "metadata.9.json";
 
@@ -163,21 +79,92 @@ bool IsValidForNewGamePlus(std::string_view aSaveName)
         return false;
     }
 
-    const auto json = nlohmann::json::parse(std::ifstream{metadataPath});
+    auto padded = simdjson::padded_string::load(metadataPath.string());
 
-    if (json.empty())
+    if (padded.error() != simdjson::error_code::SUCCESS)
     {
         return false;
     }
 
-    if (json["RootType"].get<std::string_view>() != saveMetadataType)
+    auto json2 = simdjson::dom::parser{};
+
+    const auto document = json2.parse(padded.value());
+
+    if (!document.is_object())
     {
         return false;
     }
 
-    const auto& saveMetadata = json["Data"]["metadata"];
+    if (!document["RootType"].is_string())
+    {
+        return false;
+    }
 
-    return saveMetadata["gameVersion"].get<std::int64_t>() >= minSupportedGameVersion;
+    const auto saveMetadata = document["Data"]["metadata"];
+
+    if (minSupportedGameVersion > int64_t(saveMetadata["gameVersion"]))
+    {
+        return false;
+    }
+
+    const auto isPointOfNoReturn = aSaveName.starts_with("PointOfNoReturn");
+
+    aPlaythroughHash = Red::FNV1a64(saveMetadata["playthroughID"].get_c_str().value());
+    
+    if (isPointOfNoReturn)
+    {
+        return true;
+    }
+
+    const auto questsDone = saveMetadata["finishedQuests"].get_string().value();
+
+    auto q104Done = false;
+    auto q110Done = false;
+    auto q112Done = false;
+
+    using std::operator""sv;
+    for (auto questName : std::views::split(questsDone, " "sv))
+    {
+        auto asView = std::string_view(questName);
+
+        if (asView == "q104")
+        {
+            q104Done = true;
+        }
+        else if (asView == "q110")
+        {
+            q110Done = true;
+        }
+        else if (asView == "q112")
+        {
+            q112Done = true;
+        }
+
+        if (q104Done && q110Done && q112Done)
+        {
+            return true;
+        }
+    }
+
+    constexpr auto q307_active_fact = "q307_blueprint_acquired=1";
+
+    for (auto fact : saveMetadata["facts"])
+    {
+        if (fact.is_string())
+        {
+            if (fact.get_string().value() == q307_active_fact)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
+bool IsValidForNewGamePlus(std::string_view aSaveName)
+{
+    uint64_t dummy{};
+    return IsValidForNewGamePlus(aSaveName, dummy);
+}
 } // namespace files

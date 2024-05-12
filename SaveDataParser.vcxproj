@@ -87,14 +87,14 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\simdjson\singleheader;deps\lz4\lib;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\simdjson\singleheader;deps\lz4\lib;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>
@@ -179,7 +179,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\dependencies\lz4.c" />
+    <ClCompile Include="deps\lz4\lib\lz4.c" />
+    <ClCompile Include="deps\simdjson\singleheader\simdjson.cpp" />
     <ClCompile Include="src\filesystem\fs_util.cpp" />
     <ClCompile Include="src\hooking\hooking.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -189,7 +190,6 @@
   <ItemGroup>
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\context\context.hpp" />
-    <ClInclude Include="src\dependencies\lz4.h" />
     <ClInclude Include="src\filesystem\fs_util.hpp" />
     <ClInclude Include="src\hooking\hooking.hpp" />
     <ClInclude Include="src\parsing\bufferWriter.hpp" />
@@ -197,9 +197,7 @@
     <ClInclude Include="src\parsing\definitions\compression\compressionHeader.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\inventory\inventoryNode.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\nativePersistencyReader.hpp" />
-    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\persistencyRttiClassCreator.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp" />
-    <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReader.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReaderNative.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\equipmentSystem.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\playerDevelopmentData.hpp" />

@@ -20,7 +20,6 @@ namespace parser {
 		void DecompressFile();
 		bool LoadNodes();
 	public:
-		bool ParseMetadata(std::filesystem::path aMetadataPath);
 		bool ParseSavegame(std::filesystem::path aSavePath);
 
 		cyberpunk::NodeEntry* LookupNode(std::wstring_view aNodeName);

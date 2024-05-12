@@ -18,21 +18,14 @@
 #include "definitions/nodeParsers/parserHelper.hpp"
 #include "definitions/nodeParsers/inventory/inventoryNode.hpp"
 
-#include "../dependencies/lz4.h"
-
-#include <nlohmann/json.hpp>
+#include <lz4.h>
 #include <RedLib.hpp>
 
 #include "../context/context.hpp"
 
 // Copypasted from WolvenKit :(
 namespace parser {
-	bool Parser::ParseMetadata(std::filesystem::path aMetadataPath) {
-		return true;
-	}
-
 	bool Parser::ParseSavegame(std::filesystem::path aSavePath) {
-
 		const auto bufferSize = std::filesystem::file_size(aSavePath);
 
 		m_fileStream = std::vector<std::byte>{ bufferSize };
@@ -135,16 +128,15 @@ namespace parser {
 	}
 
 	void Parser::DecompressFile() {
-		// THIS IS COMPLETELY FUCKED
+        // TODO: optimize this
+        // Dumb code here
 		auto compressionTablePosition = 0ll;
 		{
 			auto fileCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
 			
 			compressionTablePosition = fileCursor.findByteSequence("FZLC");
-
-			// std::println("Compression table pos: {}", compressionTablePosition);
 		}
-		auto decompressionResult = std::vector<std::byte>{};
+
 		{
 			auto temporaryResult = std::vector<std::byte>{ m_fileStream.data(), m_fileStream.data() + compressionTablePosition };
 			auto fileCursor = FileCursor{ m_fileStream.data(), m_fileStream.size() };
@@ -186,6 +178,7 @@ namespace parser {
 				}
 
 				const auto uncompressedData = [&temporaryResult, &decompressionBuffer, &compressionHeader, tableEntriesCount, chunkSize]() {
+					
 					const auto startPos = temporaryResult.size();
 
 					const auto chunkCount = decompressionBuffer.size() / chunkSize;
@@ -360,15 +353,10 @@ namespace parser {
 	bool Parser::LoadNodes() {
         auto cursor = FileCursor{m_decompressedData.data(), m_decompressedData.size()};
 
-		//std::println("Assigning nodeids...");
-
 		for (auto& node : m_flatNodes) {
 			cursor.seekTo(FileCursor::SeekTo::Start, node.offset);
-			auto nodeId = cursor.readInt();
-			node.id = nodeId;
+            node.id = cursor.readInt();
 		}
-
-		//std::println("Finding children...");
 
 		for (auto& node : m_flatNodes) {
 			if (!node.isChild) {
@@ -381,19 +369,13 @@ namespace parser {
 			}
 		}
 
-		//std::println("Filtering out children...");
-
 		for (auto& node : m_flatNodes) {
 			if (!node.isChild) {
 				m_nodeList.push_back(&node);
 			}
 		}
 
-		//std::println("Calculating real sizes...");
-
 		CalculateTrueSizes(m_nodeList, m_decompressedData.size());
-
-		//std::println("Beginning node parsing...");
 
 		for (auto& node : m_flatNodes) {
 			if (!node.isReadByParent) {

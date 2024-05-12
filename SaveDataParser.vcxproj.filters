@@ -24,13 +24,16 @@
     <ClCompile Include="src\parsing\fileReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\dependencies\lz4.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\parsing\definitions\nodeParsers\parserHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\hooking\hooking.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\simdjson\singleheader\simdjson.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\lz4\lib\lz4.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,9 +50,6 @@
     <ClInclude Include="src\parsing\definitions\compression\compressionHeader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\dependencies\lz4.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\parsing\bufferWriter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -59,9 +59,6 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\persistencyRttiClassCreator.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\context\context.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -69,9 +66,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\redscript_api\redscriptBindings.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReaderNative.hpp">

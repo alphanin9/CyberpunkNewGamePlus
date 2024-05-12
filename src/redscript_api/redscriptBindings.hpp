@@ -21,6 +21,8 @@
 
 #include <chrono>
 
+#include <simdjson.h>
+
 // NOT A GOOD IDEA TO HAVE IN A HEADER
 // But who cares?
 
@@ -205,6 +207,48 @@ public:
         return files::IsValidForNewGamePlus(aSaveName->c_str());
     }
 
+    Red::DynArray<int> ResolveNewGamePlusSaves(Red::ScriptRef<Red::DynArray<Red::CString>>& aSaves)
+    {
+        if (!aSaves)
+        {
+            return {};
+        }
+
+        static const auto basePath = files::GetCpSaveFolder();
+
+        // We don't need sorting, the game already sorts the saves before passing them to Redscript
+        auto& saveList = *aSaves;
+        
+        std::unordered_set<std::uint64_t> playthroughIds{};
+
+        Red::DynArray<int> returnedData{};
+        returnedData.Reserve(saveList.size);
+        // Technically a signed/unsigned mismatch, but I have doubts about people having 2 billion+ saves
+        for (auto i = 0; i < saveList.size; i++)
+        {
+            // We need the save index for this...
+            auto& saveName = saveList.entries[i];
+
+            std::uint64_t hash{};
+
+            if (!files::IsValidForNewGamePlus(saveName.c_str(), hash))
+            {
+                continue;
+            }
+
+            if (playthroughIds.contains(hash))
+            {
+                continue;
+            }
+
+            playthroughIds.insert(hash);
+            
+            returnedData.PushBack(i);
+        }
+        
+        return returnedData;
+    }
+
     bool ParsePointOfNoReturnSaveData(Red::ScriptRef<Red::CString>& aSaveName)
     {
         if (!aSaveName)
@@ -239,9 +283,6 @@ public:
                 parser.LookupNode(cyberpunk::PersistencySystemNode::nodeName)->nodeData.get());
             auto scriptableSystemsContainerNode = static_cast<cyberpunk::ScriptableSystemsContainerNode*>(
                 parser.LookupNode(cyberpunk::ScriptableSystemsContainerNode::nodeName)->nodeData.get());
-
-            // TODO: refactor scriptable bits to use native classes instead of the current method!
-            // The current method is dumb
 
             PlayerDevelopmentData playerDevelopmentData
             {
@@ -696,21 +737,21 @@ private:
     void AddItemToInventory(const ExtendedItemData& aExtendedData, const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList)
     {
         // Sorry, but these REALLY annoy me
-        static constexpr auto bannedTdbIds = std::array<RED4ext::TweakDBID, 32>{
-            RED4ext::TweakDBID{"Items.MaskCW"}, RED4ext::TweakDBID{"Items.MaskCWPlus"},
-            RED4ext::TweakDBID{"Items.MaskCWPlusPlus"}, RED4ext::TweakDBID{"Items.w_melee_004__fists_a"},
-            RED4ext::TweakDBID{"Items.PersonalLink"}, RED4ext::TweakDBID{"Items.personal_link"},
-            RED4ext::TweakDBID{"Items.PlayerMaTppHead"}, RED4ext::TweakDBID{"Items.PlayerWaTppHead"},
-            RED4ext::TweakDBID{"Items.PlayerFppHead"}, RED4ext::TweakDBID{"Items.HolsteredFists"},
-            RED4ext::TweakDBID{"Items.mq024_sandra_data_carrier"},
+        static constexpr auto bannedTdbIds = std::array<Red::TweakDBID, 32>{
+            Red::TweakDBID{"Items.MaskCW"}, Red::TweakDBID{"Items.MaskCWPlus"},
+            Red::TweakDBID{"Items.MaskCWPlusPlus"}, Red::TweakDBID{"Items.w_melee_004__fists_a"},
+            Red::TweakDBID{"Items.PersonalLink"}, Red::TweakDBID{"Items.personal_link"},
+            Red::TweakDBID{"Items.PlayerMaTppHead"}, Red::TweakDBID{"Items.PlayerWaTppHead"},
+            Red::TweakDBID{"Items.PlayerFppHead"}, Red::TweakDBID{"Items.HolsteredFists"},
+            Red::TweakDBID{"Items.mq024_sandra_data_carrier"},
             // And Skippy leads to him talking in the starting cutscene
-            RED4ext::TweakDBID{"Items.mq007_skippy"}, RED4ext::TweakDBID{"Items.mq007_skippy_post_quest"},
-            RED4ext::TweakDBID{"Items.Preset_Yukimura_Skippy"},
-            RED4ext::TweakDBID{"Items.Preset_Yukimura_Skippy_PostQuest"},
-            RED4ext::TweakDBID{"Items.q005_saburo_data_carrier"},
-            RED4ext::TweakDBID{"Items.q005_saburo_data_carrier_cracked"}, RED4ext::TweakDBID{"Items.q003_chip"},
-            RED4ext::TweakDBID{"Items.q003_chip_cracked"}, RED4ext::TweakDBID{"Items.q003_chip_cracked_funds"},
-            RED4ext::TweakDBID{"Items.Preset_Q001_Lexington"}};
+            Red::TweakDBID{"Items.mq007_skippy"}, Red::TweakDBID{"Items.mq007_skippy_post_quest"},
+            Red::TweakDBID{"Items.Preset_Yukimura_Skippy"},
+            Red::TweakDBID{"Items.Preset_Yukimura_Skippy_PostQuest"},
+            Red::TweakDBID{"Items.q005_saburo_data_carrier"},
+            Red::TweakDBID{"Items.q005_saburo_data_carrier_cracked"}, Red::TweakDBID{"Items.q003_chip"},
+            Red::TweakDBID{"Items.q003_chip_cracked"}, Red::TweakDBID{"Items.q003_chip_cracked_funds"},
+            Red::TweakDBID{"Items.Preset_Q001_Lexington"}, Red::TweakDBID{"Items.CyberdeckSplinter"}};
 
         if (std::find(bannedTdbIds.begin(), bannedTdbIds.end(), aExtendedData.m_tdbId) != bannedTdbIds.end())
         {
@@ -766,8 +807,6 @@ private:
         auto& inventoryLocal = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdLocal);
         auto& inventoryCarStash = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdCarStash);
 
-        
-
         for (const auto& item : inventoryLocal.inventoryItems)
         {
             ProcessItem(item, m_saveData.m_playerItems);
@@ -813,6 +852,7 @@ RTTI_DEFINE_ENUM(redscript::ENewGamePlusStartType);
 RTTI_DEFINE_CLASS(redscript::NewGamePlusSystem, {
     RTTI_METHOD(ParsePointOfNoReturnSaveData);
     RTTI_METHOD(HasPointOfNoReturnSave);
+    RTTI_METHOD(ResolveNewGamePlusSaves);
     RTTI_METHOD(GetNewGamePlusState);
     RTTI_METHOD(SetNewGamePlusState);
     RTTI_METHOD(GetSaveData);
