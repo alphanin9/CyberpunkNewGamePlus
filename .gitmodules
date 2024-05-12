@@ -1,9 +1,6 @@
 [submodule "deps/red4ext.sdk"]
 	path = deps/red4ext.sdk
 	url = https://github.com/WopsS/RED4ext.SDK.git
-[submodule "deps/json"]
-	path = deps/json
-	url = https://github.com/nlohmann/json.git
 [submodule "deps/redlib"]
 	path = deps/redlib
 	url = https://github.com/psiberx/cp2077-red-lib.git
