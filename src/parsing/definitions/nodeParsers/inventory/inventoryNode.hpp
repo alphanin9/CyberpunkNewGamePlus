@@ -6,6 +6,8 @@
 #include "../interfaceNodeData.hpp"
 #include "../../../../context/context.hpp"
 
+#include "../parserHelper.hpp"
+
 namespace cyberpunk {
 	struct ItemInfo {
 		enum class ItemStructure : std::uint8_t {

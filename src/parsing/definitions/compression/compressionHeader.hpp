@@ -28,6 +28,7 @@ namespace compression {
 		std::vector<DataChunkInfo> dataChunkInfo{};
 
 		int maxEntries;
+        int m_totalChunkSize{};
 
 		static CompressionHeader fromCursor(FileCursor& cursor) {
 			const auto compressionHeaderBasePosition = cursor.offset;
@@ -43,6 +44,10 @@ namespace compression {
 
 			for (auto i = 0; i < entryCount; i++) {
 				ret.dataChunkInfo.push_back(DataChunkInfo::fromCursor(cursor));
+
+				auto& entry = ret.dataChunkInfo.back();
+
+                ret.m_totalChunkSize += std::max(entry.decompressedSize, entry.compressedSize);
 			}
 
 			ret.maxEntries = (ret.dataChunkInfo.at(0).offset - (int)(compressionHeaderBasePosition + 8)) / 12;

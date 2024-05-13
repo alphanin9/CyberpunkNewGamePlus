@@ -1,8 +1,8 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
-#include <print>
 #include <ranges>
+#include <unordered_set>
 
 #include "Windows.h"
 #include "shlobj_core.h"
@@ -118,32 +118,14 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     const auto questsDone = saveMetadata["finishedQuests"].get_string().value();
 
-    auto q104Done = false;
-    auto q110Done = false;
-    auto q112Done = false;
-
     using std::operator""sv;
-    for (auto questName : std::views::split(questsDone, " "sv))
+    auto questsSplitRange = std::views::split(questsDone, " "sv);
+
+    std::unordered_set<std::string_view> questsSet(questsSplitRange.begin(), questsSplitRange.end());
+    
+    if (questsSet.contains("q104") && questsSet.contains("q110") && questsSet.contains("q112"))
     {
-        auto asView = std::string_view(questName);
-
-        if (asView == "q104")
-        {
-            q104Done = true;
-        }
-        else if (asView == "q110")
-        {
-            q110Done = true;
-        }
-        else if (asView == "q112")
-        {
-            q112Done = true;
-        }
-
-        if (q104Done && q110Done && q112Done)
-        {
-            return true;
-        }
+        return true;
     }
 
     constexpr auto q307_active_fact = "q307_blueprint_acquired=1";
