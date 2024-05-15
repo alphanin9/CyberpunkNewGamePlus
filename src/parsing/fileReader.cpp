@@ -142,13 +142,10 @@ void DumpItem(cyberpunk::ItemData& aItemData)
 
 void Parser::DecompressFile()
 {
-    // :e3:
-    // No point to optimize this further, it has good enough performance
-    auto compressionTablePosition = FileCursor{m_fileStream.data(), m_fileStream.size()}.findByteSequence("FZLC");
-
-    m_decompressedData = std::vector<std::byte>{m_fileStream.data(), m_fileStream.data() + compressionTablePosition};
-
     auto fileCursor = FileCursor{m_fileStream.data(), m_fileStream.size()};
+
+    const auto compressionTablePosition = fileCursor.findByteSequence("FZLC");
+
     fileCursor.seekTo(FileCursor::SeekTo::Start, compressionTablePosition);
 
     const auto compressionHeader = compression::CompressionHeader::fromCursor(fileCursor);
@@ -156,16 +153,7 @@ void Parser::DecompressFile()
     const auto tableEntriesCount = compressionHeader.maxEntries;
 
     const auto chunkSize = tableEntriesCount == 0x100 ? 0x00040000 : 0x00080000;
-    const auto chunkCount = (compressionHeader.m_totalChunkSize / chunkSize) + 1; // 1 leftover chunk from leftover size
-
-    m_decompressedData.reserve(compressionHeader.m_totalChunkSize * 2);
-
-    // We do not actually need to have the compression table in our CSAV, as we don't intend to save it again
-    auto emptyByteSize = sizeof(uint32_t) + sizeof(int);
-    emptyByteSize += chunkCount * (sizeof(int) * 3);
-    emptyByteSize += (tableEntriesCount - chunkCount) * 12;
-
-    m_decompressedData.insert(m_decompressedData.end(), emptyByteSize, {});
+    m_decompressedData.reserve(compressionHeader.m_totalChunkSize * 2); // Still safe...
 
     for (auto& chunkInfo : compressionHeader.dataChunkInfo)
     {
@@ -192,6 +180,19 @@ void Parser::DecompressFile()
         }
 
         m_decompressedData.insert(m_decompressedData.end(), outBuffer.begin(), outBuffer.end());
+    }
+
+    const auto chunkCountActual = (m_decompressedData.size() / chunkSize) + 1;
+
+    auto emptyByteSize = sizeof(uint32_t) + sizeof(int);
+    emptyByteSize += chunkCountActual * (sizeof(int) * 3);
+    emptyByteSize += (tableEntriesCount - chunkCountActual) * 12;
+
+    const auto nodeOffsetChangeAmount = compressionTablePosition + emptyByteSize;
+
+    for (auto& node : m_flatNodes)
+    {
+        node.offset -= nodeOffsetChangeAmount;
     }
 }
 
