@@ -68,8 +68,8 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::PluginInfo* aInfo)
 {
 	aInfo->name = L"New Game+";
 	aInfo->author = L"not_alphanine";
-	aInfo->version = RED4EXT_SEMVER(0, 9, 7); // Set your version here.
-	aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
+	aInfo->version = RED4EXT_SEMVER(0, 9, 8); // Set your version here.
+	aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT; 
 	aInfo->sdk = RED4EXT_SDK_LATEST;
 }
 
