@@ -11,6 +11,7 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 #include <ArchiveXL.hpp>
+#include <TweakXL.hpp>
 
 RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::EMainReason aReason, const RED4ext::Sdk* aSdk)
 {
@@ -30,9 +31,15 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 				return false;
 			}
 
-			if (!aSdk->scripts->Add(aHandle, L"redscript/"))
+			if (!aSdk->scripts->Add(aHandle, L"redscript\\"))
             {
                 PluginContext::Error("Failed to add scripts from the plugin's folder, quitting...");
+                return false;
+			}
+
+			if (!TweakXL::RegisterTweaks(aHandle, "tweaks\\"))
+            {
+                PluginContext::Error("Failed to add tweaks from the plugin's folder, quitting...");
                 return false;
 			}
 		}

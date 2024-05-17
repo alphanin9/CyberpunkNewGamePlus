@@ -1,0 +1,112 @@
+Character.NGPlus_EncounterNetrunnerBoss:
+  $base: t"Character.q305_maxtac_miniboss_netrunner_ma"
+  tags: ["Cyberpsycho"]
+  baseAttitudeGroup: n"hostile"
+  affiliation: t"Factions.Arasaka"
+  rarity: NPCRarity.Boss
+  quest: NPCQuestAffiliation.StreetStory
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+
+  entityTemplatePath: r"base\quest\tertiary_characters\ghost_nachtigall.ent"
+  appearanceName: n"q111_nachtigall_ghost"
+
+  displayName: l"Story-base-quest-tertiary_characters-burondo_displayName"
+  fullDisplayName: l"Story-base-quest-tertiary_characters-burondo_displayName"
+
+  savable: true
+
+  primaryEquipment:
+    $type: NPCEquipmentGroup
+    equipmentItems:
+      - "Character.ArasakaAssaultRiflePool"
+
+  effectors:
+    - !append t"Character.AllowTechWeaponDodgeEffector"
+    - !append t"Character.AllowAnyDirectionDodgeEffector"
+  
+  abilities:
+    - !append t"Ability.HasDodge"
+    - !append t"Ability.HasKerenzikov"
+    - !remove t"Ability.IsAVMaxTac"
+
+  statModifiers:
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.Health
+      modifierType: Multiplier
+      value: 1.2
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.DPS
+      modifierType: Multiplier
+      value: 3.0
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.IsTier4Archetype
+      modifierType: Additive
+      value: 1
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.AttackSpeed
+      modifierType: Multiplier
+      value: 0.2
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.MaxSpeed
+      modifierType: Multiplier
+      value: 2.0
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.Accuracy
+      modifierType: Additive
+      value: 2.0
+
+Character.NGPlus_EncounterNetrunnerBoss_KatanaSidekick:
+  $base: t"Character.arasaka_ninja_fmelee3_katana_wa_elite"
+  priority: SpawnableObjectPriority.Quest
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: "hostile"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+DynamicSpawnSystem.NewGamePlus_NetrunnerBossEncounter:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.q101_troy_bike"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss"
+      weight: 1.0
+
+# Some randoms with mantisblades or some shit, to keep the player from focusing the boss too easily
+DynamicSpawnSystem.NewGamePlus_NetrunnerBossSupport:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.q101_troy_bike"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.mws_gang_retaliation_enemies_arasaka_sidekick_1"
+      weight: 1.0
+
+DynamicSpawnSystem.NewGamePlus_NetrunnerBossSupport2:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.q101_troy_bike"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.mws_gang_retaliation_enemies_arasaka_sidekick_2"
+      weight: 1.0
+
+DynamicSpawnSystem.NewGamePlus_NetrunnerBossSupport3:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.q101_troy_bike"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_KatanaSidekick"
+      weight: 1.0

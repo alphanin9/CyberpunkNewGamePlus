@@ -13,3 +13,6 @@
 [submodule "deps/lz4"]
 	path = deps/lz4
 	url = https://github.com/lz4/lz4.git
+[submodule "deps/tweakxl"]
+	path = deps/tweakxl
+	url = https://github.com/psiberx/cp2077-tweak-xl.git

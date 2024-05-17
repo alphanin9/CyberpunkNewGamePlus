@@ -3,7 +3,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: MSBuild
+name: Build artifact on commit
 
 on:
   push:
@@ -57,13 +57,16 @@ jobs:
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/redscript
+          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/tweaks
+
           # Copy the build artifacts
           
           Copy-Item -Path ./x64/Release/NewGamePlus.dll -Destination $packagingDir/red4ext/plugins/NewGamePlus
           Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $packagingDir/red4ext/plugins/NewGamePlus
 
-          # Copy over Redscript
+          # Copy over Redscript/tweaks
           Copy-Item -Path ./scripting/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/redscript -Recurse
+          Copy-Item -Path ./tweaks/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/tweaks -Recurse
 
           # Copy over archive and .xl file (TODO: pack .archive dynamically)
           Copy-Item -Path ./wolvenkit/packed/archive/pc/mod/NewGamePlus.archive -Destination $packagingDir/red4ext/plugins/NewGamePlus

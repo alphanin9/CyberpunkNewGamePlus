@@ -87,14 +87,14 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\simdjson\singleheader;deps\lz4\lib;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\simdjson\singleheader;deps\lz4\lib;deps\tweakxl\support\red4ext;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\simdjson\singleheader;deps\lz4\lib;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\simdjson\singleheader;deps\lz4\lib;deps\tweakxl\support\red4ext;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>

@@ -28,8 +28,10 @@ jobs:
           $versionPrefix = "refs/tags/v"
           $version = $env:GITHUB_REF.Substring($versionPrefix.Length)
           $commitSha = (git rev-parse --short $env:GITHUB_SHA)
+          $changes = (git log "$(git describe --tags --abbrev=0)..HEAD" --oneline)
           echo "NGPLUS_COMMIT_SHA=${commitSha}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
           echo "NGPLUS_VERSION=${version}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
+          echo "NGPLUS_COMMITS_SINCE_LAST_TAG=${changes} | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append"
       
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1.0.2
@@ -52,13 +54,15 @@ jobs:
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/redscript
+          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/tweaks
+
           # Copy the build artifacts
-          
           Copy-Item -Path ./x64/Release/NewGamePlus.dll -Destination $packagingDir/red4ext/plugins/NewGamePlus
           Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $packagingDir/red4ext/plugins/NewGamePlus
 
-          # Copy over Redscript
+          # Copy over Redscript/tweaks
           Copy-Item -Path ./scripting/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/redscript -Recurse
+          Copy-Item -Path ./tweaks/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/tweaks -Recurse
 
           # Copy over archive and .xl file (TODO: pack .archive dynamically)
           Copy-Item -Path ./wolvenkit/packed/archive/pc/mod/NewGamePlus.archive -Destination $packagingDir/red4ext/plugins/NewGamePlus
@@ -87,5 +91,7 @@ jobs:
         body: |
           ### SHA256 of release:
           - ${{env.NGPLUS_SHA256}}
+          ### Commits
+          - ${{env.NGPLUS_COMMITS_SINCE_LAST_TAG}}
         files: | 
           NewGamePlus_${{env.NGPLUS_VERSION }}.zip

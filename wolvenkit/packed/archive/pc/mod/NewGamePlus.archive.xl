@@ -3,3 +3,5 @@ localization:
     en-us: base\localization\en-us\new_game_plus\new_game_plus_onscreens.json
   subtitles:
     en-us: base\localization\en-us\new_game_plus\subtitles\subtitles.json
+journal:
+  - mod\quest\newgameplus\journal\NGPlusJournal.journal

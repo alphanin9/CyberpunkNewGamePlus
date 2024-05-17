@@ -30,6 +30,7 @@ base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\t_bug.an
 base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\v.anims
 base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\wakako_okada.anims
 base\quest\NewGamePlus.gamedef
+base\worlds\03_night_city\03_night_city.world
 mod\quest\changedQuests\NewGamePlus_act_1.questphase
 mod\quest\changedQuests\NewGamePlus_additional_game_elements.questphase
 mod\quest\changedquests\newgameplus_cyberpunk2077.questphase
@@ -39,6 +40,9 @@ mod\quest\changedQuests\open_world\NewGamePlus_open_world_content.questphase
 mod\quest\NewGamePlus_Q001.gamedef
 mod\quest\NewGamePlus_Q001.quest
 mod\quest\NewGamePlus.quest
+mod\quest\newgameplus\bossEncounterTest\bossEncounterTest.gamedef
+mod\quest\newgameplus\bossencountertest\bossencountertest.quest
+mod\quest\newgameplus\bossEncounterTest\bossEncounterTest.quest
 mod\quest\newgameplus\FastTrackToQ001.questphase
 mod\quest\newgameplus\fasttracktoq101new.questphase
 mod\quest\newgameplus\FastTrackToQ101New.questphase
@@ -53,6 +57,10 @@ mod\quest\newgameplus\new_q101\q101p2vroom.questphase
 mod\quest\newgameplus\new_q101\Q101P2VRoom.questphase
 mod\quest\newgameplus\new_q101\q101setjohnnystuff.questphase
 mod\quest\newgameplus\new_q101\Q101SetJohnnyStuff.questphase
+mod\quest\newgameplus\ngplusadditionalcontent.questphase
+mod\quest\newgameplus\NGPlusAdditionalContent.questphase
+mod\quest\newgameplus\ngplusbossencounterloop.questphase
+mod\quest\newgameplus\NGPlusBossEncounterLoop.questphase
 mod\quest\newgameplus\restorehud.questphase
 mod\quest\newgameplus\RestoreHUD.questphase
 mod\quest\newgameplus\SetBandageOutfit.questphase
