@@ -5,3 +5,10 @@ localization:
     en-us: base\localization\en-us\new_game_plus\subtitles\subtitles.json
 journal:
   - mod\quest\newgameplus\journal\NGPlusJournal.journal
+quest:
+  phases:
+    - path: mod\quest\newgameplus\NGPlusBossEncounterRetrofix.questphase
+      parent: base\quest\holocalls\holofixer\holofixer.questphase
+      input:
+        node: 3
+        socket: "Out"

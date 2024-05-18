@@ -1,6 +1,6 @@
 Character.NGPlus_EncounterNetrunnerBoss:
   $base: t"Character.q305_maxtac_miniboss_netrunner_ma"
-  tags: ["Cyberpsycho"]
+  tags: ["Cyberpsycho", "ImmuneToTakedown"]
   baseAttitudeGroup: n"hostile"
   affiliation: t"Factions.Arasaka"
   rarity: NPCRarity.Boss
@@ -8,7 +8,7 @@ Character.NGPlus_EncounterNetrunnerBoss:
   reactionPreset: ReactionPresets.Ganger_Aggressive
 
   entityTemplatePath: r"base\quest\tertiary_characters\ghost_nachtigall.ent"
-  appearanceName: n"q111_nachtigall_ghost"
+  appearanceName: n"man_average_q111_nachtigall_ghost"
 
   displayName: l"Story-base-quest-tertiary_characters-burondo_displayName"
   fullDisplayName: l"Story-base-quest-tertiary_characters-burondo_displayName"
@@ -27,6 +27,9 @@ Character.NGPlus_EncounterNetrunnerBoss:
   abilities:
     - !append t"Ability.HasDodge"
     - !append t"Ability.HasKerenzikov"
+    - !append t"Ability.CanUseOpticalCamo"
+    - !append t"Ability.CanUseFlashbangGrenades"
+    - !append t"Ability.CanCharge"
     - !remove t"Ability.IsAVMaxTac"
 
   statModifiers:
@@ -40,7 +43,7 @@ Character.NGPlus_EncounterNetrunnerBoss:
       $type: ConstantStatModifier
       statType: BaseStats.DPS
       modifierType: Multiplier
-      value: 3.0
+      value: 2.0
 
     - !append
       $type: ConstantStatModifier
@@ -76,7 +79,7 @@ Character.NGPlus_EncounterNetrunnerBoss_KatanaSidekick:
 
 DynamicSpawnSystem.NewGamePlus_NetrunnerBossEncounter:
   $type: DynamicVehicleData
-  vehicleRecord: t"Vehicle.q101_troy_bike"
+  vehicleRecord: t"Vehicle.NGPlus_Encounter_Bike"
   unitRecordsPool:
     -
       $type: WeightedCharacter
@@ -86,7 +89,7 @@ DynamicSpawnSystem.NewGamePlus_NetrunnerBossEncounter:
 # Some randoms with mantisblades or some shit, to keep the player from focusing the boss too easily
 DynamicSpawnSystem.NewGamePlus_NetrunnerBossSupport:
   $type: DynamicVehicleData
-  vehicleRecord: t"Vehicle.q101_troy_bike"
+  vehicleRecord: t"Vehicle.NGPlus_Encounter_Bike"
   unitRecordsPool:
     -
       $type: WeightedCharacter
@@ -95,7 +98,7 @@ DynamicSpawnSystem.NewGamePlus_NetrunnerBossSupport:
 
 DynamicSpawnSystem.NewGamePlus_NetrunnerBossSupport2:
   $type: DynamicVehicleData
-  vehicleRecord: t"Vehicle.q101_troy_bike"
+  vehicleRecord: t"Vehicle.NGPlus_Encounter_Bike"
   unitRecordsPool:
     -
       $type: WeightedCharacter
@@ -104,7 +107,7 @@ DynamicSpawnSystem.NewGamePlus_NetrunnerBossSupport2:
 
 DynamicSpawnSystem.NewGamePlus_NetrunnerBossSupport3:
   $type: DynamicVehicleData
-  vehicleRecord: t"Vehicle.q101_troy_bike"
+  vehicleRecord: t"Vehicle.NGPlus_Encounter_Bike"
   unitRecordsPool:
     -
       $type: WeightedCharacter

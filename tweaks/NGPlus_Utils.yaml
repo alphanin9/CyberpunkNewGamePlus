@@ -1,0 +1,31 @@
+# The Troy Arch, with some modifications (allow hacking it ETC)
+
+Vehicle.NGPlus_Encounter_Bike:
+  $base: t"Vehicle.q101_troy_bike"
+  tags:
+    - !remove "DisableTireShooting"
+  isHackable: t"Vehicle.Dynamic"
+  statModifierGroups: 
+   - !remove t"VehicleStatPreset.QuestVeryDurable"
+   - !append t"VehicleStatPreset.Durable"
+
+# Because HasPassiveHealthRegeneration is fucking busted
+
+Ability.HasWeakHealthRegeneration:
+  $type: GameplayAbility
+  abilityPackage:
+    effectors:
+      -
+        $type: ModifyStatPoolModifierEffector
+        prereqRecord: "Prereqs.AlwaysTruePrereq"
+        effectorClassName: "ModifyStatPoolModifierEffector"
+        poolModifier:
+          $type: PoolValueModifier
+          enabled: true
+          rangeBegin: 0.0
+          rangeEnd: 100.0
+          startDelay: 0.0
+          valuePerSec: 0.5
+          delayOnChange: false
+        statPoolType: "Health"
+        modificationType: "Regeneration"

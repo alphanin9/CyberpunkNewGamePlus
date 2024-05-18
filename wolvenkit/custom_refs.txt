@@ -50,6 +50,7 @@ mod\quest\newgameplus\fixhauntedweaponspreep1.questphase
 mod\quest\newgameplus\FixHauntedWeaponsPreEP1.questphase
 mod\quest\newgameplus\initstreetstoriesandfasttravel.questphase
 mod\quest\newgameplus\InitStreetStoriesAndFastTravel.questphase
+mod\quest\newgameplus\journal\NGPlusJournal.journal
 mod\quest\newgameplus\markq000ascompleted.questphase
 mod\quest\newgameplus\MarkQ000AsCompleted.questphase
 mod\quest\newgameplus\new_q101\new_q101.questphase

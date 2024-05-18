@@ -1,0 +1,187 @@
+Character.NGPlus_EncounterFastSoloBoss:
+  $base: t"Character.afterlife_rare_fmelee3_katana_wa_elite"
+  tags: ["Cyberpsycho", "ImmuneToTakedown"]
+  baseAttitudeGroup: n"hostile"
+  rarity: NPCRarity.Boss
+  quest: NPCQuestAffiliation.StreetStory
+
+  entityTemplatePath: r"ep1\quest\primary_characters\alex.ent"
+  appearanceName: n"alex_default"
+  voiceTag: n"alex"
+
+  displayName: l"NewGamePlus_BossEncounter_FastSoloDisplayName"
+  fullDisplayName: l"NewGamePlus_BossEncounter_FastSoloDisplayName"
+
+  savable: true
+  dropsWeaponOnDeath: false
+
+  primaryEquipment:
+    $type: NPCEquipmentGroup
+    equipmentItems:
+      -
+        $type: NPCEquipmentItem
+        item: t"Items.Preset_Knife_Military"
+        equipSlot: "AttachmentSlots.WeaponRight"
+        equipCondition:
+          - t"WeaponConditions.BaseMeleePrimaryWeaponEquipCondition"
+        unequipCondition:
+          - t"WeaponConditions.BaseMeleePrimaryWeaponUnequipCondition"
+
+  secondaryEquipment:
+    $type: NPCEquipmentGroup
+    equipmentItems:
+      - $type: NPCEquipmentItem
+        item: t"Items.Preset_Ticon_Reed"
+        equipSlot: "AttachmentSlots.WeaponRight"
+  
+  affiliation: t"Factions.Classified"
+  priority: t"SpawnableObjectPriority.Quest"
+
+  statModifierGroups:
+    - !append t"Character.Boss_Poise_Primary_Stat_ModGroup"
+    - !append t"Character.Cyberpsycho_ModGroup"
+    - !append t"Character.Cyberpsycho_HitReaction_Resistance"
+
+  effectors:
+    - !append t"Character.AllowTechWeaponDodgeEffector"
+    - !append t"Character.AllowAnyDirectionDodgeEffector"
+  
+  abilities:
+    - !append t"Ability.HasDodge"
+    - !append t"Ability.HasKerenzikov"
+    - !append t"Ability.HasSandevistanTier3"
+    - !append t"Ability.CanParry"
+    - !append t"Ability.CanUseFlashbangGrenades"
+    - !append t"Ability.CanUseSmokeGrenades"
+    - !append t"Ability.HasMajorQuickhackResistance"
+    - !append t"Ability.CanThrowWeapon"
+    - !append t"Ability.CanGuardBreak"
+    - !append t"Ability.CanRegenInCombat"
+    - !append t"Ability.CanShootWhileMoving"
+    - !append t"Ability.IsReckless"
+    - !append t"Ability.HasWeakHealthRegeneration"
+    - !append t"Ability.HasICELevelBooster"
+    - !append t"Ability.HasGraphiteTissue"
+    - !append t"Ability.HasBoostedCortex"
+    - !append t"Ability.CanUseOpticalCamo"
+    - !append t"Ability.CanDash"
+    - !append t"Ability.CanCharge"
+
+  objectActions: ["QuickHack.BossBaseBlindHack", "QuickHack.BossSuicideHackBase", "QuickHack.BossBaseWeaponMalfunctionHack", "QuickHack.BossBaseLocomotionMalfunctionHack", "QuickHack.BossBaseOverheatHack", "QuickHack.BossOverloadBaseHack", "QuickHack.BossBrainMeltBaseHack", "QuickHack.BossBaseCyberwareMalfunctionHack", "QuickHack.BossSystemCollapseHackBase", "QuickHack.BossGrenadeHackBase", "QuickHack.BossMadnessHackBase", "QuickHack.BossMemoryWipeHackBase", "QuickHack.BossBaseBlackWallHack", "QuickHack.BaseCommsCallInHack", "QuickHack.BaseCommsNoiseHack", "QuickHack.BasePingHack", "QuickHack.BaseContagionHack", "QuickHack.BaseWhistleHack", "QuickHack.RemoteBreach", "Takedown.NewPerkFinisher", "Takedown.NewPerkFinisherBlunt"]
+
+  visualTags:
+    - !append "Fast"
+
+  statModifiers:
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.Health
+      modifierType: Multiplier
+      value: 0.95 # Given we have evasion and percentage defenses out the ass, we don't need much HP
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.IsTier4Archetype
+      modifierType: Additive
+      value: 1
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.MaxSpeed
+      modifierType: Multiplier
+      value: 4.0
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.Accuracy
+      modifierType: Additive
+      value: 2.0
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.AttacksPerSecond
+      modifierType: Multiplier
+      value: 2.0
+    
+    - !append
+      $type: CurveStatModifier
+      statType: BaseStats.NPCDamage
+      modifierType: Multiplier
+      id: "boss_power_level_to_dps_mult"
+      column: "kurt_level_to_dps_mult"
+      refStat: BaseStats.PowerLevel
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.Evasion
+      modifierType: Additive
+      value: 0.55
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.MaxPercentDamageTakenPerHit
+      modifierType: Additive
+      value: 20 # So you can't just queue up several Synapse Burnouts
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.StunImmunity
+      modifierType: Additive
+      value: 1
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.HitReactionFactor
+      modifierType: Additive
+      value: 1
+
+Character.NGPlus_EncounterFastSoloBoss_NetrunnerSidekick:
+  $base: Character.q306_black_ops_netrunner
+  baseAttitudeGroup: n"hostile"
+  quest: NPCQuestAffiliation.StreetStory
+  priority: t"SpawnableObjectPriority.Quest"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NGPlus_EncounterFastSoloBoss_PistolSidekick:
+  $base: Character.q306_black_ops_fast_ranged
+  baseAttitudeGroup: n"hostile"
+  quest: NPCQuestAffiliation.StreetStory
+  priority: t"SpawnableObjectPriority.Quest"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+DynamicSpawnSystem.NewGamePlus_FastSoloBossEncounter:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.NGPlus_Encounter_Bike"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss"
+      weight: 1.0
+
+DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.v_sport1_herrera_outlaw"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_NetrunnerSidekick"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_PistolSidekick"
+      weight: 1.0
+
+DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport2:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.v_sport1_herrera_outlaw"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_PistolSidekick"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_NetrunnerSidekick"
+      weight: 1.0
