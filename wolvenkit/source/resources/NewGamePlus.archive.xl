@@ -10,5 +10,5 @@ quest:
     - path: mod\quest\newgameplus\NGPlusBossEncounterRetrofix.questphase
       parent: base\quest\holocalls\holofixer\holofixer.questphase
       input:
-        node: 3
+        node: [3]
         socket: "Out"

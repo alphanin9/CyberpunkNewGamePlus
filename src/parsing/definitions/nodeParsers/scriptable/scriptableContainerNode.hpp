@@ -163,6 +163,8 @@ struct RedChunk
 
     std::byte* m_chunkLocationPtr;
 
+    // Meh, this is dumb, I could just use a handle I think?
+
     bool m_isUsed; // For handles, maybe, sometime later...
 
     // Clean the pointer up
@@ -292,6 +294,7 @@ public:
                 auto chunkType = PluginContext::m_rtti->GetType(chunk.m_typeName);
 
                 // We don't know the chunk's type (or the type is wacky), blame mods
+                // FWIW this doesn't report the chunk name properly, odd? Not adding stuff from m_names to CNamePool? Eh, not worth it I think
                 if (!chunkType || chunkType->GetType() != Red::ERTTIType::Class)
                 {
                     PluginContext::Error(std::format("ScriptableSystemParser: Tried to load chunk {} with no RTTI "

@@ -8,7 +8,7 @@ class PlayerProgressionLoader {
     private let m_player: ref<PlayerPuppet>;
     private let m_equipmentSystem: ref<ScriptableSystem>;
 
-    public func LoadPlayerProgression(player: ref<PlayerPuppet>) -> Void {
+    public final func LoadPlayerProgression(player: ref<PlayerPuppet>) -> Void {
         // Has some bugs during the Q001 start, iron them out later!
         this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
         this.m_ngPlusPlayerSaveData = this.m_ngPlusSystem.GetSaveData();
@@ -23,6 +23,7 @@ class PlayerProgressionLoader {
         this.LoadPlayerStash();
         this.LoadPlayerEquippedCyberware();
         this.LoadPlayerGarage();
+        this.LoadPlayerCraftbook();
         this.LoadFacts();
 
         let playerDevelopmentData = PlayerDevelopmentSystem.GetInstance(player).GetDevelopmentData(player);
@@ -34,7 +35,7 @@ class PlayerProgressionLoader {
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerProgression done!");
     }
 
-    private func LoadFacts() {
+    private final func LoadFacts() {
         // This only exists because I really can't be arsed to alter fast tracking to Q001/Q101
         let questsSystem = GameInstance.GetQuestsSystem(this.m_player.GetGame());
 
@@ -45,7 +46,7 @@ class PlayerProgressionLoader {
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadFacts done!");
     }   
 
-    private func LoadPlayerDevelopment() {
+    private final func LoadPlayerDevelopment() {
         let playerDevelopmentData: ref<PlayerDevelopmentData> = PlayerDevelopmentSystem.GetInstance(this.m_player).GetDevelopmentData(this.m_player);
         playerDevelopmentData.m_isInNgPlus = true;
         let levelGainReason: telemetryLevelGainReason = telemetryLevelGainReason.IsDebug;
@@ -120,7 +121,7 @@ class PlayerProgressionLoader {
         return 1000;
     }
 
-    private func LoadPlayerInventory() {
+    private final func LoadPlayerInventory() {
         let permaMod = RPGManager
             .CreateStatModifier(gamedataStatType.CarryCapacity, gameStatModifierType.Additive, PlayerProgressionLoader.GetBigStatValue());
         GameInstance
@@ -142,7 +143,8 @@ class PlayerProgressionLoader {
     
     // Problem: by the time we call this function, the stash is not loaded in yet?
     // Wait for a few seconds before giving the player progression data, even though it'd be wacky?
-    private func GetPlayerStash() -> ref<GameObject> {
+    // Fixed by waiting for the node to be loaded before triggering the fact listener
+    private final func GetPlayerStash() -> ref<GameObject> {
         let stashEntityId = Cast<EntityID>(
             ResolveNodeRef(
                 CreateNodeRef("#v_room_stash"),
@@ -154,7 +156,7 @@ class PlayerProgressionLoader {
         return stashEntity;
     }
 
-    private func LoadPlayerStash() {
+    private final func LoadPlayerStash() {
         let transactionSystem: ref<TransactionSystem> = GameInstance.GetTransactionSystem(this.m_player.GetGame());
         let stashEntity = this.GetPlayerStash();
         for inventoryItem in this.m_ngPlusPlayerSaveData.playerStashItems {
@@ -164,7 +166,7 @@ class PlayerProgressionLoader {
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerStash done!");
     }
 
-    private func EquipCyberware(item: ItemID, addToInventory: Bool, slotIndex: Int32) {
+    private final func EquipCyberware(item: ItemID, addToInventory: Bool, slotIndex: Int32) {
         if ItemID.IsValid(item) {
             let equipRequest = new EquipRequest();
 
@@ -177,7 +179,7 @@ class PlayerProgressionLoader {
         }
     }
 
-    private func LoadPlayerEquippedCyberware() {
+    private final func LoadPlayerEquippedCyberware() {
         let permaMod = RPGManager
             .CreateStatModifier(gamedataStatType.Humanity, gameStatModifierType.Additive, PlayerProgressionLoader.GetBigStatValue());
         GameInstance
@@ -211,7 +213,7 @@ class PlayerProgressionLoader {
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerEquippedCyberware done!");
     }
 
-    private func LoadPlayerGarage() {
+    private final func LoadPlayerGarage() {
         let vehicleSystem = GameInstance.GetVehicleSystem(this.m_player.GetGame());
         let vehicleList = this.m_ngPlusPlayerSaveData.playerVehicleGarage;
 
@@ -230,6 +232,46 @@ class PlayerProgressionLoader {
         }
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerGarage done!");
+    }
+
+    private final func LoadPlayerCraftbook() {
+        let craftingSystem = CraftingSystem.GetInstance(this.m_player.GetGame());
+
+        if !IsDefined(craftingSystem) {
+            this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerCraftbook failed, craftingSystem == NULL");
+            return;
+        }
+
+        let craftBook = craftingSystem.GetPlayerCraftBook();
+
+        // Since I'm too lazy to write getters for everything native-side, we'll be resolving items to hide on using this
+        let recipeRecords = TweakDBInterface.GetRecords(n"ItemRecipe_Record");
+
+        // Yes, this is O(N^2) kinda, I think
+        // Doesn't really matter, though...
+
+        for targetItemId in this.m_ngPlusPlayerSaveData.knownRecipeTargetItems {
+            // Skip over ammo and other useless crap...
+            if !craftBook.KnowsRecipe(targetItemId) {
+                for record in recipeRecords {
+                    let asRecipeRecord = record as ItemRecipe_Record;
+
+                    if IsDefined(asRecipeRecord) {
+                        let result = asRecipeRecord.CraftingResult();
+
+                        if Equals(result.Item().GetRecordID(), targetItemId) {
+                            let hideOnItemsAdded: array<wref<Item_Record>>;
+                            asRecipeRecord.HideOnItemsAdded(hideOnItemsAdded);
+                            craftBook.AddRecipe(targetItemId, hideOnItemsAdded, result.Amount());
+                            this.m_ngPlusSystem.Spew(s"PlayerProgressionLoader::LoadPlayerCraftbook, added recipe for \(TDBID.ToStringDEBUG(targetItemId))");
+                            break;
+                        }
+                    }
+                    }
+            }
+        }
+
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerCraftbook done!");
     }
 }
 

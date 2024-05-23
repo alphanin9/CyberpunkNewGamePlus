@@ -30,7 +30,12 @@ Character.NGPlus_EncounterNetrunnerBoss:
     - !append t"Ability.CanUseOpticalCamo"
     - !append t"Ability.CanUseFlashbangGrenades"
     - !append t"Ability.CanCharge"
+    - !append t"Ability.HasSubdermalArmorMedium"
+    - !append t"Ability.CanPreciseShoot"
     - !remove t"Ability.IsAVMaxTac"
+
+  bountyDrawTable: t"BountyDrawTable.ProjectGhostMember"
+  objectActions: ["QuickHack.BossBaseBlindHack", "QuickHack.BossSuicideHackBase", "QuickHack.BossBaseWeaponMalfunctionHack", "QuickHack.BossBaseLocomotionMalfunctionHack", "QuickHack.BossBaseOverheatHack", "QuickHack.BossOverloadBaseHack", "QuickHack.BossBrainMeltBaseHack", "QuickHack.BossBaseCyberwareMalfunctionHack", "QuickHack.BossSystemCollapseHackBase", "QuickHack.BossGrenadeHackBase", "QuickHack.BossMadnessHackBase", "QuickHack.BossMemoryWipeHackBase", "QuickHack.BossBaseBlackWallHack", "QuickHack.BaseCommsCallInHack", "QuickHack.BaseCommsNoiseHack", "QuickHack.BasePingHack", "QuickHack.BaseContagionHack", "QuickHack.BaseWhistleHack", "QuickHack.RemoteBreach", "Takedown.NewPerkFinisher", "Takedown.NewPerkFinisherBlunt"]
 
   statModifiers:
     - !append
@@ -68,6 +73,12 @@ Character.NGPlus_EncounterNetrunnerBoss:
       statType: BaseStats.Accuracy
       modifierType: Additive
       value: 2.0
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.MaxPercentDamageTakenPerHit
+      modifierType: Additive
+      value: 20 # So you can't just queue up several Synapse Burnouts
 
 Character.NGPlus_EncounterNetrunnerBoss_KatanaSidekick:
   $base: t"Character.arasaka_ninja_fmelee3_katana_wa_elite"

@@ -18,6 +18,7 @@
 
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/equipmentSystem.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/playerDevelopmentData.hpp"
+#include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/craftBook.hpp"
 
 #include <chrono>
 
@@ -27,8 +28,9 @@
 // But who cares?
 
 using scriptable::native::EquipmentSystem::EquipmentSystemPlayerData;
-
 using scriptable::native::PlayerDevelopment::PlayerDevelopmentData;
+using scriptable::native::CraftBook::CraftBook;
+
 // Enums
 using scriptable::native::PlayerDevelopment::AttributeDataType;
 using scriptable::native::PlayerDevelopment::EspionageMilestonePerks;
@@ -39,6 +41,7 @@ using scriptable::native::PlayerDevelopment::SAttributeData;
 using scriptable::native::PlayerDevelopment::SDevelopmentPoints;
 using scriptable::native::PlayerDevelopment::SNewPerk;
 using scriptable::native::PlayerDevelopment::SProficiency;
+using scriptable::native::CraftBook::ItemRecipe;
 
 namespace redscript
 {
@@ -100,6 +103,7 @@ struct PlayerSaveData
     // in native or on the Redscript side?
     Red::DynArray<RedItemData> m_playerItems{};
     Red::DynArray<RedItemData> m_playerStashItems{};
+    Red::DynArray<Red::TweakDBID> m_knownRecipeTargetItems{};
 
     // Most distinctive cyberware needs to be equipped
     // by the scripting side to make
@@ -147,6 +151,7 @@ RTTI_DEFINE_CLASS(redscript::PlayerSaveData, {
     RTTI_PROPERTY(m_playerMoney);
     RTTI_PROPERTY(m_playerItems);
     RTTI_PROPERTY(m_playerStashItems);
+    RTTI_PROPERTY(m_knownRecipeTargetItems);
     RTTI_PROPERTY(m_playerEquippedOperatingSystem);
     RTTI_PROPERTY(m_playerEquippedKiroshis);
     RTTI_PROPERTY(m_playerEquippedLegCyberware);
@@ -284,6 +289,9 @@ public:
             auto scriptableSystemsContainerNode = static_cast<cyberpunk::ScriptableSystemsContainerNode*>(
                 parser.LookupNode(cyberpunk::ScriptableSystemsContainerNode::nodeName)->nodeData.get());
 
+            // Yes, I should be resolving them through handles
+            // But that adds more complexity to the scriptable parser
+            // I am actually not a fan of this, should be doing more error checking - but that's for later
             PlayerDevelopmentData playerDevelopmentData
             {
                 scriptableSystemsContainerNode->LookupChunk("PlayerDevelopmentData").m_instance
@@ -292,6 +300,8 @@ public:
             EquipmentSystemPlayerData equipmentSystemPlayerData{
                 scriptableSystemsContainerNode->LookupChunk("EquipmentSystemPlayerData").m_instance
             };
+
+            CraftBook craftBook{scriptableSystemsContainerNode->LookupChunk("CraftBook").m_instance};
 
             // Vehicle garage can technically not be present in a savegame
             if (persistencySystemNode->HasChunk("vehicleGarageComponentPS"))
@@ -307,6 +317,7 @@ public:
 
             LoadPlayerDevelopmentData(playerDevelopmentData);
             LoadEquipmentSystemPlayerData(equipmentSystemPlayerData);
+            LoadCraftBook(craftBook);
             LoadInventoryNew(inventoryNode);
         }
         catch (std::exception e)
@@ -599,6 +610,17 @@ private:
                 break;
             }
         }
+    }
+
+    void LoadCraftBook(CraftBook aCraftBook)
+    {
+        auto pSaveData = &m_saveData;
+
+        aCraftBook.IterateOverRecipes(
+            [pSaveData](ItemRecipe aRecipe) { 
+                pSaveData->m_knownRecipeTargetItems.PushBack(aRecipe.GetTargetItem());
+            }
+        );
     }
  
     struct ExtendedItemData

@@ -1,3 +1,30 @@
+Items.NGPlus_FastSoloMantisBlades_RPGData:
+  $base: Items.Base_Mantis_Blades_NPC_Data
+  statModifiers:
+    - !append
+      $type: CurveStatModifier
+      statType: BaseStats.RandomCurveInput
+      modifierType: Additive
+      id: "quality_curves"
+      column: "rci_to_cyberpsycho_boss_level"
+      refStat: BaseStats.NPCLootLevelHelper
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.AttacksPerSecond
+      modifierType: Multiplier
+      value: 2
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.Range
+      modifierType: Multiplier
+      value: 2
+
+Items.NGPlus_FastSoloMantisBlades:
+  $base: t"Items.Troy_Mantis_Blades"
+  npcRPGData: t"Items.NGPlus_FastSoloMantisBlades_RPGData"
+
 Character.NGPlus_EncounterFastSoloBoss:
   $base: t"Character.afterlife_rare_fmelee3_katana_wa_elite"
   tags: ["Cyberpsycho", "ImmuneToTakedown"]
@@ -14,13 +41,14 @@ Character.NGPlus_EncounterFastSoloBoss:
 
   savable: true
   dropsWeaponOnDeath: false
-
+  # I think Mantis Blades actually work better for NPCs?
   primaryEquipment:
     $type: NPCEquipmentGroup
     equipmentItems:
       -
         $type: NPCEquipmentItem
-        item: t"Items.Preset_Knife_Military"
+        #item: t"Items.Preset_Neurotoxin_Knife_Default"
+        item: t"Items.NGPlus_FastSoloMantisBlades"
         equipSlot: "AttachmentSlots.WeaponRight"
         equipCondition:
           - t"WeaponConditions.BaseMeleePrimaryWeaponEquipCondition"
@@ -36,6 +64,7 @@ Character.NGPlus_EncounterFastSoloBoss:
   
   affiliation: t"Factions.Classified"
   priority: t"SpawnableObjectPriority.Quest"
+  bountyDrawTable: t"BountyDrawTable.ProjectGhostMember"
 
   statModifierGroups:
     - !append t"Character.Boss_Poise_Primary_Stat_ModGroup"
@@ -47,6 +76,7 @@ Character.NGPlus_EncounterFastSoloBoss:
     - !append t"Character.AllowAnyDirectionDodgeEffector"
   
   abilities:
+    - !append t"Ability.HasChargeJump"
     - !append t"Ability.HasDodge"
     - !append t"Ability.HasKerenzikov"
     - !append t"Ability.HasSandevistanTier3"
@@ -66,6 +96,12 @@ Character.NGPlus_EncounterFastSoloBoss:
     - !append t"Ability.CanUseOpticalCamo"
     - !append t"Ability.CanDash"
     - !append t"Ability.CanCharge"
+    - !append t"Ability.HasSubdermalArmorMedium"
+    - !append t"Ability.HasPainEditor"
+    - !append t"Ability.HasLoweredHitReactions"
+    - !append t"Ability.HasBerserk"
+    - !append t"Ability.CanPreciseShoot"
+    - !append t"Ability.CanChargedShoot"
 
   objectActions: ["QuickHack.BossBaseBlindHack", "QuickHack.BossSuicideHackBase", "QuickHack.BossBaseWeaponMalfunctionHack", "QuickHack.BossBaseLocomotionMalfunctionHack", "QuickHack.BossBaseOverheatHack", "QuickHack.BossOverloadBaseHack", "QuickHack.BossBrainMeltBaseHack", "QuickHack.BossBaseCyberwareMalfunctionHack", "QuickHack.BossSystemCollapseHackBase", "QuickHack.BossGrenadeHackBase", "QuickHack.BossMadnessHackBase", "QuickHack.BossMemoryWipeHackBase", "QuickHack.BossBaseBlackWallHack", "QuickHack.BaseCommsCallInHack", "QuickHack.BaseCommsNoiseHack", "QuickHack.BasePingHack", "QuickHack.BaseContagionHack", "QuickHack.BaseWhistleHack", "QuickHack.RemoteBreach", "Takedown.NewPerkFinisher", "Takedown.NewPerkFinisherBlunt"]
 
@@ -95,12 +131,6 @@ Character.NGPlus_EncounterFastSoloBoss:
       $type: ConstantStatModifier
       statType: BaseStats.Accuracy
       modifierType: Additive
-      value: 2.0
-    
-    - !append
-      $type: ConstantStatModifier
-      statType: BaseStats.AttacksPerSecond
-      modifierType: Multiplier
       value: 2.0
     
     - !append
@@ -162,7 +192,7 @@ DynamicSpawnSystem.NewGamePlus_FastSoloBossEncounter:
 
 DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport:
   $type: DynamicVehicleData
-  vehicleRecord: t"Vehicle.v_sport1_herrera_outlaw"
+  vehicleRecord: t"Vehicle.NGPlus_Encounter_Outlaw"
   unitRecordsPool:
     -
       $type: WeightedCharacter
@@ -175,7 +205,7 @@ DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport:
 
 DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport2:
   $type: DynamicVehicleData
-  vehicleRecord: t"Vehicle.v_sport1_herrera_outlaw"
+  vehicleRecord: t"Vehicle.NGPlus_Encounter_Outlaw"
   unitRecordsPool:
     -
       $type: WeightedCharacter

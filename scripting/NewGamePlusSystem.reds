@@ -29,6 +29,8 @@ public native struct PlayerSaveData {
     native let playerEquippedArmCyberware: ItemID;
     native let playerEquippedCardiacSystemCW: array<ItemID>;
     native let playerVehicleGarage: array<TweakDBID>;
+
+    native let knownRecipeTargetItems: array<TweakDBID>;
 }
 
 enum ENewGamePlusStartType {
@@ -46,6 +48,7 @@ public native class NewGamePlusSystem extends IGameSystem {
 
     public native func SetNewGamePlusState(newState: Bool) -> Void ;
 
+    // Maybe I should pass it around by wref?
     public native func GetSaveData() -> PlayerSaveData ;
 
     public native func SetNewGamePlusGameDefinition(startType: ENewGamePlusStartType) -> Void ;

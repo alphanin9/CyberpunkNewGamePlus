@@ -199,6 +199,7 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\nativePersistencyReader.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReaderNative.hpp" />
+    <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\craftBook.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\equipmentSystem.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\playerDevelopmentData.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\nativeScriptableReader.hpp" />

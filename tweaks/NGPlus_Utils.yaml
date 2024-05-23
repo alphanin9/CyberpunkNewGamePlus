@@ -8,9 +8,19 @@ Vehicle.NGPlus_Encounter_Bike:
   statModifierGroups: 
    - !remove t"VehicleStatPreset.QuestVeryDurable"
    - !append t"VehicleStatPreset.Durable"
+  savable: true
+
+Vehicle.NGPlus_Encounter_Outlaw:
+  $base: t"Vehicle.v_sport1_herrera_outlaw"
+  savable: true
+  appearanceName: "herrera_outlaw__basic_player_01"
+
+Vehicle.NGPlus_Encounter_Hellhound:
+  $base: t"Vehicle.v_standard3_militech_hellhound"
+  savable: true
+  appearanceName: t"militech_hellhound__basic_player_01"
 
 # Because HasPassiveHealthRegeneration is fucking busted
-
 Ability.HasWeakHealthRegeneration:
   $type: GameplayAbility
   abilityPackage:
@@ -25,7 +35,52 @@ Ability.HasWeakHealthRegeneration:
           rangeBegin: 0.0
           rangeEnd: 100.0
           startDelay: 0.0
-          valuePerSec: 0.5
+          valuePerSec: 0.66
           delayOnChange: false
         statPoolType: "Health"
         modificationType: "Regeneration"
+
+Ability.HasMidHealthRegeneration:
+  $type: GameplayAbility
+  abilityPackage:
+    effectors:
+      -
+        $type: ModifyStatPoolModifierEffector
+        prereqRecord: "Prereqs.AlwaysTruePrereq"
+        effectorClassName: "ModifyStatPoolModifierEffector"
+        poolModifier:
+          $type: PoolValueModifier
+          enabled: true
+          rangeBegin: 0.0
+          rangeEnd: 100.0
+          startDelay: 0.0
+          valuePerSec: 1.2
+          delayOnChange: false
+        statPoolType: "Health"
+        modificationType: "Regeneration"
+
+# Yes, I know Burondo wasn't one of the Ghosts
+# I also know Ghosts were Arasaka and Q115 Blackhand sure as fuck ain't Saka
+# It's a cool easter egg for those in the know
+BountyReward.ProjectGhostMember:
+  $base: t"BountyReward.bounty_rogue"
+  name: "Bounty for NG+ bosses"
+
+Transgression.ProjectGhostMember:
+  $type: Transgression
+  localizedDescription: l"NewGamePlus_BossEncounter_ProjectGhostBountyDescription"
+  severity: 1
+
+BountyDrawTable.ProjectGhostMember:
+  $type: BountyDrawTable
+  bountyChoices:
+    -
+      $type: Bounty
+      visualTagsFilter: []
+      bountySetter: t"Factions.Classified"
+      transgressions:
+        - t"Transgression.ProjectGhostMember"
+        - t"Transgression.BlackwallViolation"
+        - t"Transgression.Classified"
+      reward: t"BountyReward.ProjectGhostMember"
+      wantedStars: 5
