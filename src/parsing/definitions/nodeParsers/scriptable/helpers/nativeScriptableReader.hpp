@@ -144,7 +144,7 @@ class ScriptableReader : redRTTI::native::NativeReader
 
     virtual void ReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType)
     {
-        // Again, not necessary - skip it
+        // Again, not necessary - skip it.
         aCursor.readInt();
     }
 

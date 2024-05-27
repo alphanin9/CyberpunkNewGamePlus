@@ -13,6 +13,7 @@ namespace cyberpunk
 struct RedPersistentObject
 {
     // Every persistent object should be ISerializable, I think?
+    //... Could we just use a handle instead of rolling our own dtor?
     Red::ISerializable* m_ptr;
 
     RedPersistentObject(Red::ScriptInstance aInstance)
@@ -70,7 +71,7 @@ private:
     std::vector<PersistentBuffer> m_redClasses;
 
 public:
-    static constexpr std::wstring_view nodeName = L"PersistencySystem2";
+    static constexpr Red::CName m_nodeName = "PersistencySystem2";
 
     virtual void ReadData(FileCursor& aCursor, NodeEntry& node)
     {
@@ -148,7 +149,8 @@ public:
         }
     }
 
-    PersistentBuffer& LookupChunk(std::string_view aChunkName)
+    // Use std::string_view instead of CName to report missing chunks better
+    PersistentBuffer* LookupChunk(std::string_view aChunkName) noexcept
     {
         auto chunkIt = std::find_if(m_redClasses.begin(), m_redClasses.end(),
                                     [aChunkName](const PersistentBuffer& aBuffer)
@@ -156,10 +158,24 @@ public:
 
         if (chunkIt == m_redClasses.end())
         {
-            throw std::runtime_error{std::format("Failed to find class {} in PersistencySystem2", aChunkName)};
+            PluginContext::Error(std::format("Failed to find class {} in PersistencySystem2", aChunkName));
+            return nullptr;
         }
 
-        return *chunkIt;
+        return &*chunkIt;
+    }
+
+    template<typename RedClass>
+    RedClass* LookupInstanceAs(std::string_view aChunkName)
+    {
+        auto chunkPtr = LookupChunk(aChunkName);
+
+        if (!chunkPtr)
+        {
+            return nullptr;
+        }
+
+        return chunkPtr->m_classInstance.As<RedClass>();
     }
 
     bool HasChunk(std::string_view aChunkName) const

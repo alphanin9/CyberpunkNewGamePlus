@@ -24,6 +24,7 @@
 #include "../context/context.hpp"
 
 // Copypasted from WolvenKit :(
+// TODO: Make this noexcept
 namespace parser
 {
 bool Parser::ParseSavegame(std::filesystem::path aSavePath)
@@ -75,12 +76,7 @@ bool Parser::ParseSavegame(std::filesystem::path aSavePath)
         return false;
     }
 
-    const auto nodeCount = fileCursor.readVlqInt32();
-
-    for (auto i = 0; i < nodeCount; i++)
-    {
-        m_flatNodes.push_back(cyberpunk::NodeEntry::fromCursor(fileCursor));
-    }
+    m_flatNodes = fileCursor.ReadMultipleClasses<cyberpunk::NodeEntry>(fileCursor.readVlqInt32());
 
     DecompressFile();
 
@@ -153,13 +149,12 @@ void Parser::DecompressFile()
     const auto tableEntriesCount = compressionHeader.maxEntries;
 
     const auto chunkSize = tableEntriesCount == 0x100 ? 0x00040000 : 0x00080000;
-    m_decompressedData.reserve(compressionHeader.m_totalChunkSize * 2); // Still safe...
+
+    m_decompressedDataRaw = std::make_unique_for_overwrite<std::byte[]>(compressionHeader.m_totalChunkSize * 2); // We won't be going above this size, so I believe that this should be safe
+    auto endIterator = m_decompressedDataRaw.get();
 
     for (auto& chunkInfo : compressionHeader.dataChunkInfo)
     {
-        auto outBuffer = std::vector<std::byte>{};
-
-        outBuffer.reserve(chunkSize);
 
         if (fileCursor.readUInt() == compression::COMPRESSION_BLOCK_MAGIC)
         {
@@ -167,23 +162,26 @@ void Parser::DecompressFile()
 
             auto subCursor = fileCursor.CreateSubCursor(chunkInfo.compressedSize - 8);
 
-            outBuffer.resize(chunkInfo.decompressedSize);
+            LZ4_decompress_safe(reinterpret_cast<char*>(subCursor.GetCurrentPtr()), reinterpret_cast<char*>(endIterator),
+                                                        subCursor.size, chunkInfo.decompressedSize);
 
-            LZ4_decompress_safe(reinterpret_cast<char*>(subCursor.GetCurrentPtr()),
-                                reinterpret_cast<char*>(outBuffer.data()), subCursor.size, chunkInfo.decompressedSize);
+            endIterator += chunkInfo.decompressedSize;
+            m_decompressedDataSize += chunkInfo.decompressedSize;
         }
         else
         {
-            // Slow path, but it doesn't get hit during my testing
             fileCursor.offset -= 4;
-            outBuffer = fileCursor.readBytes(chunkInfo.compressedSize);
-        }
 
-        m_decompressedData.insert(m_decompressedData.end(), outBuffer.begin(), outBuffer.end());
+            fileCursor.CopyTo(endIterator, chunkInfo.compressedSize);
+
+            endIterator += chunkInfo.compressedSize;
+            m_decompressedDataSize += chunkInfo.compressedSize;
+        }
     }
 
-    const auto chunkCountActual = (m_decompressedData.size() / chunkSize) + 1;
+    const auto chunkCountActual = (m_decompressedDataSize / chunkSize) + 1;
 
+    // The size of the compression table
     auto emptyByteSize = sizeof(uint32_t) + sizeof(int);
     emptyByteSize += chunkCountActual * (sizeof(int) * 3);
     emptyByteSize += (tableEntriesCount - chunkCountActual) * 12;
@@ -311,7 +309,7 @@ void Parser::CalculateTrueSizes(std::vector<cyberpunk::NodeEntry*>& nodes, int m
 // list hold ptrs to nodes in flatNodes
 bool Parser::LoadNodes()
 {
-    auto cursor = FileCursor{m_decompressedData.data(), m_decompressedData.size()};
+    FileCursor cursor(m_decompressedDataRaw.get(), m_decompressedDataSize);
 
     for (auto& node : m_flatNodes)
     {
@@ -340,7 +338,7 @@ bool Parser::LoadNodes()
         }
     }
 
-    CalculateTrueSizes(m_nodeList, m_decompressedData.size());
+    CalculateTrueSizes(m_nodeList, m_decompressedDataSize);
 
     for (auto& node : m_flatNodes)
     {
@@ -359,10 +357,10 @@ bool Parser::LoadNodes()
             if (readSize != expectedSize)
             {
                 // HACK: itemData gets really fucked by this, even on a known good implementation
-                if (node.name != L"itemData")
+                if (node.m_hash != "itemData")
                 {
                     PluginContext::Error(
-                        std::format("Node {} expected size {} != read size {}", node.id, expectedSize, readSize));
+                        std::format("Node {} expected size {} != read size {}", node.name, expectedSize, readSize));
                 }
             }
         }
@@ -372,7 +370,7 @@ bool Parser::LoadNodes()
 
     if constexpr (shouldDumpInventory)
     {
-        auto inventory = LookupNode(L"inventory");
+        auto inventory = LookupNode("inventory");
         auto inventoryData = reinterpret_cast<cyberpunk::InventoryNode*>(inventory->nodeData.get());
 
         for (auto& subInventory : inventoryData->subInventories)
@@ -388,14 +386,14 @@ bool Parser::LoadNodes()
     return true;
 }
 
-cyberpunk::NodeEntry* Parser::LookupNode(std::wstring_view aNodeName)
+cyberpunk::NodeEntry* Parser::LookupNode(Red::CName aNodeName) noexcept
 {
     auto node = std::find_if(m_nodeList.begin(), m_nodeList.end(),
-                             [aNodeName](const cyberpunk::NodeEntry* aNode) { return aNode->name == aNodeName; });
+                             [aNodeName](const cyberpunk::NodeEntry* aNode) { return aNode->m_hash == aNodeName; });
 
     if (node == m_nodeList.end())
     {
-        throw std::runtime_error{"Failed to find node!"};
+        return nullptr;
     }
 
     return *node;

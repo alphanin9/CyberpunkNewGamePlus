@@ -8,7 +8,7 @@
 
 namespace cyberpunk {
 	struct NodeEntry {
-		std::wstring name;
+		std::string name;
 
 		int id;
 		int nextId;
@@ -36,6 +36,8 @@ namespace cyberpunk {
 		// EVIL UGLY CODE AHEAD, WILL LIKELY LEAK MEMORY LIKE CRAZY
 		std::unique_ptr<NodeDataInterface> nodeData;
 
+		Red::CName m_hash;
+
 		inline void addChild(NodeEntry* child) {
 			child->isChild = true;
 			child->parent = this;
@@ -47,14 +49,16 @@ namespace cyberpunk {
 			nodeChildren.push_back(child);
 		}
 
-		static NodeEntry fromCursor(FileCursor& fileCursor) {
+		static NodeEntry FromCursor(FileCursor& fileCursor) {
 			NodeEntry ret{};
 
-			ret.name = fileCursor.readLengthPrefixedString();
+			ret.name = fileCursor.ReadLengthPrefixedANSI();
 			ret.nextId = fileCursor.readInt();
 			ret.childId = fileCursor.readInt();
 			ret.offset = fileCursor.readInt();
 			ret.size = fileCursor.readInt();
+
+			ret.m_hash = Red::CName{ret.name.c_str()};
 
 			return ret;
 		}

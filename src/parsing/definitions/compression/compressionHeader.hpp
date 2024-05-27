@@ -27,8 +27,8 @@ namespace compression {
 	struct CompressionHeader {
 		std::vector<DataChunkInfo> dataChunkInfo{};
 
-		int maxEntries;
-        int m_totalChunkSize{};
+		std::size_t maxEntries;
+        std::size_t m_totalChunkSize{};
 
 		static CompressionHeader fromCursor(FileCursor& cursor) {
 			const auto compressionHeaderBasePosition = cursor.offset;

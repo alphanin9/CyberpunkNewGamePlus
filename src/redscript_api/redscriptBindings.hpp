@@ -273,52 +273,51 @@ public:
         {
             parser::Parser parser{};
 
-            const auto wasParseSuccessful = parser.ParseSavegame(fullPath / "sav.dat");
-
-            if (!wasParseSuccessful)
+            if (!parser.ParseSavegame(fullPath / "sav.dat"))
             {
                 return false;
             }
 
             m_tweakDb = Red::TweakDB::Get();
 
-            const auto inventoryNode = static_cast<cyberpunk::InventoryNode*>(
-                parser.LookupNode(cyberpunk::InventoryNode::nodeName)->nodeData.get());
-            auto persistencySystemNode = static_cast<cyberpunk::PersistencySystemNode*>(
-                parser.LookupNode(cyberpunk::PersistencySystemNode::nodeName)->nodeData.get());
-            auto scriptableSystemsContainerNode = static_cast<cyberpunk::ScriptableSystemsContainerNode*>(
-                parser.LookupNode(cyberpunk::ScriptableSystemsContainerNode::nodeName)->nodeData.get());
-
-            // Yes, I should be resolving them through handles
-            // But that adds more complexity to the scriptable parser
-            // I am actually not a fan of this, should be doing more error checking - but that's for later
-            PlayerDevelopmentData playerDevelopmentData
+            if (const auto inventory = parser.LookupNodeData<cyberpunk::InventoryNode>())
             {
-                scriptableSystemsContainerNode->LookupChunk("PlayerDevelopmentData").m_instance
-            };
+                LoadInventoryNew(inventory);
+            }
 
-            EquipmentSystemPlayerData equipmentSystemPlayerData{
-                scriptableSystemsContainerNode->LookupChunk("EquipmentSystemPlayerData").m_instance
-            };
-
-            CraftBook craftBook{scriptableSystemsContainerNode->LookupChunk("CraftBook").m_instance};
-
-            // Vehicle garage can technically not be present in a savegame
-            if (persistencySystemNode->HasChunk("vehicleGarageComponentPS"))
+            if (const auto persistencySystem = parser.LookupNodeData<cyberpunk::PersistencySystemNode>())
             {
-                auto redRepresentation = persistencySystemNode->LookupChunk("vehicleGarageComponentPS")
-                                             .m_classInstance.As<Red::GarageComponentPS>();
+                // Vehicle garage can technically not be present in a savegame
 
-                if (redRepresentation)
+                if (auto garageComponent = persistencySystem->LookupInstanceAs<Red::GarageComponentPS>("vehicleGarageComponentPS"))
                 {
-                    LoadGarageNative(redRepresentation);
+                    LoadGarageNative(garageComponent);
                 }
             }
 
-            LoadPlayerDevelopmentData(playerDevelopmentData);
-            LoadEquipmentSystemPlayerData(equipmentSystemPlayerData);
-            LoadCraftBook(craftBook);
-            LoadInventoryNew(inventoryNode);
+            if (auto scriptableSystemsContainer = parser.LookupNodeData<cyberpunk::ScriptableSystemsContainerNode>())
+            {
+                // All of them kind of have to be present lol
+
+                // Yes, I should be resolving them through handles
+                // But that adds more complexity to the scriptable parser
+
+                if (auto playerDevelopmentData = scriptableSystemsContainer->LookupInstance("PlayerDevelopmentData"))
+                {
+                    LoadPlayerDevelopmentData(playerDevelopmentData);
+                }
+
+                if (auto equipmentSystemPlayerData =
+                        scriptableSystemsContainer->LookupInstance("EquipmentSystemPlayerData"))
+                {
+                    LoadEquipmentSystemPlayerData(equipmentSystemPlayerData);
+                }
+
+                if (auto craftBook = scriptableSystemsContainer->LookupInstance("CraftBook"))
+                {
+                    LoadCraftBook(craftBook);
+                }
+            }
         }
         catch (std::exception e)
         {
@@ -774,6 +773,8 @@ private:
             Red::TweakDBID{"Items.q005_saburo_data_carrier_cracked"}, Red::TweakDBID{"Items.q003_chip"},
             Red::TweakDBID{"Items.q003_chip_cracked"}, Red::TweakDBID{"Items.q003_chip_cracked_funds"},
             Red::TweakDBID{"Items.Preset_Q001_Lexington"}, Red::TweakDBID{"Items.CyberdeckSplinter"}};
+
+        // TODO: just make this a switch statement using TDBID hashes
 
         if (std::find(bannedTdbIds.begin(), bannedTdbIds.end(), aExtendedData.m_tdbId) != bannedTdbIds.end())
         {

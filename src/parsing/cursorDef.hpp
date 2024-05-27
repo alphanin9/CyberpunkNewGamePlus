@@ -7,6 +7,8 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
+#include <intrin.h>
+
 struct FileCursor;
 
 template<typename ReadableClass>
@@ -211,6 +213,19 @@ struct FileCursor {
         return ret;
     }
 
+    std::string ReadLengthPrefixedANSI()
+    {
+        auto buffer = readLengthPrefixedString();
+
+        auto lengthNeeded = WideCharToMultiByte(CP_UTF8, 0, &buffer[0], buffer.size(), nullptr, 0, nullptr, nullptr);
+        
+        std::string ret(lengthNeeded, char{});
+
+        WideCharToMultiByte(CP_UTF8, 0, &buffer[0], buffer.size(), &ret[0], lengthNeeded, nullptr, nullptr);
+        
+        return ret;
+    }
+
     // Theoretically if we don't need a copy we could just do a string_view
     // But let's be safe!
     std::string readString(size_t length) {
@@ -330,7 +345,7 @@ struct FileCursor {
     }
 
     template<typename T>
-    inline static FileCursor FromVec(const std::vector<T>& aVec)
+    inline static FileCursor FromVec(std::vector<T>& aVec)
     {
         return FileCursor{aVec.data(), aVec.size()};
     }
@@ -338,5 +353,20 @@ struct FileCursor {
     std::byte* GetCurrentPtr()
     {
         return baseAddress + offset;
+    }
+
+    void CopyTo(void* aBuffer, std::size_t aSize)
+    {
+        memcpy(aBuffer, GetCurrentPtr(), aSize);
+        offset += aSize;
+    }
+
+    void InsertTo(std::vector<std::byte>& aVec, std::size_t aSize)
+    {
+        auto begin = GetCurrentPtr();
+
+        aVec.insert(aVec.end(), begin, begin + aSize);
+        
+        offset += aSize;
     }
 };

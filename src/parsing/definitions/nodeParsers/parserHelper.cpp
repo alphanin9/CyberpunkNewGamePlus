@@ -54,20 +54,21 @@ std::unique_ptr<cyberpunk::NodeDataInterface> PersistencySystemParser(FileCursor
 	return dataPtr;
 }
 
-ParseNodeFn FindParser(std::wstring_view aNodeName) {
-    if (aNodeName == cyberpunk::InventoryNode::nodeName)
+ParseNodeFn FindParser(Red::CName aNodeName)
+{
+    if (aNodeName == cyberpunk::InventoryNode::m_nodeName)
     {
 		return InventoryParser;
 	}
-    else if (aNodeName == cyberpunk::ItemDataNode::nodeName)
+    else if (aNodeName == cyberpunk::ItemDataNode::m_nodeName)
     {
 		return ItemInfoParser;
 	}
-    else if (aNodeName == cyberpunk::ScriptableSystemsContainerNode::nodeName)
+    else if (aNodeName == cyberpunk::ScriptableSystemsContainerNode::m_nodeName)
     {
 		return ScriptableSystemsContainerParser;
 	}
-    else if (aNodeName == cyberpunk::PersistencySystemNode::nodeName)
+    else if (aNodeName == cyberpunk::PersistencySystemNode::m_nodeName)
     {
 		return PersistencySystemParser;
 	}
@@ -83,7 +84,7 @@ void cyberpunk::ParseChildren(FileCursor& cursor, std::vector<cyberpunk::NodeEnt
 }
 
 void cyberpunk::ParseNode(FileCursor& cursor, cyberpunk::NodeEntry& node) {
-	const auto parserFn = FindParser(node.name);
+	const auto parserFn = FindParser(node.m_hash);
 
 	cursor.offset = node.offset; // cursor.seekTo(FileCursor::SeekTo::Start, node.offset);
 	cursor.readInt();

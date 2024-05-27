@@ -8,6 +8,9 @@
 
 #include "../parserHelper.hpp"
 
+// TODO: Optimize this
+// Make this use Red structures instead of STL for noexcept stuff?
+// Seems to have a bunch of pointless copies - get rid of them later
 namespace cyberpunk {
 	struct ItemInfo {
 		enum class ItemStructure : std::uint8_t {
@@ -106,11 +109,12 @@ namespace cyberpunk {
 			ret.isValid = true;
 
 			ret.itemInfo = ItemInfo::fromCursor(cursor);
-			ret.appearanceName = cursor.readLengthPrefixedString();
+			ret.appearanceName = cursor.readLengthPrefixedString(); // Fix this to use ANSI later, but we don't use appearance name anyway...
 			ret.attachmentSlotTdbId = cursor.readTdbId();
 
 			const auto count = cursor.readVlqInt32();
 
+			// Fix this to use new methods later...
 			for (auto i = 0; i < count; i++) {
 				ret.children.push_back(fromCursor(cursor));
 			}
@@ -136,6 +140,7 @@ namespace cyberpunk {
 		AdditionalItemInfo additionalItemInfo;
 		ItemSlotPart itemSlotPart;
 
+		// I hate this
 		bool hasQuantity() const {
 			return (static_cast<std::uint8_t>(itemInfo.itemStructure) & static_cast<std::uint8_t>(ItemInfo::ItemStructure::Quantity))
 				== static_cast<std::uint8_t>(ItemInfo::ItemStructure::Quantity) || itemInfo.itemStructure == ItemInfo::ItemStructure::None && itemInfo.itemId.rngSeed == 2;
@@ -149,7 +154,7 @@ namespace cyberpunk {
 
 	class ItemDataNode : public NodeDataInterface {
 	public:
-		static constexpr std::wstring_view nodeName = L"itemData";
+		static constexpr Red::CName m_nodeName = "itemData";
 
 		ItemData itemData;
 		virtual void ReadData(FileCursor& cursor, NodeEntry& node) {
@@ -179,7 +184,7 @@ namespace cyberpunk {
 
 	class InventoryNode : public NodeDataInterface {
 	public:
-		static constexpr std::wstring_view nodeName = L"inventory";
+		static constexpr Red::CName m_nodeName = "inventory";
 		std::vector<SubInventory> subInventories;
 	private:
 		SubInventory readSubInventory(FileCursor& cursor, NodeEntry& node, int offset) {
@@ -200,6 +205,7 @@ namespace cyberpunk {
                     PluginContext::Error("Item info parsing error, itemInfoActual->itemData.itemInfo != nextItemInfo");
 				}
 				
+				// Relatively big copy
 				ret.inventoryItems.push_back(itemInfoActual->itemData);
 			}
 
@@ -211,6 +217,7 @@ namespace cyberpunk {
 			auto offset = 0;
 
 			for (auto i = 0; i < count; i++) {
+				// Big copy, not a fan, fix later, not sure if it's avoidable...
 				auto subInventory = readSubInventory(cursor, node, offset);
 
 				subInventories.push_back(subInventory);
@@ -224,6 +231,7 @@ namespace cyberpunk {
 				return aSubInventory.inventoryId == aInventoryId;
 			});
 
+			// Remove assert later
 			assert(inventoryIt != subInventories.end());
 
 			return *inventoryIt;

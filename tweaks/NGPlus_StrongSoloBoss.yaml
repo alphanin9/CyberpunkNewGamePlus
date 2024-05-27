@@ -3,10 +3,10 @@
 # Or have the guy with gorilla arms/a hammer/the like and a few HMG guys as the backdrop jobbers
 
 Character.NGPlus_EncounterStrongSoloBoss:
-  $base: t"Character.militech_strongarms_hmelee3_fists_mb_elite"
+  $base: t"Character.militech_enforcer3_gunner3_HMG_mb_elite"
 
-  entityTemplatePath: r"ep1\quest\main_quests\q305\entities\q305_secret_service_main.ent"
-  appearanceName: n"corpo__nusa_mb_agent_border_main"
+  entityTemplatePath: r"ep1\\characters\\entities\\corpo\\corpo__black_ops_mb.ent"
+  appearanceName: n"black_ops_mb_heavy__lvl2_02"
 
   tags: ["Cyberpsycho", "ImmuneToTakedown"]
   baseAttitudeGroup: n"hostile"
@@ -28,6 +28,18 @@ Character.NGPlus_EncounterStrongSoloBoss:
     - !append t"Character.Cyberpsycho_ModGroup"
     - !append t"Character.Cyberpsycho_HitReaction_Resistance"
 
+  primaryEquipment:
+    $type: NPCEquipmentGroup
+    equipmentItems:
+      -
+        $type: NPCEquipmentItem
+        item: t"Items.Preset_MA70_Default"
+        equipSlot: "AttachmentSlots.WeaponRight"
+        equipCondition:
+          - t"WeaponConditions.BaseRangedPrimaryWeaponEquipCondition"
+        unequipCondition:
+          - t"WeaponConditions.BaseRangedPrimaryWeaponUnequipCondition"
+
   effectors:
     - !append t"Character.AllowTechWeaponDodgeEffector"
     - !append t"Character.AllowAnyDirectionDodgeEffector"
@@ -44,17 +56,17 @@ Character.NGPlus_EncounterStrongSoloBoss:
     - !append t"Ability.CanGuardBreak"
     - !append t"Ability.CanRegenInCombat"
     - !append t"Ability.CanShootWhileMoving"
-    - !append t"Ability.IsReckless"
     - !append t"Ability.HasMidHealthRegeneration"
-    - !append t"Ability.HasPainEditor"
     - !append t"Ability.HasLoweredHitReactions"
     - !append t"Ability.HasICELevelBooster"
     - !append t"Ability.HasGraphiteTissue"
     - !append t"Ability.HasBoostedCortex"
     - !append t"Ability.CanDash"
     - !append t"Ability.CanCharge"
-    - !append t"Ability.HasChargeJump"
     - !append t"Ability.HasBerserk"
+    - !append t"Ability.IsStrongMeleeArchetype"
+    - !append t"Ability.CanCatchUpDistance"
+    - !append t"Ability.CanCatchUp"
   
   objectActions: ["QuickHack.BossBaseBlindHack", "QuickHack.BossSuicideHackBase", "QuickHack.BossBaseWeaponMalfunctionHack", "QuickHack.BossBaseLocomotionMalfunctionHack", "QuickHack.BossBaseOverheatHack", "QuickHack.BossOverloadBaseHack", "QuickHack.BossBrainMeltBaseHack", "QuickHack.BossBaseCyberwareMalfunctionHack", "QuickHack.BossSystemCollapseHackBase", "QuickHack.BossGrenadeHackBase", "QuickHack.BossMadnessHackBase", "QuickHack.BossMemoryWipeHackBase", "QuickHack.BossBaseBlackWallHack", "QuickHack.BaseCommsCallInHack", "QuickHack.BaseCommsNoiseHack", "QuickHack.BasePingHack", "QuickHack.BaseContagionHack", "QuickHack.BaseWhistleHack", "QuickHack.RemoteBreach", "Takedown.NewPerkFinisher", "Takedown.NewPerkFinisherBlunt"]
 
@@ -66,8 +78,8 @@ Character.NGPlus_EncounterStrongSoloBoss:
       $type: ConstantStatModifier
       statType: BaseStats.Health
       modifierType: Multiplier
-      value: 2
-    
+      value: 1.2
+
     - !append
       $type: ConstantStatModifier
       statType: BaseStats.MaxSpeed

@@ -7,6 +7,8 @@
 
 namespace redRTTI::native
 {
+// TODO: Finish noexcept variants for this
+// TODO: Make this not use virtual methods, they are inefficient
 class NativeReader
 {
 protected:
@@ -82,7 +84,7 @@ protected:
             ReadValue(aCursor, elem, innerType);
         }
     }
-
+    // In theory, we could use the same array serialization for every array type (static arrays, dynarrays, fixed arrays, native arrays...)
     virtual void ReadStaticArray(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType)
     {
         const auto arraySize = aCursor.readInt();
@@ -100,7 +102,7 @@ protected:
 
             ReadValue(aCursor, elem, innerType);
         }
-
+        // What's the difference between calling Resize() on a static array type at start and at end?
         arrayType->Resize(aOut, arraySize);
     }
 
@@ -123,50 +125,7 @@ protected:
         }
         else if (rttiType == ERTTIType::Fundamental)
         {
-            if (typeName == RED4ext::CName{"Int8"})
-            {
-                return ReadInt8(aCursor, aOut);
-            }
-            else if (typeName == RED4ext::CName{"Uint8"})
-            {
-                return ReadUInt8(aCursor, aOut);
-            }
-            else if (typeName == RED4ext::CName{"Int16"})
-            {
-                return ReadInt16(aCursor, aOut);
-            }
-            else if (typeName == RED4ext::CName{"Uint16"})
-            {
-                return ReadUInt16(aCursor, aOut);
-            }
-            else if (typeName == RED4ext::CName{"Int32"})
-            {
-                return ReadInt32(aCursor, aOut);
-            }
-            else if (typeName == RED4ext::CName{"Uint32"})
-            {
-                return ReadUInt32(aCursor, aOut);
-            }
-            else if (typeName == RED4ext::CName{"Int64"})
-            {
-                return ReadInt64(aCursor, aOut);
-            }
-            else if (typeName == RED4ext::CName{"Uint64"})
-            {
-                return ReadUInt64(aCursor, aOut);
-            }
-            else if (typeName == RED4ext::CName{"Float"})
-            {
-                return ReadFloat(aCursor, aOut);
-            }
-            else if (typeName == RED4ext::CName{"Double"})
-            {
-                return ReadDouble(aCursor, aOut);
-            }
-            else if (typeName == RED4ext::CName{"Bool"})
-            {
-                return ReadBool(aCursor, aOut);
-            }
+            return aCursor.CopyTo(aOut, aPropType->GetSize());
         }
         else if (rttiType == ERTTIType::Simple)
         {
@@ -206,12 +165,22 @@ protected:
 
         throw std::runtime_error(std::format("NativeReader::ReadValue, unknown value type {}", typeName.ToString()));
     }
+
+    bool TryReadValue(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
+    {
+        return false;
+    }
+
 public:
     virtual ~NativeReader()
     {
     
     }
     virtual void ReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aClass) = 0;
+    bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aClass) noexcept
+    {
+        return false;
+    }
 };
 
 class NativeDumper

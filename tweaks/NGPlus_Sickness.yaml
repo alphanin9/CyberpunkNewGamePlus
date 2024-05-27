@@ -1,0 +1,10 @@
+BaseStatusEffect.JohnnySicknessHeavyQuestNGPlus:
+  $base: BaseStatusEffect.JohnnySicknessHeavy
+  duration:
+    $type: StatModifierGroup
+    statModifiers:
+      - !append
+        $type: ConstantStatModifier
+        statType: BaseStats.MaxDuration
+        modifierType: Additive
+        value: 8.0

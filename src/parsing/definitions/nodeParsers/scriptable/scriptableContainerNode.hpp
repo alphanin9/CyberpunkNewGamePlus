@@ -184,10 +184,11 @@ struct RedChunk
     }
 };
 
+// TODO: Make all this noexcept
 class ScriptableSystemsContainerNode : public NodeDataInterface
 {
 public:
-    static constexpr std::wstring_view nodeName = L"ScriptableSystemsContainer";
+    static constexpr Red::CName m_nodeName = "ScriptableSystemsContainer";
     static constexpr auto m_enableImports = false;
     static constexpr auto m_dumpEnumSizes = false;
 
@@ -349,7 +350,7 @@ public:
         }
     }
 
-    RedChunk& LookupChunk(std::string_view aChunkType)
+    RedChunk* LookupChunk(std::string_view aChunkType)
     {
         auto chunkIter =
             std::find_if(m_chunks.begin(), m_chunks.end(),
@@ -357,24 +358,26 @@ public:
 
         if (chunkIter == m_chunks.end())
         {
-            throw std::runtime_error{std::format("Failed to find chunk {}", aChunkType)};
-        }
-
-        if constexpr (!m_lazyChunkReader)
-        {
-            return *chunkIter;
-        }
-
-        // We've already read this chunk...
-        if (chunkIter->m_instance)
-        {
-            return *chunkIter;
+            PluginContext::Error(std::format("Failed to find chunk {}", aChunkType));
+            return nullptr;
         }
 
         // The chunk is bad...
         if (!chunkIter->m_type)
         {
-            throw std::runtime_error{std::format("Chunk {} has missing type", aChunkType)};
+            PluginContext::Error(std::format("Chunk {} has missing type", aChunkType));
+            return nullptr;
+        }
+
+        if constexpr (!m_lazyChunkReader)
+        {
+            return &*chunkIter;
+        }
+
+        // We've already read this chunk...
+        if (chunkIter->m_instance)
+        {
+            return &*chunkIter;
         }
 
         // Not sure if this pointer math checks out
@@ -387,7 +390,19 @@ public:
 
         chunkIter->m_instance = reinterpret_cast<Red::ISerializable*>(instance);
         
-        return *chunkIter;
+        return &*chunkIter;
+    }
+
+    Red::ISerializable* LookupInstance(std::string_view aChunkType)
+    {
+        auto chunkPtr = LookupChunk(aChunkType);
+
+        if (!chunkPtr)
+        {
+            return nullptr;
+        }
+
+        return chunkPtr->m_instance;
     }
 };
 } // namespace cyberpunk

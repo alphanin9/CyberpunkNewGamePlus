@@ -263,7 +263,6 @@ class PlayerProgressionLoader {
                             let hideOnItemsAdded: array<wref<Item_Record>>;
                             asRecipeRecord.HideOnItemsAdded(hideOnItemsAdded);
                             craftBook.AddRecipe(targetItemId, hideOnItemsAdded, result.Amount());
-                            this.m_ngPlusSystem.Spew(s"PlayerProgressionLoader::LoadPlayerCraftbook, added recipe for \(TDBID.ToStringDEBUG(targetItemId))");
                             break;
                         }
                     }
@@ -296,6 +295,7 @@ class NewGamePlusProgressionLoader extends ScriptableSystem {
         let player = GameInstance.GetPlayerSystem(GetGameInstance()).GetLocalPlayerMainGameObject() as PlayerPuppet;
 
         if !IsDefined(player) {
+            this.m_questsSystem.SetFactStr("ngplus_apply_progression", 0);
             this.m_ngPlusSystem.Error("NewGamePlusProgressionLoader::OnProgressionTransferCalled, player not found");
             return;
         }
