@@ -99,17 +99,9 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
     }
 
     private final func SetupLoadItems() -> Void {
-        //let i: Int32 = 0;
         for i in this.m_ngPlusSaveIndices {
             this.CreateLoadItem(i);
         }
-        /*while i < ArraySize(this.m_saves) {
-            if ArrayContains(this.m_ngPlusSaveIndices, i) {
-                this.CreateLoadItem(i);
-            }
-            // Preserve save indices!
-            i += 1;
-        };*/
     }
 
     private final func CreateLoadItem(index: Int32) -> Void {
@@ -152,9 +144,6 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
     private final func OnSelectedSave(controller: ref<LoadListItem>) -> Void {
         let saveName = this.m_saves[controller.Index()];
         this.m_ngPlusSystem.Spew(s"Loading save \(saveName) for player progression transfer...");
-        
-        // Need to add code for working with save data here
-        // Also maybe add something for exception handling?
 
         let result = this.m_ngPlusSystem.ParsePointOfNoReturnSaveData(saveName);
 
@@ -197,9 +186,8 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
             let controller: wref<LoadListItem> = button.GetController() as LoadListItem;
             if controller.Index() == info.saveIndex {
                 if info.isValid && Equals(info.platform, "pc") {
-                    controller.SetMetadata(info, this.m_isEp1Enabled);
+                    controller.SetMetadataForNGPlus(info, this.m_isEp1Enabled);
                     controller.CheckThumbnailCensorship(!characterCustomizationSystem.IsNudityAllowed());
-                    controller.SetCloudStatusVisibility(false); // HACK
                 } else {
                     controller.SetInvalid(info.internalName);
                 };

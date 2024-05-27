@@ -36,7 +36,10 @@ public native struct PlayerSaveData {
 enum ENewGamePlusStartType {
     StartFromQ001 = 0,
     StartFromQ101 = 1,
-    Invalid = 2,
+    StartFromQ001_NoEP1 = 2,
+    StartFromQ101_NoEP1 = 3,
+    Count = 4,
+    Invalid = 5,
 }
 
 public native class NewGamePlusSystem extends IGameSystem {
@@ -56,6 +59,8 @@ public native class NewGamePlusSystem extends IGameSystem {
     public native func IsSaveValidForNewGamePlus(saveName: script_ref<String>) -> Bool;
 
     public native func ResolveNewGamePlusSaves(saves: script_ref<array<String>>) -> array<Int32>;
+
+    public native func LoadExpansionIntoSave() -> Void;
     // Since LogChannel is not declared for everybody...
 
     public native func Spew(str: script_ref<String>) -> Void;

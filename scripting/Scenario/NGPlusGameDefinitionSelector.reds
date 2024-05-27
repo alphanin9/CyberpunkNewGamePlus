@@ -13,6 +13,8 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
     private let m_lastShownPart: CName;
     private let m_q001Button: inkWidgetRef;
     private let m_q101Button: inkWidgetRef;
+
+    private let m_ep1Enabled: Bool;
     private let m_isInputLocked: Bool;
 
     private let m_ngPlusSystem: ref<NewGamePlusSystem>;
@@ -34,6 +36,9 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
         inkWidgetRef.RegisterToCallback(this.m_q101Button, n"OnPress", this, n"OnPressQ101");
 
         this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
+
+        // Select the correct game definition based on the person owning EP1 or not, so nothing ends up broken in EP1-free scenarios...
+        this.m_ep1Enabled = this.GetSystemRequestsHandler().IsAdditionalContentEnabled(n"EP1");
 
         this.OnIntro();
     }
@@ -68,7 +73,13 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
         if evt.IsAction(n"click") && !this.m_isInputLocked {
             this.PlaySound(n"Button", n"OnPress");
             NewGamePlusSpawnTagController.SetSpawnTags(n"#q000_spwn_vr_tutorial_test");
-            this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ001);
+
+            if this.m_ep1Enabled {
+                this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ001);
+            } else {
+                this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ001_NoEP1);
+            }
+
             this.OnSelectedOption();
         }
     }
@@ -77,7 +88,13 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
         if evt.IsAction(n"click") && !this.m_isInputLocked {
             this.PlaySound(n"Button", n"OnPress");
             NewGamePlusSpawnTagController.SetSpawnTags(n"#q101_spwn_player");
-            this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ101);
+
+            if this.m_ep1Enabled {
+                this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ101);
+            } else {
+                this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ101_NoEP1);
+            }
+
             this.OnSelectedOption();
         }
     }

@@ -7,6 +7,7 @@ class PlayerProgressionLoader {
     private let m_ngPlusSystem: ref<NewGamePlusSystem>;
     private let m_player: ref<PlayerPuppet>;
     private let m_equipmentSystem: ref<ScriptableSystem>;
+    private let m_isEp1: Bool;
 
     public final func LoadPlayerProgression(player: ref<PlayerPuppet>) -> Void {
         // Has some bugs during the Q001 start, iron them out later!
@@ -17,6 +18,7 @@ class PlayerProgressionLoader {
             return;
         }
         this.m_player = player;
+        this.m_isEp1 = IsEP1();
 
         this.LoadPlayerDevelopment();
         this.LoadPlayerInventory();
@@ -105,14 +107,13 @@ class PlayerProgressionLoader {
                 gamedataDevelopmentPointType.Primary,
                 this.m_ngPlusPlayerSaveData.playerPerkPoints
             );
-        playerDevelopmentData
-            .SetDevelopmentsPoint(
-                gamedataDevelopmentPointType.Espionage,
-                this.m_ngPlusPlayerSaveData.playerRelicPoints
-            );
-        GameInstance
-            .GetQuestsSystem(this.m_player.GetGame())
-            .SetFact(n"ep1_tree_unlocked", 1);
+        
+        // Non-EP1 makes this look really wonky
+        if this.m_isEp1 {
+            playerDevelopmentData.SetDevelopmentsPoint(gamedataDevelopmentPointType.Espionage, this.m_ngPlusPlayerSaveData.playerRelicPoints);
+            GameInstance.GetQuestsSystem(this.m_player.GetGame()).SetFact(n"ep1_tree_unlocked", 1);
+        }
+        
         playerDevelopmentData.m_isInNgPlus = false;
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerDevelopment done!");
     }
@@ -206,7 +207,14 @@ class PlayerProgressionLoader {
 
         // After testing the Q001 start I've come to the conclusion Q001 is too much of a pain in the ass to do at Level 50 without armor
         // So we add a little bit
-        let subdermalArmorId = ItemID.FromTDBID(t"Items.AdvancedBoringPlatingLegendaryPlusPlus");
+        let subdermalArmorId: ItemID;
+
+        // Fix: Non-EP1 is wonky...
+        if this.m_isEp1 {
+            subdermalArmorId = ItemID.FromTDBID(t"Items.AdvancedBoringPlatingLegendaryPlusPlus");
+        } else {
+            subdermalArmorId = ItemID.FromTDBID(t"Items.AdvancedBoringPlatingLegendaryPlus");
+        }
 
         this.EquipCyberware(subdermalArmorId, true, 0); // Might as well add it to inventory as well, free NG+ gift LMAO
 
@@ -221,10 +229,15 @@ class PlayerProgressionLoader {
         let quadraTdbid = t"Vehicle.v_sport1_quadra_turbo_r_player";
 
         for vehicle in vehicleList {
-            if !addedQuadra {
-                addedQuadra = Equals(vehicle, quadraTdbid);
+            let record = TweakDBInterface.GetRecord(vehicle);
+
+            // EP1 saves on non-EP1 game fix
+            if IsDefined(record) {
+                if !addedQuadra {
+                    addedQuadra = Equals(vehicle, quadraTdbid);
+                }
+                vehicleSystem.EnablePlayerVehicleID(vehicle, true, false);
             }
-            vehicleSystem.EnablePlayerVehicleID(vehicle, true, false);
         }
 
         if !addedQuadra {
@@ -266,7 +279,7 @@ class PlayerProgressionLoader {
                             break;
                         }
                     }
-                    }
+                }
             }
         }
 

@@ -24,7 +24,8 @@ namespace hooking {
 				return m_originalFn(aDepotPath, aGamedefType);
 			}
 
-			if (aGamedefType != GamedefType::EP1) {
+			// Fix for non-EP1 NG+ start
+			if (aGamedefType >= GamedefType::EP1_Standalone) {
 				return m_originalFn(aDepotPath, aGamedefType);
 			}
 

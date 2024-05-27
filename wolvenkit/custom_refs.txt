@@ -32,6 +32,7 @@ base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\jackie.a
 base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\t_bug.anims
 base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\v.anims
 base\quest\main_quests\prologue\q001\scenes\lipsync\en\q001_00d_leaving\wakako_okada.anims
+base\quest\NewGamePlus_NoEP1.gamedef
 base\quest\NewGamePlus.gamedef
 base\worlds\03_night_city\03_night_city.world
 ep1\quest\main_quests\q306\scenes\lipsync\en\q306_10_finale\myers.anims
@@ -44,8 +45,13 @@ mod\quest\changedquests\newgameplus_cyberpunk2077.questphase
 mod\quest\changedQuests\NewGamePlus_cyberpunk2077.questphase
 mod\quest\changedQuests\NewGamePlus_persistent_content.questphase
 mod\quest\changedQuests\open_world\NewGamePlus_open_world_content.questphase
+mod\quest\NewGamePlus_NoEP1.gamedef
+mod\quest\NewGamePlus_Q001_NoEP1.gamedef
 mod\quest\NewGamePlus_Q001.gamedef
+mod\quest\newgameplus_q001.quest
 mod\quest\NewGamePlus_Q001.quest
+mod\quest\NewGamePlus.gamedef
+mod\quest\newgameplus.quest
 mod\quest\NewGamePlus.quest
 mod\quest\newgameplus\bossEncounterTest\bossEncounterTest.gamedef
 mod\quest\newgameplus\bossencountertest\bossencountertest.quest

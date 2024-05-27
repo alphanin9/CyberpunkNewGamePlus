@@ -16,6 +16,8 @@
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType_Record.hpp>
 #include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
 
+#include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
+
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/equipmentSystem.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/playerDevelopmentData.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/craftBook.hpp"
@@ -167,6 +169,9 @@ enum class ENewGamePlusStartType
 {
     StartFromQ001,
     StartFromQ101,
+    StartFromQ001_NoEP1,
+    StartFromQ101_NoEP1,
+    Count,
     Invalid
 };
 
@@ -188,17 +193,48 @@ public:
         PluginContext::m_isNewGamePlusActive = aNewState;
     }
 
+    void LoadExpansionIntoSave()
+    {
+        // We only have the one expansion... Thank God
+
+        // TODO: move all hashes into a header?
+        // Vtable index 62
+        // Sig: 48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 33 ED B8
+        constexpr auto addQuestHash = 1617892594u;
+        
+        // Maybe check if EP1 is already running? Eh, the Redscript side already does...
+
+        static const auto fnAddQuest = Red::UniversalRelocFunc<void(__fastcall*)(
+            Red::quest::QuestsSystem * aQuestsSystem, Red::ResourcePath aPath)>(addQuestHash);
+
+        fnAddQuest(Red::GetGameSystem<Red::quest::QuestsSystem>(), R"(ep1\quest\ep1.quest)");
+    }
+
     void SetNewGamePlusGameDefinition(ENewGamePlusStartType aStartType)
     {
-        if (aStartType == ENewGamePlusStartType::StartFromQ001)
+        constexpr auto q001Path = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001.gamedef");
+        constexpr auto q101Path = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus.gamedef");
+
+        // These ones do not have EP1 enabled by default, but will have it enabled via custom quest starting
+        constexpr auto q001PathNoEP1 = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001_NoEP1.gamedef");
+        constexpr auto q101PathNoEP1 = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_NoEP1.gamedef");
+
+        switch (aStartType)
         {
-            constexpr auto q001Path = RED4ext::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001.gamedef");
-            PluginContext::m_ngPlusGameDefinitionHash = q001Path;   
-        }
-        else
-        {
-            constexpr auto q101Path = RED4ext::ResourcePath::HashSanitized("base/quest/NewGamePlus.gamedef");
+        case ENewGamePlusStartType::StartFromQ001:
+            PluginContext::m_ngPlusGameDefinitionHash = q001Path;
+            break;
+        case ENewGamePlusStartType::StartFromQ101:
             PluginContext::m_ngPlusGameDefinitionHash = q101Path; // Should fix it being in base/ sometime
+            break;
+        case ENewGamePlusStartType::StartFromQ001_NoEP1:
+            PluginContext::m_ngPlusGameDefinitionHash = q001PathNoEP1;
+            break;
+        case ENewGamePlusStartType::StartFromQ101_NoEP1:
+            PluginContext::m_ngPlusGameDefinitionHash = q101PathNoEP1;
+            break;
+        default:
+            break;
         }
     }
 
@@ -881,6 +917,7 @@ RTTI_DEFINE_CLASS(redscript::NewGamePlusSystem, {
     RTTI_METHOD(GetSaveData);
     RTTI_METHOD(SetNewGamePlusGameDefinition);
     RTTI_METHOD(IsSaveValidForNewGamePlus);
+    RTTI_METHOD(LoadExpansionIntoSave);
     RTTI_METHOD(Spew);
     RTTI_METHOD(Error);
 });

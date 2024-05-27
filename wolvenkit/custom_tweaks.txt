@@ -1,3 +1,5 @@
+BaseStatusEffect.JohnnySicknessHeavyQuestNGPlus
+BaseStatusEffect.ohnnySicknessMediumQuest
 DynamicSpawnSystem.NewGamePlus_FastSoloBossEncounter
 DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport
 DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport:
@@ -11,3 +13,4 @@ DynamicSpawnSystem.NewGamePlus_StrongSoloBossSupport
 DynamicSpawnSystem.NewGamePlus_StrongSoloBossSupport1
 DynamicSpawnSystem.NewGamePlusTestSpawn
 DynamicSpawnSystem.NGPlus_FastSoloBossEncounter
+JohnnySicknessMediumQuest

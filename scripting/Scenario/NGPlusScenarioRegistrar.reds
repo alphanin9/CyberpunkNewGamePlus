@@ -62,6 +62,10 @@ class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
     private cb func OnMenuResourceReady(event: ref<ResourceEvent>) {
         let resource = event.GetResource() as inkMenuResource;
 
+        if !IsDefined(resource) {
+            return;
+        }
+
         let scenarios = this.GetNewGamePlusRegisteredScenarios();
 
         for scenario in scenarios {
