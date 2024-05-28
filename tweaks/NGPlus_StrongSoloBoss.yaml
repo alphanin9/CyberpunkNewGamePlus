@@ -2,6 +2,10 @@
 # Maybe take some HMG guy as the base?
 # Or have the guy with gorilla arms/a hammer/the like and a few HMG guys as the backdrop jobbers
 
+# FIX: EP1 tweaks crashing non-EP1 builds
+
+$dlc: EP1
+
 Character.NGPlus_EncounterStrongSoloBoss:
   $base: t"Character.militech_enforcer3_gunner3_HMG_mb_elite"
 

@@ -794,7 +794,8 @@ private:
     void AddItemToInventory(const ExtendedItemData& aExtendedData, const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList)
     {
         // Sorry, but these REALLY annoy me
-        static constexpr auto bannedTdbIds = std::array<Red::TweakDBID, 32>{
+        // TODO: Make this a switch statement, array searches take a while... Though it's not important
+        static constexpr std::array<Red::TweakDBID, 32> bannedTdbIds = {
             Red::TweakDBID{"Items.MaskCW"}, Red::TweakDBID{"Items.MaskCWPlus"},
             Red::TweakDBID{"Items.MaskCWPlusPlus"}, Red::TweakDBID{"Items.w_melee_004__fists_a"},
             Red::TweakDBID{"Items.PersonalLink"}, Red::TweakDBID{"Items.personal_link"},
@@ -807,8 +808,9 @@ private:
             Red::TweakDBID{"Items.Preset_Yukimura_Skippy_PostQuest"},
             Red::TweakDBID{"Items.q005_saburo_data_carrier"},
             Red::TweakDBID{"Items.q005_saburo_data_carrier_cracked"}, Red::TweakDBID{"Items.q003_chip"},
-            Red::TweakDBID{"Items.q003_chip_cracked"}, Red::TweakDBID{"Items.q003_chip_cracked_funds"},
-            Red::TweakDBID{"Items.Preset_Q001_Lexington"}, Red::TweakDBID{"Items.CyberdeckSplinter"}};
+            Red::TweakDBID{"Items.q003_chip_cracked"}, Red::TweakDBID{"Items.q003_chip_cracked_funds"}, Red::TweakDBID{"Items.Preset_Q001_Lexington"},
+            Red::TweakDBID{"Items.CyberdeckSplinter"}, Red::TweakDBID{"Items.Preset_Lexington_Wilson"},
+            Red::TweakDBID{"Items.mq011_wilson_gun"}};
 
         // TODO: just make this a switch statement using TDBID hashes
 

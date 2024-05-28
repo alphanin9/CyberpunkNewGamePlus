@@ -1,3 +1,5 @@
+$dlc: EP1
+
 Items.NGPlus_FastSoloMantisBlades_RPGData:
   $base: Items.Base_Mantis_Blades_NPC_Data
   statModifiers:

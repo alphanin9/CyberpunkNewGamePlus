@@ -3,6 +3,12 @@ module NewGamePlus.EP1Listener
 public class NGPlusEP1StatusListener extends ScriptableSystem {
     public final func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
         let questsSystem = GameInstance.GetQuestsSystem(this.GetGameInstance());
+
+        // This is only for NG+
+        if questsSystem.GetFactStr("ngplus_active") == 0 {
+            return;
+        }
+
         let ngPlusSystem = GameInstance.GetNewGamePlusSystem();
         let hasEp1 = IsEP1();
 

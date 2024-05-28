@@ -1,3 +1,5 @@
+$dlc: EP1
+
 Character.NGPlus_EncounterNetrunnerBoss:
   $base: t"Character.q305_maxtac_miniboss_netrunner_ma"
   tags: ["Cyberpsycho", "ImmuneToTakedown"]
