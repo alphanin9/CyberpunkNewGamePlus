@@ -207,14 +207,8 @@ inline constexpr auto Q003Chip = Red::TweakDBID("Items.q003_chip");
 inline constexpr auto Q003ChipCracked = Red::TweakDBID("Items.q003_chip_cracked");
 inline constexpr auto Q003ChipCrackedFunds = Red::TweakDBID("Items.q003_chip_cracked_funds");
 
-inline constexpr auto Q001Lexington = Red::TweakDBID("Items.Preset_Q001_Lexington");
 inline constexpr auto CyberdeckSplinter = Red::TweakDBID("Items.CyberdeckSplinter");
-inline constexpr auto PresetLexingtonWilson = Red::TweakDBID("Items.Preset_Lexington_Wilson");
-inline constexpr auto PresetLexingtonWilsonRare = Red::TweakDBID("Items.Preset_Lexington_Wilson_Rare");
-inline constexpr auto PresetLexingtonWilsonEpic = Red::TweakDBID("Items.Preset_Lexington_Wilson_Epic");
 
-inline constexpr auto PresetLexingtonWilsonLegendary = Red::TweakDBID("Items.Preset_Lexington_Wilson_Legendary");
-inline constexpr auto MQ011WilsonGun = Red::TweakDBID("Items.mq011_wilson_gun");
 
 inline bool IsForbidden(Red::TweakDBID aId)
 {
@@ -223,9 +217,8 @@ inline bool IsForbidden(Red::TweakDBID aId)
            aId == PersonalLink2 || aId == MaTppHead || aId == WaTppHead || aId == FppHead || aId == HolsteredFists ||
            aId == MQ024DataCarrier || aId == Skippy || aId == SkippyPostQuest || aId == PresetSkippy ||
            aId == PresetSkippyPostQuest || aId == SaburoDataCarrier || aId == SaburoDataCarrierCracked ||
-           aId == Q003Chip || aId == Q003ChipCracked || aId == Q003ChipCrackedFunds || aId == Q001Lexington ||
-           aId == CyberdeckSplinter || aId == PresetLexingtonWilson || aId == PresetLexingtonWilsonRare ||
-           aId == PresetLexingtonWilsonEpic || aId == PresetLexingtonWilsonLegendary || aId == MQ011WilsonGun;
+           aId == Q003Chip || aId == Q003ChipCracked || aId == Q003ChipCrackedFunds ||
+           aId == CyberdeckSplinter;
 }
 };
 
@@ -750,6 +743,11 @@ private:
             return HasTag("WeaponMod") || m_itemType == Red::gamedataItemType::Prt_Program;
         }
 
+        bool IsDyingNight() const
+        {
+            return HasTag("Lexington_Wilson");
+        }
+
         bool IsAllowedType() const
         {
             using Red::gamedataItemType;
@@ -905,6 +903,12 @@ private:
         // Sorry, but these REALLY annoy me
         if (BlacklistedTDBIDs::IsForbidden(aExtendedData.m_tdbId))
         {
+            return;
+        }
+
+        if (aExtendedData.IsDyingNight())
+        {
+            // Just fuck off...
             return;
         }
 

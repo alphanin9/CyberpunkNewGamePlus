@@ -62,7 +62,7 @@ bool HasValidPointOfNoReturnSave()
                        });
 }
 
-bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHash)
+bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHash) noexcept
 {
     static const auto basePath = GetCpSaveFolder();
 
@@ -74,49 +74,82 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     const auto metadataPath = basePath / aSaveName / "metadata.9.json";
 
-    if (!std::filesystem::is_regular_file(metadataPath))
+    std::error_code ec{};
+
+    if (!std::filesystem::is_regular_file(metadataPath, ec))
     {
         return false;
     }
 
     auto padded = simdjson::padded_string::load(metadataPath.string());
 
-    if (padded.error() != simdjson::error_code::SUCCESS)
+    if (padded.error() != simdjson::SUCCESS)
     {
         return false;
     }
 
-    auto json2 = simdjson::dom::parser{};
+    simdjson::dom::parser parser{};
+    simdjson::dom::element document{};
 
-    const auto document = json2.parse(padded.value());
+    if (parser.parse(padded.value()).get(document) != simdjson::SUCCESS)
+    {
+        return false;
+    }
 
     if (!document.is_object())
     {
         return false;
     }
 
-    if (!document["RootType"].is_string())
+    if (!document.at_key("RootType").is_string())
+    {
+        return false;
+    }
+    
+    simdjson::dom::element saveMetadata{};
+
+    if (document.at_key("Data").at_key("metadata").get(saveMetadata) != simdjson::SUCCESS)
     {
         return false;
     }
 
-    const auto saveMetadata = document["Data"]["metadata"];
+    // ISSUE: old saves (might not be from PC?) don't have save metadata correct
+    // Switch to noexcept versions
 
-    if (minSupportedGameVersion > int64_t(saveMetadata["gameVersion"]))
+    int64_t gameVersion{};
+
+    if (saveMetadata.at_key("gameVersion").get_int64().get(gameVersion) != simdjson::SUCCESS)
+    {
+        return false;
+    }
+
+    if (minSupportedGameVersion > gameVersion)
     {
         return false;
     }
 
     const auto isPointOfNoReturn = aSaveName.starts_with("PointOfNoReturn");
 
-    aPlaythroughHash = Red::FNV1a64(saveMetadata["playthroughID"].get_c_str().value());
+    std::string_view playthroughId{};
+
+    if (saveMetadata.at_key("playthroughID").get_string().get(playthroughId) != simdjson::SUCCESS)
+    {
+        return false;
+    }
+
+    aPlaythroughHash = Red::FNV1a64(playthroughId.data());
     
     if (isPointOfNoReturn)
     {
         return true;
     }
 
-    const auto questsDone = saveMetadata["finishedQuests"].get_string().value();
+    std::string_view questsDone{};
+
+    if (saveMetadata.at_key("finishedQuests").get_string().get(questsDone) != simdjson::SUCCESS)
+    {
+        return false;
+    }
 
     using std::operator""sv;
     auto questsSplitRange = std::views::split(questsDone, " "sv);
@@ -128,23 +161,34 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
         return true;
     }
 
-    constexpr auto q307_active_fact = "q307_blueprint_acquired=1";
+    constexpr auto q307ActiveFact = "q307_blueprint_acquired=1";
 
-    for (auto fact : saveMetadata["facts"])
+    simdjson::dom::array importantFacts{};
+
+    if (!saveMetadata.at_key("facts").get_array().get(importantFacts) != simdjson::SUCCESS)
     {
-        if (fact.is_string())
+        return false;
+    }
+
+    for (auto fact : importantFacts)
+    {
+        std::string_view factValueString{};
+
+        if (fact.get_string().get(factValueString) != simdjson::SUCCESS)
         {
-            if (fact.get_string().value() == q307_active_fact)
-            {
-                return true;
-            }
+            continue;
+        }
+
+        if (factValueString == q307ActiveFact)
+        {
+            return true;
         }
     }
 
     return false;
 }
 
-bool IsValidForNewGamePlus(std::string_view aSaveName)
+bool IsValidForNewGamePlus(std::string_view aSaveName) noexcept
 {
     uint64_t dummy{};
     return IsValidForNewGamePlus(aSaveName, dummy);
