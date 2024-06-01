@@ -347,16 +347,13 @@ bool Parser::LoadNodes()
             cyberpunk::ParseNode(cursor, node);
 
             const auto readSize = cursor.offset - node.offset;
-            auto expectedSize = node.size;
-
-            if (node.isWritingOwnTrailingSize)
-            {
-                expectedSize += node.trailingSize;
-            }
+            const auto expectedSize = node.GetExpectedSize();
 
             if (readSize != expectedSize)
             {
                 // HACK: itemData gets really fucked by this, even on a known good implementation
+                // This is kinda irrelevant actually :P
+                // We don't care about saving back anyway
                 if (node.m_hash != "itemData")
                 {
                     PluginContext::Error(
@@ -371,14 +368,16 @@ bool Parser::LoadNodes()
     if constexpr (shouldDumpInventory)
     {
         auto inventory = LookupNode("inventory");
-        auto inventoryData = reinterpret_cast<cyberpunk::InventoryNode*>(inventory->nodeData.get());
 
-        for (auto& subInventory : inventoryData->subInventories)
+        if (auto inventory = LookupNodeData<cyberpunk::InventoryNode>())
         {
-            PluginContext::Spew(std::format("Inventory {}", subInventory.inventoryId));
-            for (auto& inventoryItem : subInventory.inventoryItems)
+            for (auto& subInventory : inventory->subInventories)
             {
-                DumpItem(inventoryItem);
+                PluginContext::Spew(std::format("Inventory {}", subInventory.inventoryId));
+                for (auto& inventoryItem : subInventory.inventoryItems)
+                {
+                    DumpItem(inventoryItem);
+                }
             }
         }
     }

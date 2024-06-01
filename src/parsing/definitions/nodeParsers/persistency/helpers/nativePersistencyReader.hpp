@@ -23,59 +23,13 @@ protected:
     virtual void ReadEnum(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) final
     {
         auto enumType = static_cast<RED4ext::CEnum*>(aType);
-        std::int64_t enumIndexer{};
 
-        switch (enumType->actualSize)
+        if (enumType->actualSize == 0)
         {
-        case 1u:
-            enumIndexer = aCursor.readByte();
-            if (enumIndexer < enumType->valueList.size)
-            {
-                *reinterpret_cast<std::uint8_t*>(aOut) = static_cast<std::uint8_t>(enumIndexer);    
-            }
-            else
-            {
-                *reinterpret_cast<std::uint8_t*>(aOut) = static_cast<std::uint8_t>(enumType->valueList.Back());
-            }
-            break;
-        case 2u:
-            enumIndexer = aCursor.readShort();
-            if (enumIndexer < enumType->valueList.size)
-            {
-                *reinterpret_cast<std::uint16_t*>(aOut) = static_cast<std::uint16_t>(enumIndexer);
-            }
-            else
-            {
-                *reinterpret_cast<std::uint16_t*>(aOut) = static_cast<std::uint16_t>(enumType->valueList.Back());
-            }
-            break;
-        case 4u:
-            enumIndexer = aCursor.readInt();
-            if (enumIndexer < enumType->valueList.size)
-            {
-                *reinterpret_cast<std::uint32_t*>(aOut) = static_cast<std::uint32_t>(enumIndexer);
-            }
-            else
-            {
-                *reinterpret_cast<std::uint32_t*>(aOut) = static_cast<std::uint32_t>(enumType->valueList.Back());
-            }
-            break;
-        case 8u:
-            enumIndexer = aCursor.readInt64();
-            if (enumIndexer < enumType->valueList.size)
-            {
-                *reinterpret_cast<std::uint64_t*>(aOut) = static_cast<std::uint64_t>(enumIndexer);
-            }
-            else
-            {
-                *reinterpret_cast<std::uint64_t*>(aOut) = static_cast<std::uint64_t>(enumType->valueList.Back());
-            }
-            break;
-        default:
-            throw std::runtime_error{
-                std::format("Enum {} has size {}", enumType->GetName().ToString(), enumType->actualSize)};
-            break;
+            PluginContext::Error("NativePersistencyReader::ReadEnum, enumType->actualSize == 0");
         }
+
+        aCursor.CopyTo(aOut, enumType->actualSize);
     }
 
     virtual void ReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) final
@@ -105,6 +59,40 @@ protected:
         // Skip this, currently we have no need for wrefs
         aCursor.readInt();
     }
+
+    virtual bool TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept final
+    {
+        const auto handleType = static_cast<Red::CRTTIHandleType*>(aType);
+        auto innerType = handleType->GetInnerType();
+
+        if (innerType->GetType() != Red::ERTTIType::Class)
+        {
+            PluginContext::Error(std::format("Tried to read handle of a non-class type! Typename: {}", aType->GetName().ToString()));
+            return false;
+        }
+
+        auto instance = static_cast<Red::CClass*>(innerType)->CreateInstance();
+        auto handle = Red::Handle<Red::ISerializable>(reinterpret_cast<Red::ISerializable*>(instance));
+
+        if (!TryReadValue(aCursor, handle.GetPtr(), innerType))
+        {
+            return false;
+        }
+
+        using HandleType = Red::Handle<Red::ISerializable>;
+
+        reinterpret_cast<HandleType*>(aOut)->Swap(handle);
+
+        return true;
+    }
+
+    virtual bool TryReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut,
+                                   Red::CBaseRTTIType* aType) noexcept final
+    {
+        aCursor.readInt();
+        return true;
+    }
+
 public:
     virtual void ReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aClass) final
     {
@@ -151,6 +139,48 @@ public:
         {
             PluginContext::Error(std::format("NativePersistencyReader::ReadClass, {}", e.what()));
         }
+    }
+
+    virtual bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aClass) noexcept final
+    {
+        auto classType = static_cast<Red::CClass*>(aClass);
+
+        while (aCursor.getRemaining())
+        {
+            auto propName = aCursor.ReadCNameHash();
+
+            if (propName.IsNone())
+            {
+                break;
+            }
+
+            auto propTypeStr = aCursor.ReadCNameHash();
+            auto prop = classType->GetProperty(propName);
+
+            if (!prop)
+            {
+                PluginContext::Error(std::format("Prop {}::{} does not exist!", classType->name.ToString(), propName.ToString()));
+                return false;
+            }
+
+            if (propTypeStr != prop->type->GetName())
+            {
+                PluginContext::Error(
+                    std::format("Prop {}::{} type mismatch, {} != {}!", classType->name.ToString(), propName.ToString(), prop->type->GetName().ToString(), propTypeStr.ToString()));
+                return false;
+            }
+
+            auto valuePtr = prop->GetValuePtr<std::remove_pointer_t<Red::ScriptInstance>>(aOut);
+
+            if (!TryReadValue(aCursor, valuePtr, prop->type))
+            {
+                PluginContext::Error(
+                    std::format("Failed to read {}::{}", classType->name.ToString(), propName.ToString()));
+                return false;
+            }
+        }
+
+        return true;
     }
 };
 } // namespace persistency::native

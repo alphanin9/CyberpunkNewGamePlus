@@ -115,32 +115,27 @@ public:
                     auto instance = static_cast<Red::CClass*>(type)->CreateInstance();
                     auto subCursor = aCursor.CreateSubCursor(classSize);
 
-                    try
+                    if (reader.TryReadClass(subCursor, instance, type))
                     {
-                        reader.ReadClass(subCursor, instance, type);
-                    }
-                    catch (const std::exception& e)
-                    {
-                        // Don't do anything, pray that it doesn't crash
-                    }
+                        // Small optimization: instead of resizing the vector for all the persistent nodes (that we only
+                        // use one of anyway), we only instantiate the needed one(s)
+                        m_redClasses.emplace_back();
 
-                    // Small optimization: instead of resizing the vector for all the persistent nodes (that we only use one of anyway), we only instantiate the needed one(s)
-                    m_redClasses.emplace_back();
+                        auto& entry = m_redClasses.back();
 
-                    auto& entry = m_redClasses.back();
+                        entry.m_classInstance.SetInstance(instance);
+                        entry.m_className = classHash;
+                        entry.m_id = classId;
 
-                    entry.m_classInstance.SetInstance(instance);
-                    entry.m_className = classHash;
-                    entry.m_id = classId;
+                        if constexpr (m_onlyDoVehicleGarage)
+                        {
+                            // We're done here LOL
+                            // Seek to the end of the node so LoadNodes doesn't whine
 
-                    if constexpr (m_onlyDoVehicleGarage)
-                    {
-                        // We're done here LOL
-                        // Seek to the end of the node so LoadNodes doesn't whine
+                            aCursor.seekTo(FileCursor::SeekTo::Start, node.offset + node.GetExpectedSize());
 
-                        aCursor.seekTo(FileCursor::SeekTo::Start, node.offset + node.GetExpectedSize());
-
-                        break;
+                            break;
+                        }
                     }
                 }
 

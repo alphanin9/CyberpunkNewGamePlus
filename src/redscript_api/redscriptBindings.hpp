@@ -162,6 +162,73 @@ RTTI_DEFINE_CLASS(redscript::PlayerSaveData, {
     RTTI_PROPERTY(m_playerVehicleGarage);
 });
 
+namespace BlacklistedTDBIDs
+{
+/*
+{
+            Red::TweakDBID{"Items.MaskCW"}, Red::TweakDBID{"Items.MaskCWPlus"},
+            Red::TweakDBID{"Items.MaskCWPlusPlus"}, Red::TweakDBID{"Items.w_melee_004__fists_a"},
+            Red::TweakDBID{"Items.PersonalLink"}, Red::TweakDBID{"Items.personal_link"},
+            Red::TweakDBID{"Items.PlayerMaTppHead"}, Red::TweakDBID{"Items.PlayerWaTppHead"},
+            Red::TweakDBID{"Items.PlayerFppHead"}, Red::TweakDBID{"Items.HolsteredFists"},
+            Red::TweakDBID{"Items.mq024_sandra_data_carrier"},
+            // And Skippy leads to him talking in the starting cutscene
+            Red::TweakDBID{"Items.mq007_skippy"}, Red::TweakDBID{"Items.mq007_skippy_post_quest"},
+            Red::TweakDBID{"Items.Preset_Yukimura_Skippy"},
+            Red::TweakDBID{"Items.Preset_Yukimura_Skippy_PostQuest"},
+            Red::TweakDBID{"Items.q005_saburo_data_carrier"},
+            Red::TweakDBID{"Items.q005_saburo_data_carrier_cracked"}, Red::TweakDBID{"Items.q003_chip"},
+            Red::TweakDBID{"Items.q003_chip_cracked"}, Red::TweakDBID{"Items.q003_chip_cracked_funds"},
+            Red::TweakDBID{"Items.Preset_Q001_Lexington"}, Red::TweakDBID{"Items.CyberdeckSplinter"},
+            Red::TweakDBID{"Items.Preset_Lexington_Wilson"}, Red::TweakDBID{"Items.mq011_wilson_gun"}
+}
+*/
+inline constexpr auto MaskCW = Red::TweakDBID("Items.MaskCW");
+inline constexpr auto MaskCWPlus = Red::TweakDBID("Items.MaskCWPlus");
+inline constexpr auto MaskCWPlusPlus = Red::TweakDBID("Items.MaskCWPlusPlus");
+inline constexpr auto Fists = Red::TweakDBID("Items.w_melee_004__fists_a");
+inline constexpr auto PersonalLink = Red::TweakDBID("Items.PersonalLink");
+
+inline constexpr auto PersonalLink2 = Red::TweakDBID("Items.personal_link");
+inline constexpr auto MaTppHead = Red::TweakDBID("Items.PlayerMaTppHead");
+inline constexpr auto WaTppHead = Red::TweakDBID("Items.PlayerWaTppHead");
+inline constexpr auto FppHead = Red::TweakDBID("Items.PlayerFppHead");
+inline constexpr auto HolsteredFists = Red::TweakDBID("Items.HolsteredFists");
+
+inline constexpr auto MQ024DataCarrier = Red::TweakDBID("Items.mq024_sandra_data_carrier");
+inline constexpr auto Skippy = Red::TweakDBID("Items.mq007_skippy");
+inline constexpr auto SkippyPostQuest = Red::TweakDBID("Items.mq007_skippy_post_quest");
+inline constexpr auto PresetSkippy = Red::TweakDBID("Items.Preset_Yukimura_Skippy");
+inline constexpr auto PresetSkippyPostQuest = Red::TweakDBID("Items.Preset_Yukimura_Skippy_PostQuest");
+
+inline constexpr auto SaburoDataCarrier = Red::TweakDBID("Items.q005_saburo_data_carrier");
+inline constexpr auto SaburoDataCarrierCracked = Red::TweakDBID("Items.q005_saburo_data_carrier_cracked");
+inline constexpr auto Q003Chip = Red::TweakDBID("Items.q003_chip");
+inline constexpr auto Q003ChipCracked = Red::TweakDBID("Items.q003_chip_cracked");
+inline constexpr auto Q003ChipCrackedFunds = Red::TweakDBID("Items.q003_chip_cracked_funds");
+
+inline constexpr auto Q001Lexington = Red::TweakDBID("Items.Preset_Q001_Lexington");
+inline constexpr auto CyberdeckSplinter = Red::TweakDBID("Items.CyberdeckSplinter");
+inline constexpr auto PresetLexingtonWilson = Red::TweakDBID("Items.Preset_Lexington_Wilson");
+inline constexpr auto PresetLexingtonWilsonRare = Red::TweakDBID("Items.Preset_Lexington_Wilson_Rare");
+inline constexpr auto PresetLexingtonWilsonEpic = Red::TweakDBID("Items.Preset_Lexington_Wilson_Epic");
+
+inline constexpr auto PresetLexingtonWilsonLegendary = Red::TweakDBID("Items.Preset_Lexington_Wilson_Legendary");
+inline constexpr auto MQ011WilsonGun = Red::TweakDBID("Items.mq011_wilson_gun");
+
+inline bool IsForbidden(Red::TweakDBID aId)
+{
+    // Disgusting
+    return aId == MaskCW || aId == MaskCWPlus || aId == MaskCWPlusPlus || aId == Fists || aId == PersonalLink ||
+           aId == PersonalLink2 || aId == MaTppHead || aId == WaTppHead || aId == FppHead || aId == HolsteredFists ||
+           aId == MQ024DataCarrier || aId == Skippy || aId == SkippyPostQuest || aId == PresetSkippy ||
+           aId == PresetSkippyPostQuest || aId == SaburoDataCarrier || aId == SaburoDataCarrierCracked ||
+           aId == Q003Chip || aId == Q003ChipCracked || aId == Q003ChipCrackedFunds || aId == Q001Lexington ||
+           aId == CyberdeckSplinter || aId == PresetLexingtonWilson || aId == PresetLexingtonWilsonRare ||
+           aId == PresetLexingtonWilsonEpic || aId == PresetLexingtonWilsonLegendary || aId == MQ011WilsonGun;
+}
+};
+
 namespace redscript
 {
 
@@ -358,7 +425,6 @@ public:
         catch (std::exception e)
         {
             PluginContext::Error(std::format("EXCEPTION {}", e.what()));
-            m_lastError = e.what();
             return false;
         }
 
@@ -569,6 +635,7 @@ private:
                         continue;
                     }
 
+                    // Check if the CW exists at all (sanity)
                     auto tweakRecord = m_tweakDb->GetRecord(itemId.tdbid);
 
                     if (!tweakRecord)
@@ -576,12 +643,18 @@ private:
                         continue;
                     }
 
-                    bool isMask{};
-                    Red::CName tagName = "MaskCW";
+                    Red::TweakDBID tagsFlat(itemId.tdbid, ".tags");
 
-                    Red::CallVirtual(tweakRecord, "TagsContains", isMask, tagName);
+                    auto flat = m_tweakDb->GetFlatValue(tagsFlat);
 
-                    if (!isMask)
+                    if (!flat)
+                    {
+                        continue;
+                    }
+
+                    auto tagList = flat->GetValue<Red::DynArray<Red::CName>>();
+
+                    if (!tagList->Contains("MaskCW"))
                     {
                         m_saveData.m_playerEquippedKiroshis = itemId;
                         break;
@@ -662,11 +735,10 @@ private:
     {
         Red::ItemID m_itemId;
         Red::TweakDBID m_tdbId;
-        Red::Handle<Red::IScriptable> m_itemRecord;
-        Red::DynArray<Red::CName> m_tags;
+        Red::Handle<Red::TweakDBRecord> m_itemRecord;
+        Red::DynArray<Red::CName>* m_tags;
 
         Red::gamedataItemType m_itemType;
-        Red::CName m_itemCategory;
 
         bool IsHiddenInUI() const
         {
@@ -711,11 +783,16 @@ private:
 
         bool HasTag(Red::CName aTag) const
         {
-            return m_tags.Contains(aTag);
+            if (!m_tags)
+            {
+                return false;
+            }
+
+            return m_tags->Contains(aTag);
         }
     };
 
-    ExtendedItemData CreateExtendedData(const cyberpunk::ItemInfo& aItem, Red::Handle<Red::IScriptable>& aRecord)
+    ExtendedItemData CreateExtendedData(const cyberpunk::ItemInfo& aItem, Red::Handle<Red::TweakDBRecord>& aRecord)
     {
         ExtendedItemData ret{};
 
@@ -723,24 +800,49 @@ private:
         ret.m_tdbId = ret.m_itemId.tdbid;
         ret.m_itemRecord = aRecord;
         ret.m_itemType = Red::gamedataItemType::Invalid;
-        ret.m_itemCategory = "";
         
-        Red::CallVirtual(aRecord, "Tags", ret.m_tags);
-
-        Red::Handle<Red::gamedataItemType_Record> itemTypeHandle;
-        Red::CallVirtual(aRecord, "ItemTypeHandle", itemTypeHandle);
-
-        if (itemTypeHandle)
+        if (auto tagValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(aRecord->recordID, ".tags")))
         {
-            Red::CallVirtual(itemTypeHandle, "Type", ret.m_itemType);
+            ret.m_tags = tagValuePtr->GetValue<Red::DynArray<Red::CName>>();
         }
 
-        Red::Handle<Red::gamedataItemCategory_Record> itemCategoryHandle;
-        Red::CallVirtual(aRecord, "ItemCategoryHandle", itemCategoryHandle);
-
-        if (itemCategoryHandle)
+        if (auto typeValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(aRecord->recordID, ".itemType")))
         {
-            Red::CallVirtual(itemCategoryHandle, "Name", ret.m_itemCategory);
+            auto typeFk = *typeValuePtr->GetValue<Red::TweakDBID>();
+
+            if (auto nameValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(typeFk, ".name")))
+            {
+                static auto typeEnum = Red::GetEnum<Red::gamedataItemType>();
+                // Ugly...
+                if (typeEnum)
+                {
+                    auto enumName = *nameValuePtr->GetValue<Red::CName>();
+
+                    auto isFound = false;
+
+                    for (auto i = 0; i < typeEnum->hashList.size; i++)
+                    {
+                        if (typeEnum->hashList[i] == enumName)
+                        {
+                            ret.m_itemType = static_cast<Red::gamedataItemType>(typeEnum->valueList[i]);
+                            isFound = true;
+                            break;
+                        }
+                    }
+
+                    if (!isFound)
+                    {
+                        for (auto i = 0; i < typeEnum->aliasList.size; i++)
+                        {
+                            if (typeEnum->aliasList[i] == enumName)
+                            {
+                                ret.m_itemType = static_cast<Red::gamedataItemType>(typeEnum->aliasValueList[i]);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         return ret;
@@ -763,7 +865,14 @@ private:
             return;
         }
 
-        auto extendedData = CreateExtendedData(aSlotPart.itemInfo, record);
+        auto casted = Red::Cast<Red::TweakDBRecord>(record);
+
+        if (!casted)
+        {
+            return;
+        }
+
+        auto extendedData = CreateExtendedData(aSlotPart.itemInfo, casted);
 
         if (extendedData.IsAllowedType() && !extendedData.IsHiddenInUI() && extendedData.IsValidAttachment())
         {
@@ -794,27 +903,7 @@ private:
     void AddItemToInventory(const ExtendedItemData& aExtendedData, const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList)
     {
         // Sorry, but these REALLY annoy me
-        // TODO: Make this a switch statement, array searches take a while... Though it's not important
-        static constexpr std::array<Red::TweakDBID, 32> bannedTdbIds = {
-            Red::TweakDBID{"Items.MaskCW"}, Red::TweakDBID{"Items.MaskCWPlus"},
-            Red::TweakDBID{"Items.MaskCWPlusPlus"}, Red::TweakDBID{"Items.w_melee_004__fists_a"},
-            Red::TweakDBID{"Items.PersonalLink"}, Red::TweakDBID{"Items.personal_link"},
-            Red::TweakDBID{"Items.PlayerMaTppHead"}, Red::TweakDBID{"Items.PlayerWaTppHead"},
-            Red::TweakDBID{"Items.PlayerFppHead"}, Red::TweakDBID{"Items.HolsteredFists"},
-            Red::TweakDBID{"Items.mq024_sandra_data_carrier"},
-            // And Skippy leads to him talking in the starting cutscene
-            Red::TweakDBID{"Items.mq007_skippy"}, Red::TweakDBID{"Items.mq007_skippy_post_quest"},
-            Red::TweakDBID{"Items.Preset_Yukimura_Skippy"},
-            Red::TweakDBID{"Items.Preset_Yukimura_Skippy_PostQuest"},
-            Red::TweakDBID{"Items.q005_saburo_data_carrier"},
-            Red::TweakDBID{"Items.q005_saburo_data_carrier_cracked"}, Red::TweakDBID{"Items.q003_chip"},
-            Red::TweakDBID{"Items.q003_chip_cracked"}, Red::TweakDBID{"Items.q003_chip_cracked_funds"}, Red::TweakDBID{"Items.Preset_Q001_Lexington"},
-            Red::TweakDBID{"Items.CyberdeckSplinter"}, Red::TweakDBID{"Items.Preset_Lexington_Wilson"},
-            Red::TweakDBID{"Items.mq011_wilson_gun"}};
-
-        // TODO: just make this a switch statement using TDBID hashes
-
-        if (std::find(bannedTdbIds.begin(), bannedTdbIds.end(), aExtendedData.m_tdbId) != bannedTdbIds.end())
+        if (BlacklistedTDBIDs::IsForbidden(aExtendedData.m_tdbId))
         {
             return;
         }
@@ -858,7 +947,14 @@ private:
             return;
         }
 
-        auto extendedItemData = CreateExtendedData(aItem.itemInfo, record);
+        auto casted = Red::Cast<Red::TweakDBRecord>(record);
+
+        if (!casted)
+        {
+            return;
+        }
+
+        auto extendedItemData = CreateExtendedData(aItem.itemInfo, casted);
 
         AddItemToInventory(extendedItemData, aItem, aTargetList);
     }
@@ -881,25 +977,29 @@ private:
 
     void LoadGarageNative(Red::GarageComponentPS* aGarage)
     {
-        static constexpr std::array<Red::TweakDBID, 32> blacklistedVehicles =
-                                            {Red::TweakDBID{"Vehicle.v_utility4_thorton_mackinaw_bmf_player"},
-                                           Red::TweakDBID{"Vehicle.v_sport2_quadra_type66_nomad_tribute"},
-                                           Red::TweakDBID{"Vehicle.v_sportbike2_arch_jackie_player"},
-                                           Red::TweakDBID{"Vehicle.v_sportbike2_arch_jackie_tuned_player"}};
+        static constexpr auto Demiurge = Red::TweakDBID("Vehicle.v_utility4_thorton_mackinaw_bmf_player");
+        static constexpr auto Hoon = Red::TweakDBID("Vehicle.v_sport2_quadra_type66_nomad_tribute");
+        static constexpr auto JackieArch = Red::TweakDBID("Vehicle.v_sportbike2_arch_jackie_player");
+        static constexpr auto JackieTunedArch = Red::TweakDBID("Vehicle.v_sportbike2_arch_jackie_tuned_player");
+
+        // Hardcoded HACK
 
         auto& unlockedVehicles = aGarage->unlockedVehicleArray;
 
         for (auto& unlockedVehicle : unlockedVehicles)
         {
-            if (std::find(blacklistedVehicles.begin(), blacklistedVehicles.end(), unlockedVehicle.vehicleID.recordID) == blacklistedVehicles.end())
+            const auto recordId = unlockedVehicle.vehicleID.recordID;
+
+            if (recordId == Demiurge || recordId == Hoon || recordId == JackieArch || recordId == JackieTunedArch)
             {
-                m_saveData.m_playerVehicleGarage.PushBack(unlockedVehicle.vehicleID.recordID);
+                continue;
             }
+
+            m_saveData.m_playerVehicleGarage.PushBack(recordId);
         }
     }
 
     PlayerSaveData m_saveData{};
-    std::string m_lastError{};
 
     Red::TweakDB* m_tweakDb;
 

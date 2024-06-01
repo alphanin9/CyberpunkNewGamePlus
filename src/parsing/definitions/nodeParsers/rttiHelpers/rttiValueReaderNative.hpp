@@ -12,52 +12,6 @@ namespace redRTTI::native
 class NativeReader
 {
 protected:
-    virtual void ReadInt8(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<std::int8_t*>(aOut) = aCursor.readByte();
-    }
-    virtual void ReadInt16(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<std::int16_t*>(aOut) = aCursor.readShort();
-    }
-    virtual void ReadInt32(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<std::int32_t*>(aOut) = aCursor.readInt();
-    }
-    virtual void ReadInt64(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<std::int64_t*>(aOut) = aCursor.readInt64();
-    }
-
-    virtual void ReadUInt8(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<std::uint8_t*>(aOut) = aCursor.readValue<std::uint8_t>();
-    }
-    virtual void ReadUInt16(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<std::uint16_t*>(aOut) = aCursor.readUShort();
-    }
-    virtual void ReadUInt32(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<std::uint32_t*>(aOut) = aCursor.readUInt();
-    }
-    virtual void ReadUInt64(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<std::uint64_t*>(aOut) = aCursor.readUInt64();
-    }
-
-    virtual void ReadFloat(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<float*>(aOut) = aCursor.readFloat();
-    }
-    virtual void ReadDouble(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<double*>(aOut) = aCursor.readDouble();
-    }
-    virtual void ReadBool(FileCursor& aCursor, Red::ScriptInstance aOut)
-    {
-        *reinterpret_cast<bool*>(aOut) = aCursor.readValue<bool>();
-    }
     virtual void ReadTDBID(FileCursor& aCursor, Red::ScriptInstance aOut)
     {
         *reinterpret_cast<Red::TweakDBID*>(aOut) = aCursor.readTdbId();
@@ -84,7 +38,8 @@ protected:
             ReadValue(aCursor, elem, innerType);
         }
     }
-    // In theory, we could use the same array serialization for every array type (static arrays, dynarrays, fixed arrays, native arrays...)
+    // In theory, we could use the same array serialization for every array type (static arrays, dynarrays, fixed
+    // arrays, native arrays...)
     virtual void ReadStaticArray(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType)
     {
         const auto arraySize = aCursor.readInt();
@@ -106,8 +61,44 @@ protected:
         arrayType->Resize(aOut, arraySize);
     }
 
+    // Should work for arrs of all types
+    // NVM, results in odd crashes
+    bool TryReadArray(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
+    {
+        const auto arraySize = aCursor.readInt();
+        const auto arrayType = static_cast<Red::CRTTIArrayType*>(aPropType);
+        const auto innerType = arrayType->GetInnerType();
+
+        arrayType->Resize(aOut, arraySize);
+
+        for (auto i = 0; i < arraySize; i++)
+        {
+            // Array elements are constructed on resize, we don't need to create a new instance
+            auto elem = arrayType->GetElement(aOut, i);
+            if (!TryReadValue(aCursor, elem, innerType))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     virtual void ReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) = 0;
     virtual void ReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) = 0;
+
+    virtual bool TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
+    {
+        PluginContext::Error("Hit raw TryReadHandle!");
+        return false;
+    }
+
+    virtual bool TryReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut,
+                                   Red::CBaseRTTIType* aPropType) noexcept
+    {
+        PluginContext::Error("Hit raw TryReadWhandle!");
+        return false;
+    }
 
     virtual void ReadValue(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType)
     {
@@ -168,130 +159,62 @@ protected:
 
     bool TryReadValue(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
     {
+        const auto rttiType = aPropType->GetType();
+        const auto typeName = aPropType->GetName();
+
+        using Red::ERTTIType;
+
+        switch (rttiType)
+        {
+        case ERTTIType::Name:
+            if (typeName == "CName")
+            {
+                ReadCName(aCursor, aOut);
+                return true;
+            }
+            break;
+        case ERTTIType::Fundamental:
+            aCursor.CopyTo(aOut, aPropType->GetSize());
+            return true;
+        case ERTTIType::Class:
+            return TryReadClass(aCursor, aOut, aPropType);
+        case ERTTIType::Array:
+        case ERTTIType::StaticArray:
+        case ERTTIType::NativeArray:
+            return TryReadArray(aCursor, aOut, aPropType);
+        case ERTTIType::Simple:
+            if (typeName == RED4ext::CName{"TweakDBID"})
+            {
+                ReadTDBID(aCursor, aOut);
+                return true;
+            }
+            else if (typeName == RED4ext::CName{"NodeRef"})
+            {
+                ReadNodeRef(aCursor, aOut);
+                return true;
+            }
+            break;
+        case ERTTIType::Enum:
+            ReadEnum(aCursor, aOut, aPropType);
+            return true;
+        case ERTTIType::Handle:
+            return TryReadHandle(aCursor, aOut, aPropType);
+        case ERTTIType::WeakHandle:
+            return TryReadWeakHandle(aCursor, aOut, aPropType);
+        }
+
+        PluginContext::Error(std::format("NativeReader::TryReadValue, type {} cannot be loaded!", typeName.ToString()));
         return false;
     }
 
 public:
     virtual ~NativeReader()
     {
-    
     }
     virtual void ReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aClass) = 0;
-    bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aClass) noexcept
+    virtual bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aClass) noexcept
     {
         return false;
     }
 };
-
-class NativeDumper
-{
-private:
-    // Very simple and PoC
-    static void DumpValue(Red::ScriptInstance aPtr, Red::CBaseRTTIType* aType)
-    {
-        const auto rttiType = aType->GetType();
-        const auto typeName = aType->GetName();
-
-        using Red::ERTTIType;
-
-        if (rttiType == ERTTIType::Name)
-        {
-            if (typeName == "CName")
-            {
-                PluginContext::Spew(std::format("{}", reinterpret_cast<Red::CName*>(aPtr)->ToString()));
-            }
-        }
-        else if (rttiType == ERTTIType::Enum)
-        {
-            const auto enumType = static_cast<Red::CEnum*>(aType);
-            
-            auto enumValue = enumType->valueList.Back();
-
-            switch (enumType->actualSize)
-            {
-            case 1:
-                enumValue = *reinterpret_cast<std::int8_t*>(aPtr);
-                break;
-            case 2:
-                enumValue = *reinterpret_cast<std::int16_t*>(aPtr);
-                break;
-            case 4:
-                enumValue = *reinterpret_cast<std::int32_t*>(aPtr);
-                break;
-            case 8:
-                enumValue = *reinterpret_cast<std::int64_t*>(aPtr);
-                break;
-            }
-
-            for (auto i = 0; i < enumType->valueList.size; i++)
-            {
-                if (enumValue == enumType->valueList[i])
-                {
-                    PluginContext::Spew(std::format("{}.{}", aType->GetName().ToString(), enumType->hashList[i].ToString()));
-                    return;
-                }
-            }
-
-            for (auto i = 0; i < enumType->aliasValueList.size; i++)
-            {
-                if (enumValue == enumType->aliasValueList[i])
-                {
-                    PluginContext::Spew(std::format("{}.{}", aType->GetName().ToString(), enumType->aliasList[i].ToString()));
-                    return;
-                }
-            }
-        }
-        else if (rttiType == ERTTIType::Array)
-        {
-            auto arrayType = static_cast<Red::CRTTIArrayType*>(aType);
-            auto innerType = arrayType->GetInnerType();
-            const auto len = arrayType->GetLength(aPtr);
-
-            for (auto i = 0u; i < len; i++)
-            {
-                auto elem = arrayType->GetElement(aPtr, i);
-                
-                DumpValue(elem, innerType);
-            }
-        }
-        else if (rttiType == ERTTIType::StaticArray)
-        {
-            auto arrayType = static_cast<Red::CRTTIStaticArrayType*>(aType);
-            auto innerType = arrayType->GetInnerType();
-            const auto len = arrayType->GetLength(aPtr);
-
-            for (auto i = 0u; i < len; i++)
-            {
-                auto elem = arrayType->GetElement(aPtr, i);
-
-                DumpValue(elem, innerType);
-            }
-        }
-        else if (rttiType == ERTTIType::Class)
-        {
-            return DumpClass(aPtr, aType);
-        }
-    }
-public:
-    static void DumpClass(Red::ScriptInstance aData, Red::CBaseRTTIType* aType)
-    {
-        const auto classType = static_cast<Red::CClass*>(aType);
-
-        Red::DynArray<Red::CProperty*> props{};
-
-        classType->GetProperties(props);
-
-        for (auto i : props)
-        {
-            if (i->flags.isSavable == 0 && i->flags.isPersistent == 0)
-            {
-                continue;
-            }
-
-            auto valuePtr = i->GetValuePtr<std::remove_pointer_t<Red::ScriptInstance>>(aData);
-
-            DumpValue(valuePtr, i->type);
-        }
-    }
-};
-}
+} // namespace redRTTI::native

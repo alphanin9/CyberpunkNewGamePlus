@@ -386,7 +386,12 @@ public:
 
         auto instance = static_cast<Red::CClass*>(chunkIter->m_type)->CreateInstance();
 
-        m_reader.ReadClass(cursor, instance, chunkIter->m_type);
+        if (!m_reader.TryReadClass(cursor, instance, chunkIter->m_type))
+        {
+            PluginContext::Error(
+                std::format("ScriptableSystemsContainer::LookupChunk, failed to load chunk {}", aChunkType));
+            return nullptr;
+        }
 
         chunkIter->m_instance = reinterpret_cast<Red::ISerializable*>(instance);
         

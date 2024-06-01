@@ -61,6 +61,31 @@ class ScriptableReader : redRTTI::native::NativeReader
         return m_names->at(index);
     }
 
+    bool ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aRet)
+    {
+        aRet = aEnum->valueList.Back();
+
+        for (auto i = 0; i < aEnum->hashList.size; i++)
+        {
+            if (aEnum->hashList[i] == aName)
+            {
+                aRet = aEnum->valueList[i];
+                return true;
+            }
+        }
+
+        for (auto i = 0; i < aEnum->aliasList.size; i++)
+        {
+            if (aEnum->aliasList[i] == aName)
+            {
+                aRet = aEnum->aliasValueList[i];
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     virtual void ReadCName(FileCursor& aCursor, Red::ScriptInstance aOut) final
     {
         *reinterpret_cast<Red::CName*>(aOut) = ReadCNameInternal(aCursor);
@@ -86,54 +111,25 @@ class ScriptableReader : redRTTI::native::NativeReader
         auto enumValueName = ReadCNameInternal(aCursor);
         auto enumType = static_cast<Red::CEnum*>(aPropType);
         
-        auto wasFound = false;
-        auto enumValue = enumType->valueList.Back();
-        
-        for (auto i = 0; i < enumType->hashList.size; i++)
-        {
-            if (enumType->hashList[i] == enumValueName)
-            {
-                enumValue = enumType->valueList[i];
-                wasFound = true;
-                break;
-            }
-        }
-        
-        // Didn't find, try aliases...
+        std::int64_t enumValue{};
+        ResolveEnumValue(enumType, enumValueName, enumValue);
 
-        if (!wasFound)
+        constexpr auto shouldDumpEnumSizes = false;
+        if constexpr (shouldDumpEnumSizes)
         {
-            for (auto i = 0; i < enumType->aliasList.size; i++)
-            {
-                if (enumType->aliasList[i] == enumValueName)
-                {
-                    enumValue = enumType->aliasValueList[i];
-                    break;
-                }
-            }
+            s_enumSizes.insert(enumType->actualSize);
         }
-
-        s_enumSizes.insert(enumType->actualSize);
         
         // Scriptable systems only seem to use actualSize=4
-
-        switch (enumType->actualSize)
+        if (enumType->actualSize == 0)
         {
-        case 1u:
-            *reinterpret_cast<std::int8_t*>(aOut) = static_cast<std::int8_t>(enumValue);
-            break;
-        case 2u:
-            *reinterpret_cast<std::int16_t*>(aOut) = static_cast<std::int16_t>(enumValue);
-            break;
-        case 4u:
-            *reinterpret_cast<std::int32_t*>(aOut) = static_cast<std::int32_t>(enumValue);
-            break;
-        case 8u:
-            *reinterpret_cast<std::int64_t*>(aOut) = enumValue;
-            break;
-        default: // What the fuck?
-            break;
+            PluginContext::Error("NativeScriptableReader::ReadEnum, enumType->actualSize == 0");
+            return;
         }
+
+        // Should be fine, given endianness and all that sort
+        // Though maybe less performant?
+        memcpy(aOut, &enumValue, enumType->actualSize);
     }
 
     virtual void ReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType)
@@ -146,6 +142,21 @@ class ScriptableReader : redRTTI::native::NativeReader
     {
         // Again, not necessary - skip it.
         aCursor.readInt();
+    }
+
+    virtual bool TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept final
+    {
+        // We don't resolve handles... yet....
+        // And probably never will
+        aCursor.readInt();
+        return true;
+    }
+
+    virtual bool TryReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept final
+    {
+        // Again, no resolving handles just yet
+        aCursor.readInt();
+        return true;
     }
 
 public:
@@ -223,6 +234,56 @@ public:
                 PluginContext::Error(std::format("NativeScriptableReader::ReadClass exception, {}", e.what()));
             }
         }
+    }
+
+    inline virtual bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept final
+    {
+        auto classType = static_cast<Red::CClass*>(aType);
+
+        const auto baseOffset = aCursor.offset;
+        const auto fieldCount = aCursor.readUShort();
+
+        for (auto desc : aCursor.ReadMultipleClasses<RedPackageFieldHeader>(fieldCount))
+        {
+            const auto propName = m_names->at(desc.m_nameId);
+            const auto propData = classType->GetProperty(propName);
+
+            // No prop...
+            if (!propData)
+            {
+                if constexpr (m_reportNonCriticalErrors)
+                {
+                    PluginContext::Error(std::format("NativeScriptableReader::TryReadClass, couldn't find {}.{}",
+                                                     classType->GetName().ToString(), propName.ToString()));
+                }
+
+                continue;
+            }
+
+            if (propData->type->GetName() != m_names->at(desc.m_typeId))
+            {
+                if constexpr (m_reportNonCriticalErrors)
+                {
+                    PluginContext::Error(
+                        std::format("NativeScriptableReader::TryReadClass, class {}, property type mismatch - {} != {}",
+                                    classType->GetName().ToString(), propData->type->GetName().ToString(),
+                                    m_names->at(desc.m_typeId).ToString()));
+                }
+                continue;
+            }
+
+            aCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + desc.m_offset);
+
+            auto propPtr = propData->GetValuePtr<std::remove_pointer_t<Red::ScriptInstance>>(aOut);
+
+            if (!TryReadValue(aCursor, propPtr, propData->type))
+            {
+                PluginContext::Error(std::format("NativeScriptableReader::TryReadClass, failed to read prop {}::{}",
+                                                 classType->GetName().ToString(), propData->name.ToString()));
+            }
+        }
+
+        return true;
     }
 };
 }
