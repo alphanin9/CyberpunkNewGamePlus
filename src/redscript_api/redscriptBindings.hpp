@@ -55,11 +55,27 @@ struct RedItemData
     RTTI_IMPL_TYPEINFO(RedItemData);
     RTTI_IMPL_ALLOCATOR();
 };
+
+struct RedCraftInfo
+{
+    Red::TweakDBID m_targetItem;
+    int m_amount;
+    Red::DynArray<Red::ItemID> m_hideOnItemsAdded;
+
+    RTTI_IMPL_TYPEINFO(RedCraftInfo);
+    RTTI_IMPL_ALLOCATOR();
+};
 } // namespace redscript
 
 RTTI_DEFINE_CLASS(redscript::RedItemData, {
     RTTI_PROPERTY(m_itemId);
     RTTI_PROPERTY(m_itemQuantity);
+});
+
+RTTI_DEFINE_CLASS(redscript::RedCraftInfo, {
+    RTTI_PROPERTY(m_targetItem);
+    RTTI_PROPERTY(m_amount);
+    RTTI_PROPERTY(m_hideOnItemsAdded);
 });
 
 namespace redscript
@@ -105,7 +121,8 @@ struct PlayerSaveData
     // in native or on the Redscript side?
     Red::DynArray<RedItemData> m_playerItems{};
     Red::DynArray<RedItemData> m_playerStashItems{};
-    Red::DynArray<Red::TweakDBID> m_knownRecipeTargetItems{};
+    
+    Red::DynArray<RedCraftInfo> m_knownRecipeTargetItems{};
 
     // Most distinctive cyberware needs to be equipped
     // by the scripting side to make
@@ -126,6 +143,8 @@ struct PlayerSaveData
     // Nah, shit idea, maybe for the Demiurge
     // Seeing as acquiring it is pretty cool
     Red::DynArray<Red::TweakDBID> m_playerVehicleGarage{};
+
+    // Later maybe do Equipment-EX transfer too?
 
     // In theory we don't need this
     RTTI_IMPL_TYPEINFO(PlayerSaveData);
@@ -719,7 +738,13 @@ private:
 
         aCraftBook.IterateOverRecipes(
             [pSaveData](ItemRecipe aRecipe) { 
-                pSaveData->m_knownRecipeTargetItems.PushBack(aRecipe.GetTargetItem());
+                RedCraftInfo craftInfo{};
+
+                craftInfo.m_hideOnItemsAdded = aRecipe.GetHideOnAdded();
+                craftInfo.m_amount = aRecipe.GetAmount();
+                craftInfo.m_targetItem = aRecipe.GetTargetItem();
+
+                pSaveData->m_knownRecipeTargetItems.PushBack(std::move(craftInfo));
             }
         );
     }
@@ -790,21 +815,20 @@ private:
         }
     };
 
-    ExtendedItemData CreateExtendedData(const cyberpunk::ItemInfo& aItem, Red::Handle<Red::TweakDBRecord>& aRecord)
+    ExtendedItemData CreateExtendedData(const Red::ItemID& aItemId)
     {
         ExtendedItemData ret{};
 
-        ret.m_itemId = aItem.itemId;
-        ret.m_tdbId = ret.m_itemId.tdbid;
-        ret.m_itemRecord = aRecord;
+        ret.m_itemId = aItemId;
+        ret.m_tdbId = aItemId.tdbid;
         ret.m_itemType = Red::gamedataItemType::Invalid;
         
-        if (auto tagValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(aRecord->recordID, ".tags")))
+        if (auto tagValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(ret.m_tdbId, ".tags")))
         {
             ret.m_tags = tagValuePtr->GetValue<Red::DynArray<Red::CName>>();
         }
 
-        if (auto typeValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(aRecord->recordID, ".itemType")))
+        if (auto typeValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(ret.m_tdbId, ".itemType")))
         {
             auto typeFk = *typeValuePtr->GetValue<Red::TweakDBID>();
 
@@ -849,28 +873,15 @@ private:
     void ProcessAttachments(const cyberpunk::ItemSlotPart& aSlotPart, Red::DynArray<RedItemData>& aTargetList)
     {
         // Don't bother doing iconic weapon mods
-        if (aSlotPart.attachmentSlotTdbId == "AttachmentSlots.IconicWeaponModLegendary" ||
-            aSlotPart.attachmentSlotTdbId == "AttachmentSlots.IconicMeleeWeaponMod1")
+        if (aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.IconicWeaponModLegendary" ||
+            aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.IconicMeleeWeaponMod1")
         {
             return;
         }
 
-        auto itemId = aSlotPart.itemInfo.itemId;
-        auto record = m_tweakDb->GetRecord(itemId.tdbid);
+        auto itemId = aSlotPart.m_itemId;
 
-        if (!record)
-        {
-            return;
-        }
-
-        auto casted = Red::Cast<Red::TweakDBRecord>(record);
-
-        if (!casted)
-        {
-            return;
-        }
-
-        auto extendedData = CreateExtendedData(aSlotPart.itemInfo, casted);
+        auto extendedData = CreateExtendedData(aSlotPart.m_itemId);
 
         if (extendedData.IsAllowedType() && !extendedData.IsHiddenInUI() && extendedData.IsValidAttachment())
         {
@@ -879,20 +890,10 @@ private:
             itemData.m_itemId = itemId;
             itemData.m_itemQuantity = 1;
 
-            constexpr auto showAddedMods = false;
-
-            if constexpr (showAddedMods)
-            {
-                Red::CString str{};
-		        Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, extendedData.m_tdbId);
-                
-                PluginContext::Spew(std::format("Added mod {} to inventory!", str.c_str()));
-            }
-
             aTargetList.PushBack(itemData);
         }
 
-        for (const auto& child : aSlotPart.children)
+        for (const auto& child : aSlotPart.m_children)
         {
             ProcessAttachments(child, aTargetList);   
         }
@@ -914,7 +915,7 @@ private:
 
         if (aExtendedData.m_tdbId == "Items.money")
         {
-            m_saveData.m_playerMoney += aItem.itemQuantity;
+            m_saveData.m_playerMoney += aItem.m_itemQuantity;
             return;
         }
 
@@ -932,33 +933,19 @@ private:
         RedItemData itemData{};
 
         itemData.m_itemId = aExtendedData.m_itemId;
-        itemData.m_itemQuantity = aItem.hasQuantity() ? aItem.itemQuantity : 1;
+        itemData.m_itemQuantity = aItem.HasQuantity() ? aItem.m_itemQuantity : 1;
 
         aTargetList.PushBack(itemData);
 
-        if (aItem.hasExtendedData())
+        if (aItem.HasExtendedData())
         {
-            ProcessAttachments(aItem.itemSlotPart, aTargetList);
+            ProcessAttachments(aItem.m_itemSlotPart, aTargetList);
         }
     }
 
     void ProcessItem(const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList)
     {
-        auto record = m_tweakDb->GetRecord(aItem.itemInfo.itemId.tdbid);
-
-        if (!record)
-        {
-            return;
-        }
-
-        auto casted = Red::Cast<Red::TweakDBRecord>(record);
-
-        if (!casted)
-        {
-            return;
-        }
-
-        auto extendedItemData = CreateExtendedData(aItem.itemInfo, casted);
+        auto extendedItemData = CreateExtendedData(aItem.GetItemID());
 
         AddItemToInventory(extendedItemData, aItem, aTargetList);
     }
@@ -967,6 +954,9 @@ private:
     {
         auto& inventoryLocal = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdLocal);
         auto& inventoryCarStash = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdCarStash);
+
+        m_saveData.m_playerItems.Reserve(inventoryLocal.inventoryItems.size());
+        m_saveData.m_playerStashItems.Reserve(inventoryLocal.inventoryItems.size());
 
         for (const auto& item : inventoryLocal.inventoryItems)
         {

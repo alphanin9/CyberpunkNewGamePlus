@@ -25,6 +25,34 @@ struct ItemRecipe
     {
         return s_type->GetProperty("targetItem")->GetValue<Red::TweakDBID>(m_instance);
     }
+
+    int GetAmount() const
+    {
+        return s_type->GetProperty("amount")->GetValue<int>(m_instance);
+    }
+
+    Red::DynArray<Red::ItemID> GetHideOnAdded() const
+    {
+        Red::DynArray<Red::ItemID> ret{};
+
+        const auto prop = s_type->GetProperty("hideOnItemsAdded");
+        
+        auto type = static_cast<Red::CRTTIArrayType*>(prop->type);
+        auto instancePtr = prop->GetValuePtr<void>(m_instance);
+
+        const auto arrayLength = type->GetLength(instancePtr);
+
+        ret.Reserve(arrayLength);
+
+        for (auto i = 0u; i < arrayLength; i++)
+        {
+            auto elementPtr = reinterpret_cast<Red::ItemID*>(type->GetElement(instancePtr, i));
+
+            ret.PushBack(*elementPtr);
+        }
+
+        return ret;
+    }
 };
 
 struct CraftBook

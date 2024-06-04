@@ -258,12 +258,12 @@ class PlayerProgressionLoader {
         let craftBook = craftingSystem.GetPlayerCraftBook();
 
         // Since I'm too lazy to write getters for everything native-side, we'll be resolving items to hide on using this
-        let recipeRecords = TweakDBInterface.GetRecords(n"ItemRecipe_Record");
+        //let recipeRecords = TweakDBInterface.GetRecords(n"ItemRecipe_Record");
 
         // Yes, this is O(N^2) kinda, I think
         // Doesn't really matter, though...
 
-        for targetItemId in this.m_ngPlusPlayerSaveData.knownRecipeTargetItems {
+        /*for targetItemId in this.m_ngPlusPlayerSaveData.knownRecipeTargetItems {
             // Skip over ammo and other useless crap...
             if !craftBook.KnowsRecipe(targetItemId) {
                 for record in recipeRecords {
@@ -281,6 +281,10 @@ class PlayerProgressionLoader {
                     }
                 }
             }
+        }*/
+
+        for targetItem in this.m_ngPlusPlayerSaveData.knownRecipeTargetItems {
+            craftBook.AddRecipeFromInfo(targetItem);
         }
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerCraftbook done!");

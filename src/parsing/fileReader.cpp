@@ -12,10 +12,7 @@
 #include "definitions/fileInfo.hpp"
 #include "definitions/nodeEntry.hpp"
 
-#include "bufferWriter.hpp"
 #include "cursorDef.hpp"
-
-#include "definitions/nodeParsers/inventory/inventoryNode.hpp"
 #include "definitions/nodeParsers/parserHelper.hpp"
 
 #include <RedLib.hpp>
@@ -83,59 +80,6 @@ bool Parser::ParseSavegame(std::filesystem::path aSavePath)
     return LoadNodes();
 }
 
-void DumpItemInfo(cyberpunk::ItemInfo& aItemInfo, int aIndentation)
-{
-    std::string padding{};
-    for (auto i = 0; i < aIndentation; i++)
-    {
-        padding.push_back(' ');
-    }
-
-    Red::CString str;
-    Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aItemInfo.itemId.tdbid);
-
-    PluginContext::Spew(std::format("{}{}", padding, str.c_str()));
-}
-
-void DumpItemSlotParts(cyberpunk::ItemSlotPart& aItemSlotPart, int aIndentation)
-{
-    if (!aItemSlotPart.isValid)
-    {
-        return;
-    }
-    std::string padding{};
-
-    for (auto i = 0; i < aIndentation; i++)
-    {
-        padding.push_back(' ');
-    }
-
-    Red::CString str;
-    Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aItemSlotPart.attachmentSlotTdbId);
-
-    PluginContext::Spew(std::format("{}Attachment slot {}", padding, str.c_str()));
-    DumpItemInfo(aItemSlotPart.itemInfo, aIndentation + 1);
-    for (auto& i : aItemSlotPart.children)
-    {
-        DumpItemSlotParts(i, aIndentation + 2);
-    }
-}
-
-void DumpItem(cyberpunk::ItemData& aItemData)
-{
-    Red::CString str;
-    Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aItemData.itemInfo.itemId.tdbid);
-
-    const auto itemQuantity = aItemData.hasQuantity() ? aItemData.itemQuantity : 1;
-
-    PluginContext::Spew(std::format("{}, qty {}", str.c_str(), itemQuantity));
-
-    if (aItemData.hasExtendedData())
-    {
-        DumpItemSlotParts(aItemData.itemSlotPart, 1);
-    }
-}
-
 void Parser::DecompressFile()
 {
     auto fileCursor = FileCursor{m_fileStream.data(), m_fileStream.size()};
@@ -153,20 +97,31 @@ void Parser::DecompressFile()
     m_decompressedDataRaw = std::make_unique_for_overwrite<std::byte[]>(compressionHeader.m_totalChunkSize * 2); // We won't be going above this size, so I believe that this should be safe
     auto endIterator = m_decompressedDataRaw.get();
 
+    // No two decompressed regions should be touching each other...
+    Red::JobQueue waiterJob{};
+
     for (auto& chunkInfo : compressionHeader.dataChunkInfo)
     {
-
         if (fileCursor.readUInt() == compression::COMPRESSION_BLOCK_MAGIC)
         {
+            Red::JobQueue decompressionJob{};
+
             fileCursor.readInt();
 
             auto subCursor = fileCursor.CreateSubCursor(chunkInfo.compressedSize - 8);
+            auto decompressedSize = chunkInfo.decompressedSize;
 
-            LZ4_decompress_safe(reinterpret_cast<char*>(subCursor.GetCurrentPtr()), reinterpret_cast<char*>(endIterator),
-                                                        subCursor.size, chunkInfo.decompressedSize);
+            decompressionJob.Dispatch(
+                [subCursor, decompressedSize, endIterator]() {
+                    LZ4_decompress_safe(reinterpret_cast<char*>(subCursor.GetCurrentPtr()),
+                                        reinterpret_cast<char*>(endIterator), subCursor.size,
+                                        decompressedSize);
+                });
 
             endIterator += chunkInfo.decompressedSize;
             m_decompressedDataSize += chunkInfo.decompressedSize;
+
+            waiterJob.Wait(decompressionJob.Capture());
         }
         else
         {
@@ -192,6 +147,9 @@ void Parser::DecompressFile()
     {
         node.offset -= nodeOffsetChangeAmount;
     }
+
+    // Timeout value is arbitrary
+    Red::WaitForQueue(waiterJob, std::chrono::seconds(1));
 }
 
 void Parser::FindChildren(cyberpunk::NodeEntry& node, int maxNextId)
@@ -358,25 +316,6 @@ bool Parser::LoadNodes()
                 {
                     PluginContext::Error(
                         std::format("Node {} expected size {} != read size {}", node.name, expectedSize, readSize));
-                }
-            }
-        }
-    }
-
-    constexpr auto shouldDumpInventory = false;
-
-    if constexpr (shouldDumpInventory)
-    {
-        auto inventory = LookupNode("inventory");
-
-        if (auto inventory = LookupNodeData<cyberpunk::InventoryNode>())
-        {
-            for (auto& subInventory : inventory->subInventories)
-            {
-                PluginContext::Spew(std::format("Inventory {}", subInventory.inventoryId));
-                for (auto& inventoryItem : subInventory.inventoryItems)
-                {
-                    DumpItem(inventoryItem);
                 }
             }
         }

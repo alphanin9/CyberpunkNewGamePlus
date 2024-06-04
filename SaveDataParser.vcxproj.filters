@@ -36,6 +36,9 @@
     <ClCompile Include="deps\lz4\lib\lz4.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\parsing\definitions\nodeParsers\quest\factsDBNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\filesystem\fs_util.hpp">
@@ -48,9 +51,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\compression\compressionHeader.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\parsing\bufferWriter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\inventory\inventoryNode.hpp">
@@ -87,6 +87,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\craftBook.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\quest\factsDBNode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

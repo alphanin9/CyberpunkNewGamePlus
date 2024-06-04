@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <print>
+#include <span>
 #include <string>
 
 #include <RED4ext/RED4ext.hpp>
@@ -271,7 +273,11 @@ struct FileCursor {
 
     Red::CName ReadCName()
     {
-        return Red::CName{ReadStringView().data()};
+        auto dataPtr = ReadStringView().data();
+
+        Red::CNamePool::Add(dataPtr);
+
+        return dataPtr;
     }
 
     Red::CName ReadCNameHash()
@@ -350,7 +356,7 @@ struct FileCursor {
         return FileCursor{aVec.data(), aVec.size()};
     }
 
-    std::byte* GetCurrentPtr()
+    std::byte* GetCurrentPtr() const
     {
         return baseAddress + offset;
     }
@@ -368,5 +374,15 @@ struct FileCursor {
         aVec.insert(aVec.end(), begin, begin + aSize);
         
         offset += aSize;
+    }
+
+    template<typename T>
+    std::span<T> ReadSpan(std::size_t aCount)
+    {
+        std::span<T> ret(reinterpret_cast<T*>(GetCurrentPtr()), aCount);
+
+        offset += ret.size_bytes();
+
+        return ret;
     }
 };

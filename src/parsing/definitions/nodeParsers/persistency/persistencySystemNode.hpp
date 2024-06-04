@@ -66,7 +66,6 @@ class PersistencySystemNode : public NodeDataInterface
 private:
     static constexpr auto m_onlyDoVehicleGarage = true;
 
-    std::vector<std::uint32_t> m_ids;
     std::uint32_t m_unk1;
     std::vector<PersistentBuffer> m_redClasses;
 
@@ -77,7 +76,9 @@ public:
     {
         const auto idCount = aCursor.readInt();
 
-        m_ids = aCursor.ReadMultiplePOD<std::uint32_t>(idCount);
+        aCursor.ReadSpan<std::uint32_t>(idCount); // Ignore m_ids, they're irrelevant for the usecase
+        // Could just skip ahead...
+
         m_unk1 = aCursor.readUInt();
         
         persistency::native::NativePersistencyReader reader{};

@@ -121,6 +121,9 @@ struct RedPackageNameHeader
     }
 };
 
+RED4EXT_ASSERT_SIZE(RedPackageNameHeader, 4);
+RED4EXT_ASSERT_OFFSET(RedPackageNameHeader, value, 0);
+
 struct RedImport
 {
     enum class ImportFlags
@@ -140,19 +143,24 @@ struct RedImport
 
 struct RedPackageChunkHeader
 {
-    std::uint32_t typeId;
-    std::uint32_t offset;
+    std::uint32_t m_typeId;
+    std::uint32_t m_offset;
 
     static RedPackageChunkHeader FromCursor(FileCursor& cursor)
     {
         auto ret = RedPackageChunkHeader{};
 
-        ret.typeId = cursor.readUInt();
-        ret.offset = cursor.readUInt();
+        ret.m_typeId = cursor.readUInt();
+        ret.m_offset = cursor.readUInt();
 
         return ret;
     }
 };
+
+RED4EXT_ASSERT_SIZE(RedPackageChunkHeader, 8);
+RED4EXT_ASSERT_OFFSET(RedPackageChunkHeader, m_typeId, 0);
+RED4EXT_ASSERT_OFFSET(RedPackageChunkHeader, m_offset, 4);
+
 
 struct RedChunk
 {
@@ -202,8 +210,10 @@ private:
     std::vector<Red::CRUID> m_rootCruids;
     std::vector<Red::CName> m_names;
     std::vector<RedImport> m_imports;
-    std::vector<RedPackageChunkHeader> m_chunkHeaders;
     std::vector<RedChunk> m_chunks;
+
+    // std::vector<Red::Handle<Red::ISerializable>> m_scriptableSystems; // TODO: use this
+    std::span<RedPackageChunkHeader> m_chunkHeaders;
 
     scriptable::native::ScriptableReader m_reader;
 
@@ -263,7 +273,7 @@ public:
             // const auto nameDesc = subCursor.ReadMultipleClasses<RedPackageNameHeader>(
             //     (m_header.m_namePoolDataOffset - m_header.m_namePoolDescOffset) / sizeof(RedPackageNameHeader));
 
-            for (auto name : subCursor.ReadMultipleClasses<RedPackageNameHeader>(
+            for (auto name : subCursor.ReadSpan<RedPackageNameHeader>(
                      (m_header.m_namePoolDataOffset - m_header.m_namePoolDescOffset) / sizeof(RedPackageNameHeader)))
             {
                 subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + name.offset());
@@ -275,10 +285,11 @@ public:
 
             subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + m_header.m_chunkDescOffset);
 
-            m_chunkHeaders = subCursor.ReadMultipleClasses<RedPackageChunkHeader>(
+            m_chunkHeaders = subCursor.ReadSpan<RedPackageChunkHeader>(
                 (m_header.m_chunkDataOffset - m_header.m_chunkDescOffset) / sizeof(RedPackageChunkHeader));
 
             
+            // This is dumb
             m_chunks.resize(m_chunkHeaders.size());
 
             // We could potentially MT this? Chunks aren't particularly related to each other and we don't process
@@ -288,10 +299,10 @@ public:
 
             for (auto i = 0u; i < m_chunkHeaders.size(); i++)
             {
-                auto header = m_chunkHeaders.at(i);
+                auto header = m_chunkHeaders[i];
                 auto& chunk = m_chunks.at(i);
 
-                chunk.m_typeName = m_names.at(header.typeId);
+                chunk.m_typeName = m_names.at(header.m_typeId);
                 auto chunkType = PluginContext::m_rtti->GetType(chunk.m_typeName);
 
                 // We don't know the chunk's type (or the type is wacky), blame mods
@@ -305,7 +316,7 @@ public:
                 }
 
                 chunk.m_type = chunkType;
-                subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + header.offset);
+                subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + header.m_offset);
                 
                 chunk.m_chunkLocationPtr = subCursor.GetCurrentPtr();
 
@@ -314,7 +325,7 @@ public:
                 {
                     auto instance = static_cast<Red::CClass*>(chunkType)->CreateInstance();
 
-                    m_reader.ReadClass(subCursor, instance, chunkType);
+                    m_reader.TryReadClass(subCursor, instance, chunkType);
 
                     chunk.m_instance = reinterpret_cast<Red::ISerializable*>(instance);
                 }

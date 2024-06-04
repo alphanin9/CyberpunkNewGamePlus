@@ -3,6 +3,8 @@
 #include <cassert>
 
 #include <RED4ext/RED4ext.hpp>
+#include <RedLib.hpp>
+
 #include "../interfaceNodeData.hpp"
 #include "../../../../context/context.hpp"
 
@@ -12,66 +14,28 @@
 // Make this use Red structures instead of STL for noexcept stuff?
 // Seems to have a bunch of pointless copies - get rid of them later
 namespace cyberpunk {
-	struct ItemInfo {
-		enum class ItemStructure : std::uint8_t {
-			None = 0,
-			Extended = 1,
-			Quantity = 2
-		};
+namespace item
+{
+inline Red::ItemID ReadItemId(FileCursor& aCursor)
+{
+    Red::ItemID id{};
 
-		// Repeating the same value, BAD!
-		RED4ext::ItemID itemId;
-		ItemStructure itemStructure;
+	id.tdbid = aCursor.readTdbId();
+    id.rngSeed = aCursor.readUInt();
+    id.structure = aCursor.readValue<std::uint8_t>();
+    id.uniqueCounter = aCursor.readUShort();
+    id.flags = aCursor.readByte();
 
-		static ItemInfo fromCursor(FileCursor& cursor) {
-			auto id = cursor.readTdbId();
-			auto seed = cursor.readUInt();
-			auto itemStructure = cursor.readValue<ItemStructure>();
-			auto uniqueCounter = cursor.readUShort();
-			auto flags = cursor.readByte();
+	return id;
+}
 
-			auto ret = ItemInfo{};
-
-			ret.itemId.tdbid = id;
-			ret.itemId.rngSeed = seed;
-			ret.itemId.uniqueCounter = uniqueCounter;
-			ret.itemId.flags = flags;
-			ret.itemId.structure = static_cast<std::uint8_t>(itemStructure);
-
-			ret.itemStructure = itemStructure;
-
-			return ret;
-		}
-
-		bool operator ==(const ItemInfo& rhs) {
-			if (itemStructure != rhs.itemStructure) {
-				return false;
-			}
-
-			if (itemId.tdbid != rhs.itemId.tdbid) {
-				return false;
-			}
-
-			if (itemId.rngSeed != rhs.itemId.rngSeed) {
-				return false;
-			}
-
-			if (itemId.uniqueCounter != rhs.itemId.uniqueCounter) {
-				return false;
-			}
-
-			if (itemId.flags != rhs.itemId.flags) {
-				return false;
-			}
-
-			return true;
-		}
-
-		bool operator !=(const ItemInfo& rhs) {
-			return !(*this == rhs);
-		}
-	};
-
+enum class ItemStructure : std::uint8_t
+{
+    None = 0,
+    Extended = 1,
+    Quantity = 2
+};
+}
 	struct AdditionalItemInfo {
 		bool isValid = false;
 
@@ -79,7 +43,7 @@ namespace cyberpunk {
 		std::uint32_t unk2;
 		float requiredLevel;
 
-		static AdditionalItemInfo fromCursor(FileCursor& cursor) {
+		static AdditionalItemInfo FromCursor(FileCursor& cursor) {
 			auto ret = AdditionalItemInfo{};
 
 			ret.isValid = true;
@@ -94,33 +58,30 @@ namespace cyberpunk {
 	struct ItemSlotPart {
 		bool isValid = false;
 
-		ItemInfo itemInfo;
-		std::wstring appearanceName;
-		RED4ext::TweakDBID attachmentSlotTdbId;
+		Red::ItemID m_itemId;
+		std::string m_appearanceName;
+		Red::TweakDBID m_attachmentSlotTdbId;
 
-		std::vector<ItemSlotPart> children;
+		std::vector<ItemSlotPart> m_children;
 
 		std::uint32_t unk2;
 		AdditionalItemInfo additionalItemInfo;
 
-		static ItemSlotPart fromCursor(FileCursor& cursor) {
+		static ItemSlotPart FromCursor(FileCursor& cursor) {
 			auto ret = ItemSlotPart{};
 
 			ret.isValid = true;
 
-			ret.itemInfo = ItemInfo::fromCursor(cursor);
-			ret.appearanceName = cursor.readLengthPrefixedString(); // Fix this to use ANSI later, but we don't use appearance name anyway...
-			ret.attachmentSlotTdbId = cursor.readTdbId();
+			ret.m_itemId = item::ReadItemId(cursor);
+			ret.m_appearanceName = cursor.ReadLengthPrefixedANSI(); // Fix this to use ANSI later, but we don't use appearance name anyway...
+			ret.m_attachmentSlotTdbId = cursor.readTdbId();
 
 			const auto count = cursor.readVlqInt32();
 
-			// Fix this to use new methods later...
-			for (auto i = 0; i < count; i++) {
-				ret.children.push_back(fromCursor(cursor));
-			}
+			ret.m_children = cursor.ReadMultipleClasses<ItemSlotPart>(count);
 
 			ret.unk2 = cursor.readUInt();
-			ret.additionalItemInfo = AdditionalItemInfo::fromCursor(cursor);
+			ret.additionalItemInfo = AdditionalItemInfo::FromCursor(cursor);
 
 			return ret;
 		}
@@ -132,23 +93,47 @@ namespace cyberpunk {
 			IsNotUnequippable = 2
 		};
 
-		ItemInfo itemInfo;
-		ItemFlags itemFlags;
-		std::uint32_t creationTime;
-		std::uint32_t itemQuantity = 1;
+		Red::ItemID m_itemId;
+		ItemFlags m_itemFlags;
+		std::uint32_t m_creationTime;
+		std::uint32_t m_itemQuantity = 1;
 		
-		AdditionalItemInfo additionalItemInfo;
-		ItemSlotPart itemSlotPart;
+		AdditionalItemInfo m_additionalItemInfo;
+		ItemSlotPart m_itemSlotPart;
 
 		// I hate this
-		bool hasQuantity() const {
-			return (static_cast<std::uint8_t>(itemInfo.itemStructure) & static_cast<std::uint8_t>(ItemInfo::ItemStructure::Quantity))
-				== static_cast<std::uint8_t>(ItemInfo::ItemStructure::Quantity) || itemInfo.itemStructure == ItemInfo::ItemStructure::None && itemInfo.itemId.rngSeed == 2;
+		bool HasQuantity() const {
+            return (m_itemId.structure & static_cast<std::uint8_t>(item::ItemStructure::Quantity)) ==
+                       static_cast<std::uint8_t>(item::ItemStructure::Quantity) ||
+                   m_itemId.structure == static_cast<std::uint8_t>(item::ItemStructure::None) &&
+                       m_itemId.rngSeed == 2;
 		}
 
-		bool hasExtendedData() const {
-			return (static_cast<std::uint8_t>(itemInfo.itemStructure) & static_cast<std::uint8_t>(ItemInfo::ItemStructure::Extended))
-				== static_cast<std::uint8_t>(ItemInfo::ItemStructure::Extended) || itemInfo.itemStructure == ItemInfo::ItemStructure::None && itemInfo.itemId.rngSeed != 2;
+		bool HasExtendedData() const {
+            return (m_itemId.structure & static_cast<std::uint8_t>(item::ItemStructure::Extended)) ==
+                       static_cast<std::uint8_t>(item::ItemStructure::Extended) ||
+                   m_itemId.structure == static_cast<std::uint8_t>(item::ItemStructure::None) &&
+                       m_itemId.rngSeed != 2;
+		}
+
+		std::uint32_t GetQuantity() const
+        {
+            if (HasQuantity())
+            {
+                return m_itemQuantity;
+			}
+
+			return 1;
+		}
+
+		Red::TweakDBID GetRecordID() const
+        {
+            return m_itemId.tdbid;
+		}
+
+		const Red::ItemID& GetItemID() const
+        {
+            return m_itemId;
 		}
 	};
 
@@ -158,18 +143,18 @@ namespace cyberpunk {
 
 		ItemData itemData;
 		virtual void ReadData(FileCursor& cursor, NodeEntry& node) {
-			itemData.itemInfo = ItemInfo::fromCursor(cursor);
+            itemData.m_itemId = item::ReadItemId(cursor);
 
-			itemData.itemFlags = cursor.readValue<ItemData::ItemFlags>();
-			itemData.creationTime = cursor.readUInt();
+			itemData.m_itemFlags = cursor.readValue<ItemData::ItemFlags>();
+			itemData.m_creationTime = cursor.readUInt();
 
-			if (itemData.hasQuantity()) {
-				itemData.itemQuantity = cursor.readUInt();
+			if (itemData.HasQuantity()) {
+				itemData.m_itemQuantity = cursor.readUInt();
 			}
 
-			if (itemData.hasExtendedData()) {
-				itemData.additionalItemInfo = AdditionalItemInfo::fromCursor(cursor);
-				itemData.itemSlotPart = ItemSlotPart::fromCursor(cursor);
+			if (itemData.HasExtendedData()) {
+				itemData.m_additionalItemInfo = AdditionalItemInfo::FromCursor(cursor);
+				itemData.m_itemSlotPart = ItemSlotPart::FromCursor(cursor);
 			}
 		}
 	};
@@ -178,6 +163,7 @@ namespace cyberpunk {
 		static constexpr auto inventoryIdLocal = 0x1;
 		static constexpr auto inventoryIdCarStash = 0xF4240;
 
+		// This is actually entityId
 		std::uint64_t inventoryId;
 		std::vector<ItemData> inventoryItems;
 	};
@@ -194,19 +180,19 @@ namespace cyberpunk {
 
 			const auto count = cursor.readUInt();
 
-			for (auto i = 0; i < count; i++) {
-				auto nextItemInfo = ItemInfo::fromCursor(cursor);
+			ret.inventoryItems.reserve(count);
 
+			for (auto i = 0u; i < count; i++) {
+				auto nextItemInfo = item::ReadItemId(cursor);
+
+				// Not a big fan of this... But it has to be done
 				cyberpunk::ParseNode(cursor, *node.nodeChildren.at(offset + i));
+				node.nodeChildren.at(offset + i)->isReadByParent = true;
 
 				auto itemInfoActual = reinterpret_cast<ItemDataNode*>(node.nodeChildren.at(offset + i)->nodeData.get());
 				
-				if (itemInfoActual->itemData.itemInfo != nextItemInfo) {
-                    PluginContext::Error("Item info parsing error, itemInfoActual->itemData.itemInfo != nextItemInfo");
-				}
-				
 				// Relatively big copy
-				ret.inventoryItems.push_back(itemInfoActual->itemData);
+				ret.inventoryItems.push_back(std::move(itemInfoActual->itemData));
 			}
 
 			return ret;
@@ -217,12 +203,13 @@ namespace cyberpunk {
 			auto offset = 0;
 
 			for (auto i = 0; i < count; i++) {
-				// Big copy, not a fan, fix later, not sure if it's avoidable...
 				auto subInventory = readSubInventory(cursor, node, offset);
 
-				subInventories.push_back(subInventory);
+				auto inventorySize = subInventory.inventoryItems.size();
 
-				offset += subInventory.inventoryItems.size();
+				subInventories.push_back(std::move(subInventory));
+
+				offset += inventorySize;
 			}
 		}
 

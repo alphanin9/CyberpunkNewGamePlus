@@ -3,6 +3,12 @@ public native struct RedItemData {
     native let itemQuantity: Int32;
 }
 
+public native struct RedCraftInfo {
+    native let targetItem: TweakDBID;
+    native let amount: Int32;
+    native let hideOnItemsAdded: array<ItemID>;
+}
+
 public native struct PlayerSaveData {
     native let isValid: Bool;
     native let playerPerkPoints: Int32;
@@ -30,7 +36,7 @@ public native struct PlayerSaveData {
     native let playerEquippedCardiacSystemCW: array<ItemID>;
     native let playerVehicleGarage: array<TweakDBID>;
 
-    native let knownRecipeTargetItems: array<TweakDBID>;
+    native let knownRecipeTargetItems: array<RedCraftInfo>;
 }
 
 enum ENewGamePlusStartType {

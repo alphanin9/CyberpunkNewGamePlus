@@ -8,6 +8,7 @@
 #include "inventory/inventoryNode.hpp"
 #include "persistency/persistencySystemNode.hpp"
 #include "scriptable/scriptableContainerNode.hpp"
+#include "quest/factsDBNode.hpp"
 
 #include "../nodeEntry.hpp"
 #include "../../cursorDef.hpp"
@@ -54,6 +55,24 @@ std::unique_ptr<cyberpunk::NodeDataInterface> PersistencySystemParser(FileCursor
 	return dataPtr;
 }
 
+std::unique_ptr<cyberpunk::NodeDataInterface> FactsDBParser(FileCursor& aCursor, cyberpunk::NodeEntry& aNode)
+{
+    auto dataPtr = std::make_unique<cyberpunk::FactsDBNode>();
+
+	dataPtr->ReadData(aCursor, aNode);
+
+	return dataPtr;
+}
+
+std::unique_ptr<cyberpunk::NodeDataInterface> FactsTableParser(FileCursor& aCursor, cyberpunk::NodeEntry& aNode)
+{
+    auto dataPtr = std::make_unique<cyberpunk::FactsTableNode>();
+
+    dataPtr->ReadData(aCursor, aNode);
+
+    return dataPtr;
+}
+
 ParseNodeFn FindParser(Red::CName aNodeName)
 {
     if (aNodeName == cyberpunk::InventoryNode::m_nodeName)
@@ -71,6 +90,14 @@ ParseNodeFn FindParser(Red::CName aNodeName)
     else if (aNodeName == cyberpunk::PersistencySystemNode::m_nodeName)
     {
 		return PersistencySystemParser;
+	}
+    else if (aNodeName == cyberpunk::FactsDBNode::m_nodeName)
+    {
+        return FactsDBParser;
+	}
+    else if (aNodeName == cyberpunk::FactsTableNode::m_nodeName)
+    {
+        return FactsTableParser;
 	}
 
 	return DefaultParser;
