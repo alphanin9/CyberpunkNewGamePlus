@@ -1,0 +1,51 @@
+# TODO: use this for enemy powerups?
+ArchetypeData.NGPlusAbilityGroup_Fast:
+  $type: GameplayAbilityGroup
+  abilities:
+    - Ability.HasDodge
+    - Ability.HasChargeJump
+    - Ability.HasSandevistan
+    - Ability.CanCatchUpDistance
+    - Ability.CanCatchUp
+    - Ability.SandevistanDashShoot
+    - Ability.CanSprintHarass
+    - Ability.HasPainEditor
+
+ArchetypeData.NGPlusAbilityGroup_Tanky:
+  $type: GameplayAbilityGroup
+  abilities:
+    - Ability.HasWeakHealthRegeneration
+    - Ability.CanCatchUpDistance
+    - Ability.CanCatchUp
+    - Ability.HasPainEditor
+    - Ability.HasSubdermalArmorHigh
+    - Ability.HasBerserk
+    - Ability.HasSecondHeart
+
+ArchetypeData.NGPlusAbilityGroup_Regen:
+  $type: GameplayAbilityGroup
+  abilities:
+    - Ability.HasPassiveHealthRegeneration
+    - Ability.HasLoweredHitReactions
+    - Ability.HasPainEditor
+    - Ability.CanResurrectAllies
+
+ArchetypeData.NGPlusAbilityGroup_Netrunner:
+  $type: GameplayAbilityGroup
+  abilities:
+    - Ability.CanUseCovers
+    - Ability.CanCatchUpDistance
+    - Ability.HasChargeJump
+    - Ability.CanCatchUp
+    - Ability.HasSandevistan
+    - Ability.HasDodge
+    - Ability.CanOverheatQuickHack
+    - Ability.CanDeathQuickHack
+    - Ability.CanLocomotionMalfunctionQuickHack
+    - Ability.CanCyberwareMalfunctionQuickHack
+    - Ability.CanPingQuickHack
+
+ArchetypeData.NGPlusAbilityGroup_Sneaky:
+  $type: GameplayAbilityGroup
+  abilities:
+    - Ability.CanUseOpticalCamo

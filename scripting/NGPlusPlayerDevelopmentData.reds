@@ -201,3 +201,34 @@ public const final func AddExperience(
         }
     }
 }
+
+@replaceMethod(PlayerDevelopmentData)
+public final func RefreshDevelopmentSystem() {
+    this.RefreshProficiencyStats();
+    this.SetAttributes();
+    this.UpdateProficiencyMaxLevels();
+
+    // By the time this gets called, quests system is already executing...
+    let isNgPlus = GameInstance.GetQuestsSystem(GetGameInstance()).GetFactStr("ngplus_active") == 1;
+
+    // Fix for Corpo progression build adding extra money :P
+    // Could be done simpler, I think
+    if isNgPlus {
+        this.SetProgressionBuild(gamedataBuildType.StartingBuild);
+        return;
+    }
+
+    if Equals(this.GetLifePath(), gamedataLifePath.StreetKid) {
+      this.SetProgressionBuild(gamedataBuildType.StreetKidStarting);
+    } else {
+      if Equals(this.GetLifePath(), gamedataLifePath.Nomad) {
+        this.SetProgressionBuild(gamedataBuildType.NomadStarting);
+      } else {
+        if Equals(this.GetLifePath(), gamedataLifePath.Corporate) {
+          this.SetProgressionBuild(gamedataBuildType.CorporateStarting);
+        } else {
+          this.SetProgressionBuild(gamedataBuildType.StartingBuild);
+        };
+      };
+    };
+}

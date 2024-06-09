@@ -94,6 +94,12 @@ class PlayerProgressionLoader {
                 levelGainReason,
                 true
             );
+
+        let targetLevel = this.m_ngPlusPlayerSaveData.playerLevel;
+
+        if !IsEP1() {
+            targetLevel = Min(targetLevel, 40); // FIX: broken progression on non-EP1 (This really should be in native, but I don't care...)
+        }
         playerDevelopmentData
             .SetLevel(
                 gamedataProficiencyType.Level,
@@ -131,7 +137,7 @@ class PlayerProgressionLoader {
         let transactionSystem: ref<TransactionSystem> = GameInstance.GetTransactionSystem(this.m_player.GetGame());
         // Results in an annoying notification, I will not have that in MY Cyberpunk
         //  transactionSystem.GiveMoney(this.m_player, this.m_ngPlusPlayerSaveData.playerMoney, n"money");
-        
+
         transactionSystem.GiveItem(this.m_player, ItemID.FromTDBID(t"Items.money"), this.m_ngPlusPlayerSaveData.playerMoney);
 
         for inventoryItem in this.m_ngPlusPlayerSaveData.playerItems {
@@ -164,6 +170,7 @@ class PlayerProgressionLoader {
             transactionSystem
                 .GiveItem(stashEntity, inventoryItem.itemId, inventoryItem.itemQuantity);
         }
+
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerStash done!");
     }
 
@@ -181,6 +188,7 @@ class PlayerProgressionLoader {
     }
 
     private final func LoadPlayerEquippedCyberware() {
+        // TODO: calculate the needed value for equipped CW... Later, it's a bit wonky and I can't be arsed
         let permaMod = RPGManager
             .CreateStatModifier(gamedataStatType.Humanity, gameStatModifierType.Additive, PlayerProgressionLoader.GetBigStatValue());
         GameInstance
@@ -244,6 +252,13 @@ class PlayerProgressionLoader {
             vehicleSystem.EnablePlayerVehicleID(quadraTdbid, true, false);
         }
 
+        let adderSystem = GameInstance.GetScriptableSystemsContainer(this.m_player.GetGame()).Get(n"NGPlusVehicleAdderSystem") as NGPlusVehicleAdderSystem;
+
+        if IsDefined(adderSystem) {
+            this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerGarage, fixing Autofixer...");
+            adderSystem.OnFinalizeVehicleAdditions();
+        }
+
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerGarage done!");
     }
 
@@ -256,32 +271,6 @@ class PlayerProgressionLoader {
         }
 
         let craftBook = craftingSystem.GetPlayerCraftBook();
-
-        // Since I'm too lazy to write getters for everything native-side, we'll be resolving items to hide on using this
-        //let recipeRecords = TweakDBInterface.GetRecords(n"ItemRecipe_Record");
-
-        // Yes, this is O(N^2) kinda, I think
-        // Doesn't really matter, though...
-
-        /*for targetItemId in this.m_ngPlusPlayerSaveData.knownRecipeTargetItems {
-            // Skip over ammo and other useless crap...
-            if !craftBook.KnowsRecipe(targetItemId) {
-                for record in recipeRecords {
-                    let asRecipeRecord = record as ItemRecipe_Record;
-
-                    if IsDefined(asRecipeRecord) {
-                        let result = asRecipeRecord.CraftingResult();
-
-                        if Equals(result.Item().GetRecordID(), targetItemId) {
-                            let hideOnItemsAdded: array<wref<Item_Record>>;
-                            asRecipeRecord.HideOnItemsAdded(hideOnItemsAdded);
-                            craftBook.AddRecipe(targetItemId, hideOnItemsAdded, result.Amount());
-                            break;
-                        }
-                    }
-                }
-            }
-        }*/
 
         for targetItem in this.m_ngPlusPlayerSaveData.knownRecipeTargetItems {
             craftBook.AddRecipeFromInfo(targetItem);

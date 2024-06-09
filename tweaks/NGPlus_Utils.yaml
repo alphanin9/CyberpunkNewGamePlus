@@ -51,11 +51,11 @@ Ability.HasMidHealthRegeneration:
         poolModifier:
           $type: PoolValueModifier
           enabled: true
-          rangeBegin: 0.0
-          rangeEnd: 50.0
+          rangeBegin: 90.0
+          rangeEnd: 100.0
           startDelay: 0.0
           valuePerSec: 1.4
-          delayOnChange: true
+          delayOnChange: false
         statPoolType: "Health"
         modificationType: "Regeneration"
 
@@ -64,6 +64,7 @@ Ability.HasMidHealthRegeneration:
 # It's a cool easter egg for those in the know
 
 # Fixes warning on non-EP1 copies
+# Unsure if EP1 matters on this?
 BountyReward.ProjectGhostMember:
   $dlc: EP1
   $base: t"BountyReward.bounty_rogue"
@@ -82,7 +83,7 @@ BountyDrawTable.ProjectGhostMember:
     -
       $type: Bounty
       visualTagsFilter: []
-      bountySetter: t"Factions.Classified"
+      bountySetter: t"Factions.UnaffiliatedCorpo"
       transgressions:
         - t"Transgression.ProjectGhostMember"
         - t"Transgression.BlackwallViolation"
