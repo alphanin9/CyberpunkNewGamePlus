@@ -1,12 +1,18 @@
 module NGPlus.Difficulty.System
 
+import NGPlus.DifficultyConfig.*
+
 class PuppetPowerUpSystem {
     private let m_puppet: ref<NPCPuppet>;
     private let m_statsSystem: ref<StatsSystem>;
+    private let m_ngPlusSystem: ref<NewGamePlusSystem>;
     private let m_targetPowerLevel: Float;
 
     private final func RaisePowerLevel() {
-        let puppetStatId = Cast<StatsObjectID>(this.m_puppet.GetEntityID());
+        // Disabled for now, causes various issues...
+        // We can increase general NPC toughness in other ways
+
+        /*let puppetStatId = Cast<StatsObjectID>(this.m_puppet.GetEntityID());
         let currentPowerLevel = this.m_statsSystem.GetStatValue(puppetStatId, gamedataStatType.PowerLevel);
 
         if currentPowerLevel >= this.m_targetPowerLevel {
@@ -16,14 +22,14 @@ class PuppetPowerUpSystem {
         let neededModifierValue = this.m_targetPowerLevel - currentPowerLevel;
         let statModifier = RPGManager.CreateStatModifier(gamedataStatType.PowerLevel, gameStatModifierType.Additive, neededModifierValue);
 
-        this.m_statsSystem.AddModifier(puppetStatId, statModifier);
+        this.m_statsSystem.AddModifier(puppetStatId, statModifier);*/
     }
 
     private final func ApplyAbilityGroup(aGroupId: TweakDBID) {
         let abilityGroup = TweakDBInterface.GetGameplayAbilityGroupRecord(aGroupId);
 
         if !IsDefined(abilityGroup) {
-            ModLog(n"NG+", "Ability group is missing!");
+            this.m_ngPlusSystem.Spew("Ability group is missing!");
             return;
         }
 
@@ -35,28 +41,41 @@ class PuppetPowerUpSystem {
     }
 
     private final func AddCyberAbilities() {
-        // Only buff the normies, don't buff bosses because they're already pretty strong and drones because I don't care about them
-        if this.m_puppet.IsBoss() || this.m_puppet.IsMaxTac() || this.m_puppet.IsDrone() {
+        let isPsycho = this.m_puppet.IsCharacterCyberpsycho();
+
+        // Only buff the normies, don't buff bosses because they're already pretty strong (with the exception of psychos) and drones because I don't care about them
+        if (this.m_puppet.IsBoss() && !isPsycho) || this.m_puppet.IsMaxTac() || this.m_puppet.IsDrone() {
             return;
         }
 
-        if this.m_puppet.IsNetrunnerPuppet() && this.RandMeetsChance(0.5) {
+        let netrunnerChance = GetNetrunnerUpgradeChance() / 100.0;
+        let fastChance = GetFastUpgradeChance() / 100.0;
+        let tankChance = GetTankUpgradeChance() / 100.0;
+        let regenChance = GetRegenUpgradeChance() / 100.0;
+        let stealthChance = GetOpticalCamoUpgradeChance() / 100.0;
+
+        // Unused ATM
+        // let dodgeChance = GetDodgeUpgradeChance() / 100.0; 
+
+        if netrunnerChance > 0.0 && this.RandMeetsChance(netrunnerChance) && this.m_puppet.IsNetrunnerPuppet() {
             this.ApplyAbilityGroup(t"ArchetypeData.NGPlusAbilityGroup_Netrunner");
         }
 
-        if this.RandMeetsChance(0.77) {
+        if fastChance > 0.0 && this.RandMeetsChance(fastChance) {
             this.ApplyAbilityGroup(t"ArchetypeData.NGPlusAbilityGroup_Fast");
         }
 
-        if this.RandMeetsChance(0.55) {
+        if tankChance > 0.0 && this.RandMeetsChance(tankChance) {
             this.ApplyAbilityGroup(t"ArchetypeData.NGPlusAbilityGroup_Tanky");
         }
 
-        if this.RandMeetsChance(0.44) {
+        // Psychos are very busted with regen, as their health pool is fuckhuge
+        if regenChance > 0.0 && this.RandMeetsChance(regenChance) && !isPsycho {
             this.ApplyAbilityGroup(t"ArchetypeData.NGPlusAbilityGroup_Regen");
         }
 
-        if this.RandMeetsChance(0.25) {
+        // FIX: unexpected units getting Optical Camo
+        if stealthChance > 0.0 && this.RandMeetsChance(stealthChance) && !this.m_puppet.IsMech() {
             this.ApplyAbilityGroup(t"ArchetypeData.NGPlusAbilityGroup_Sneaky");
         }
     }
@@ -70,15 +89,16 @@ class PuppetPowerUpSystem {
         this.m_targetPowerLevel = aLevel;
     }
 
-    public final func SetPuppet(aPuppet: ref<NPCPuppet>) {
+    public final func SetPuppetAndInitializeSystems(aPuppet: ref<NPCPuppet>) {
         this.m_puppet = aPuppet;
         this.m_statsSystem = GameInstance.GetStatsSystem(this.m_puppet.GetGame());
+        this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
     }
 
     public static func Create(aPuppet: ref<NPCPuppet>, aLevel: Float) -> ref<PuppetPowerUpSystem> {
         let ret = new PuppetPowerUpSystem();
 
-        ret.SetPuppet(aPuppet);
+        ret.SetPuppetAndInitializeSystems(aPuppet);
         ret.SetTargetPowerLevel(aLevel);
 
         return ret;
@@ -88,6 +108,7 @@ class PuppetPowerUpSystem {
 class NGPlusDifficultySystem extends ScriptableSystem {
     private let m_questsSystem: ref<QuestsSystem>;
     private let m_statsSystem: ref<StatsSystem>;
+    private let m_ngPlusSystem: ref<NewGamePlusSystem>;
     private let m_player: ref<PlayerPuppet>;
 
     private let m_hasDetectedNgPlus: Bool;
@@ -98,6 +119,7 @@ class NGPlusDifficultySystem extends ScriptableSystem {
     private func OnAttach() {
         this.m_questsSystem = GameInstance.GetQuestsSystem(this.GetGameInstance());
         this.m_statsSystem = GameInstance.GetStatsSystem(this.GetGameInstance());
+        this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
         
         // Kinda broken with non-EP1, but w/e...
         this.m_playerMaxLevel = Cast<Float>(TweakDBInterface.GetInt(t"Proficiencies.Level.maxLevel", 50));

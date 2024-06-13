@@ -257,33 +257,33 @@ public:
 
             if constexpr (m_enableImports)
             {
-                subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + m_header.m_refPoolDescOffset);
+                subCursor.seekTo(m_baseOffset + m_header.m_refPoolDescOffset);
 
                 const auto refDesc = subCursor.ReadMultipleClasses<RedPackageImportHeader>(
                     (m_header.m_refPoolDataOffset - m_header.m_refPoolDescOffset) / sizeof(RedPackageImportHeader));
 
                 for (auto ref : refDesc)
                 {
-                    subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + ref.offset());
+                    subCursor.seekTo(m_baseOffset + ref.offset());
                     m_imports.push_back(ReadImport(subCursor, ref));
                 }
             }
 
-            subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + m_header.m_namePoolDescOffset);
+            subCursor.seekTo(m_baseOffset + m_header.m_namePoolDescOffset);
             // const auto nameDesc = subCursor.ReadMultipleClasses<RedPackageNameHeader>(
             //     (m_header.m_namePoolDataOffset - m_header.m_namePoolDescOffset) / sizeof(RedPackageNameHeader));
 
             for (auto name : subCursor.ReadSpan<RedPackageNameHeader>(
                      (m_header.m_namePoolDataOffset - m_header.m_namePoolDescOffset) / sizeof(RedPackageNameHeader)))
             {
-                subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + name.offset());
+                subCursor.seekTo(m_baseOffset + name.offset());
                 m_names.push_back(subCursor.ReadCName());
             }
 
             // Prime the reader to read classes...
             m_reader.SetNames(&m_names);
 
-            subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + m_header.m_chunkDescOffset);
+            subCursor.seekTo(m_baseOffset + m_header.m_chunkDescOffset);
 
             m_chunkHeaders = subCursor.ReadSpan<RedPackageChunkHeader>(
                 (m_header.m_chunkDataOffset - m_header.m_chunkDescOffset) / sizeof(RedPackageChunkHeader));
@@ -316,7 +316,7 @@ public:
                 }
 
                 chunk.m_type = chunkType;
-                subCursor.seekTo(FileCursor::SeekTo::Start, m_baseOffset + header.m_offset);
+                subCursor.seekTo(m_baseOffset + header.m_offset);
                 
                 chunk.m_chunkLocationPtr = subCursor.GetCurrentPtr();
 

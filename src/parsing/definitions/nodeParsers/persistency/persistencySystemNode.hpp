@@ -98,7 +98,7 @@ public:
 
                 if (m_onlyDoVehicleGarage && classHash != "vehicleGarageComponentPS")
                 {
-                    aCursor.seekTo(FileCursor::SeekTo::Start, startOffset + classSize);
+                    aCursor.seekTo(startOffset + classSize);
                     continue;
                 }
 
@@ -133,14 +133,14 @@ public:
                             // We're done here LOL
                             // Seek to the end of the node so LoadNodes doesn't whine
 
-                            aCursor.seekTo(FileCursor::SeekTo::Start, node.offset + node.GetExpectedSize());
+                            aCursor.seekTo(node.offset + node.GetExpectedSize());
 
                             break;
                         }
                     }
                 }
 
-                aCursor.seekTo(FileCursor::SeekTo::Start, startOffset + classSize);
+                aCursor.seekTo(startOffset + classSize);
             }
         }
     }

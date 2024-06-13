@@ -187,6 +187,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\parsing\definitions\nodeParsers\parserHelper.cpp" />
     <ClCompile Include="src\parsing\definitions\nodeParsers\quest\factsDBNode.cpp" />
+    <ClCompile Include="src\parsing\definitions\nodeParsers\stats\statsSystemNode.cpp" />
     <ClCompile Include="src\parsing\fileReader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -205,6 +206,7 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\equipmentSystem.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\playerDevelopmentData.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\nativeScriptableReader.hpp" />
+    <ClInclude Include="src\parsing\definitions\nodeParsers\stats\statsSystemNode.hpp" />
     <ClInclude Include="src\parsing\fileReader.hpp" />
     <ClInclude Include="src\redscript_api\redscriptBindings.hpp" />
   </ItemGroup>

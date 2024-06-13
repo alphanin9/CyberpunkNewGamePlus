@@ -52,7 +52,7 @@ namespace compression {
 
 			ret.maxEntries = (ret.dataChunkInfo.at(0).offset - (int)(compressionHeaderBasePosition + 8)) / 12;
 
-			cursor.seekTo(FileCursor::SeekTo::Start, ret.dataChunkInfo.at(0).offset);
+			cursor.seekTo(ret.dataChunkInfo.at(0).offset);
 
 			return ret;
 		}

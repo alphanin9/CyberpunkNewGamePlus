@@ -206,7 +206,7 @@ public:
                 }
             }
 
-            aCursor.seekTo(FileCursor::SeekTo::Start, baseOffset + desc.m_offset);
+            aCursor.seekTo(baseOffset + desc.m_offset);
 
             auto propPtr = propData->GetValuePtr<std::remove_pointer_t<Red::ScriptInstance>>(aOut);
 

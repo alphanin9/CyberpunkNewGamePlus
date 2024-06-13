@@ -126,6 +126,11 @@ struct FileCursor {
         }
     }
 
+    void seekTo(std::ptrdiff_t aSeekOffset = 0)
+    {
+        offset = aSeekOffset;
+    }
+
     static bool byteHasFlag(char byte, char flag) {
         return (byte & flag) == flag;
     }

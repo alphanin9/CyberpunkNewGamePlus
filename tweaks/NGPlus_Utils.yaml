@@ -51,7 +51,7 @@ Ability.HasMidHealthRegeneration:
         poolModifier:
           $type: PoolValueModifier
           enabled: true
-          rangeBegin: 90.0
+          rangeBegin: 80.0
           rangeEnd: 100.0
           startDelay: 0.0
           valuePerSec: 1.4

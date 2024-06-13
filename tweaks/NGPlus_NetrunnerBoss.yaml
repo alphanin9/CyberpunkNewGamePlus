@@ -1,7 +1,8 @@
+# TODO: unlink bosses from EP1...
 $dlc: EP1
 
 Character.NGPlus_EncounterNetrunnerBoss:
-  $base: t"Character.q305_maxtac_miniboss_netrunner_ma"
+  $base: t"Character.maxtac_av_netrunner_ma"
   tags: ["Cyberpsycho", "ImmuneToTakedown"]
   baseAttitudeGroup: n"hostile"
   affiliation: t"Factions.Arasaka"
@@ -28,13 +29,12 @@ Character.NGPlus_EncounterNetrunnerBoss:
   
   abilities:
     - !append t"Ability.HasDodge"
-    - !append t"Ability.HasKerenzikov"
+    - !append t"Ability.HasSandevistanTier3"
     - !append t"Ability.CanUseOpticalCamo"
     - !append t"Ability.CanUseFlashbangGrenades"
     - !append t"Ability.CanCharge"
     - !append t"Ability.HasSubdermalArmorMedium"
     - !append t"Ability.CanPreciseShoot"
-    - !remove t"Ability.IsAVMaxTac"
 
   bountyDrawTable: t"BountyDrawTable.ProjectGhostMember"
   objectActions: ["QuickHack.BossBaseBlindHack", "QuickHack.BossSuicideHackBase", "QuickHack.BossBaseWeaponMalfunctionHack", "QuickHack.BossBaseLocomotionMalfunctionHack", "QuickHack.BossBaseOverheatHack", "QuickHack.BossOverloadBaseHack", "QuickHack.BossBrainMeltBaseHack", "QuickHack.BossBaseCyberwareMalfunctionHack", "QuickHack.BossSystemCollapseHackBase", "QuickHack.BossGrenadeHackBase", "QuickHack.BossMadnessHackBase", "QuickHack.BossMemoryWipeHackBase", "QuickHack.BossBaseBlackWallHack", "QuickHack.BaseCommsCallInHack", "QuickHack.BaseCommsNoiseHack", "QuickHack.BasePingHack", "QuickHack.BaseContagionHack", "QuickHack.BaseWhistleHack", "QuickHack.RemoteBreach", "Takedown.NewPerkFinisher", "Takedown.NewPerkFinisherBlunt"]
@@ -48,21 +48,15 @@ Character.NGPlus_EncounterNetrunnerBoss:
     
     - !append
       $type: ConstantStatModifier
-      statType: BaseStats.DPS
+      statType: BaseStats.NPCDamage
       modifierType: Multiplier
-      value: 2.0
+      value: 1.2
 
     - !append
       $type: ConstantStatModifier
       statType: BaseStats.IsTier4Archetype
       modifierType: Additive
       value: 1
-    
-    - !append
-      $type: ConstantStatModifier
-      statType: BaseStats.AttackSpeed
-      modifierType: Multiplier
-      value: 0.2
 
     - !append
       $type: ConstantStatModifier

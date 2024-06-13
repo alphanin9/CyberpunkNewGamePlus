@@ -33,7 +33,7 @@ void FactsDBNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     }
 
     // Apparently some trailing stuff gets thrown in...
-    aCursor.seekTo(FileCursor::SeekTo::Start, aNode.offset + aNode.GetExpectedSize());
+    aCursor.seekTo(aNode.offset + aNode.GetExpectedSize());
 
     constexpr auto testReader = false;
 

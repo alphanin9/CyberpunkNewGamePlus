@@ -39,6 +39,9 @@
     <ClCompile Include="src\parsing\definitions\nodeParsers\quest\factsDBNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\parsing\definitions\nodeParsers\stats\statsSystemNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\filesystem\fs_util.hpp">
@@ -90,6 +93,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\quest\factsDBNode.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\stats\statsSystemNode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,5 +1,7 @@
 module NGPlus.Difficulty.Correction
 
+// Unused now that we don't play with power level
+
 @replaceMethod(DamageSystem)
 private final func ProcessStealthAttack(hitEvent: ref<gameHitEvent>) {
     let canStealthHit: Bool;

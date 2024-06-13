@@ -66,7 +66,7 @@ bool Parser::ParseSavegame(std::filesystem::path aSavePath)
     }
 
     auto fileCursor = FileCursor{m_fileStream.data(), m_fileStream.size()};
-    fileCursor.seekTo(FileCursor::SeekTo::Start, infoStart);
+    fileCursor.seekTo(infoStart);
 
     if (fileCursor.readUInt() != cyberpunk::FILE_NODE)
     {
@@ -86,7 +86,7 @@ void Parser::DecompressFile()
 
     const auto compressionTablePosition = fileCursor.findByteSequence("FZLC");
 
-    fileCursor.seekTo(FileCursor::SeekTo::Start, compressionTablePosition);
+    fileCursor.seekTo(compressionTablePosition);
 
     const auto compressionHeader = compression::CompressionHeader::fromCursor(fileCursor);
 
@@ -271,7 +271,7 @@ bool Parser::LoadNodes()
 
     for (auto& node : m_flatNodes)
     {
-        cursor.seekTo(FileCursor::SeekTo::Start, node.offset);
+        cursor.seekTo(node.offset);
         node.id = cursor.readInt();
     }
 

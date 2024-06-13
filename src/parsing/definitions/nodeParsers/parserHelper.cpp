@@ -7,100 +7,45 @@
 
 #include "inventory/inventoryNode.hpp"
 #include "persistency/persistencySystemNode.hpp"
-#include "scriptable/scriptableContainerNode.hpp"
 #include "quest/factsDBNode.hpp"
+#include "scriptable/scriptableContainerNode.hpp"
+#include "stats/statsSystemNode.hpp"
 
 #include "../nodeEntry.hpp"
 #include "../../cursorDef.hpp"
 
 using ParseNodeFn = std::unique_ptr<cyberpunk::NodeDataInterface>(*)(FileCursor& cursor, cyberpunk::NodeEntry& node);
 
-std::unique_ptr<cyberpunk::NodeDataInterface> DefaultParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
-	auto dataPtr = std::make_unique<cyberpunk::DefaultNodeData>();
-
-	dataPtr->ReadData(cursor, node);
-
-	return dataPtr;
-}
-
-std::unique_ptr<cyberpunk::NodeDataInterface> InventoryParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
-	auto dataPtr = std::make_unique<cyberpunk::InventoryNode>();
-
-	dataPtr->ReadData(cursor, node);
-
-	return dataPtr;
-}
-
-std::unique_ptr<cyberpunk::NodeDataInterface> ItemInfoParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
-	auto dataPtr = std::make_unique<cyberpunk::ItemDataNode>();
-
-	dataPtr->ReadData(cursor, node);
-
-	return dataPtr;
-}
-
-std::unique_ptr<cyberpunk::NodeDataInterface> ScriptableSystemsContainerParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
-	auto dataPtr = std::make_unique<cyberpunk::ScriptableSystemsContainerNode>();
-
-	dataPtr->ReadData(cursor, node);
-
-	return dataPtr;
-}
-
-std::unique_ptr<cyberpunk::NodeDataInterface> PersistencySystemParser(FileCursor& cursor, cyberpunk::NodeEntry& node) {
-	auto dataPtr = std::make_unique<cyberpunk::PersistencySystemNode>();
-
-	dataPtr->ReadData(cursor, node);
-	
-	return dataPtr;
-}
-
-std::unique_ptr<cyberpunk::NodeDataInterface> FactsDBParser(FileCursor& aCursor, cyberpunk::NodeEntry& aNode)
+template<typename NodeType>
+std::unique_ptr<cyberpunk::NodeDataInterface> GetParserForNode(FileCursor& aCursor, cyberpunk::NodeEntry& aNode)
 {
-    auto dataPtr = std::make_unique<cyberpunk::FactsDBNode>();
+    auto dataPtr = std::make_unique<NodeType>();
 
 	dataPtr->ReadData(aCursor, aNode);
 
 	return dataPtr;
 }
 
-std::unique_ptr<cyberpunk::NodeDataInterface> FactsTableParser(FileCursor& aCursor, cyberpunk::NodeEntry& aNode)
-{
-    auto dataPtr = std::make_unique<cyberpunk::FactsTableNode>();
-
-    dataPtr->ReadData(aCursor, aNode);
-
-    return dataPtr;
-}
+#define GET_UNIQUE_NODE_PARSER(nodeTypeName)                                                                           \
+    if (aNodeName == cyberpunk::nodeTypeName::m_nodeName)                                                              \
+    {                                                                                                                  \
+		return GetParserForNode<cyberpunk::nodeTypeName>;																\
+	}																													\
 
 ParseNodeFn FindParser(Red::CName aNodeName)
 {
-    if (aNodeName == cyberpunk::InventoryNode::m_nodeName)
-    {
-		return InventoryParser;
-	}
-    else if (aNodeName == cyberpunk::ItemDataNode::m_nodeName)
-    {
-		return ItemInfoParser;
-	}
-    else if (aNodeName == cyberpunk::ScriptableSystemsContainerNode::m_nodeName)
-    {
-		return ScriptableSystemsContainerParser;
-	}
-    else if (aNodeName == cyberpunk::PersistencySystemNode::m_nodeName)
-    {
-		return PersistencySystemParser;
-	}
-    else if (aNodeName == cyberpunk::FactsDBNode::m_nodeName)
-    {
-        return FactsDBParser;
-	}
-    else if (aNodeName == cyberpunk::FactsTableNode::m_nodeName)
-    {
-        return FactsTableParser;
-	}
+	using namespace cyberpunk;
 
-	return DefaultParser;
+	GET_UNIQUE_NODE_PARSER(InventoryNode);
+    GET_UNIQUE_NODE_PARSER(ItemDataNode);
+    GET_UNIQUE_NODE_PARSER(ScriptableSystemsContainerNode);
+    GET_UNIQUE_NODE_PARSER(PersistencySystemNode);
+    GET_UNIQUE_NODE_PARSER(FactsDBNode);
+    GET_UNIQUE_NODE_PARSER(FactsTableNode);
+	// Disabled ATM, until I figure out how to work with it...
+    // GET_UNIQUE_NODE_PARSER(StatsSystemNode); 
+
+	return GetParserForNode<DefaultNodeData>;
 }
 
 void cyberpunk::ParseChildren(FileCursor& cursor, std::vector<cyberpunk::NodeEntry*>& nodeChildren) {
@@ -111,10 +56,8 @@ void cyberpunk::ParseChildren(FileCursor& cursor, std::vector<cyberpunk::NodeEnt
 }
 
 void cyberpunk::ParseNode(FileCursor& cursor, cyberpunk::NodeEntry& node) {
-	const auto parserFn = FindParser(node.m_hash);
+	cursor.seekTo(node.offset);
+	cursor.readInt(); // Node ID
 
-	cursor.offset = node.offset; // cursor.seekTo(FileCursor::SeekTo::Start, node.offset);
-	cursor.readInt();
-
-	node.nodeData = parserFn(cursor, node);
+	node.nodeData = FindParser(node.m_hash)(cursor, node);
 }

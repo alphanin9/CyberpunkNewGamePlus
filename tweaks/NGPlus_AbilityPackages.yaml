@@ -1,4 +1,6 @@
 # TODO: use this for enemy powerups?
+# Second Heart can behave... oddly?
+
 ArchetypeData.NGPlusAbilityGroup_Fast:
   $type: GameplayAbilityGroup
   abilities:
@@ -14,13 +16,12 @@ ArchetypeData.NGPlusAbilityGroup_Fast:
 ArchetypeData.NGPlusAbilityGroup_Tanky:
   $type: GameplayAbilityGroup
   abilities:
-    - Ability.HasWeakHealthRegeneration
+    - Ability.HasMidHealthRegeneration
     - Ability.CanCatchUpDistance
     - Ability.CanCatchUp
     - Ability.HasPainEditor
     - Ability.HasSubdermalArmorHigh
     - Ability.HasBerserk
-    - Ability.HasSecondHeart
 
 ArchetypeData.NGPlusAbilityGroup_Regen:
   $type: GameplayAbilityGroup
@@ -28,7 +29,6 @@ ArchetypeData.NGPlusAbilityGroup_Regen:
     - Ability.HasPassiveHealthRegeneration
     - Ability.HasLoweredHitReactions
     - Ability.HasPainEditor
-    - Ability.CanResurrectAllies
 
 ArchetypeData.NGPlusAbilityGroup_Netrunner:
   $type: GameplayAbilityGroup
