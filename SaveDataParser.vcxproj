@@ -188,6 +188,7 @@
     <ClCompile Include="src\parsing\definitions\nodeParsers\parserHelper.cpp" />
     <ClCompile Include="src\parsing\definitions\nodeParsers\quest\factsDBNode.cpp" />
     <ClCompile Include="src\parsing\definitions\nodeParsers\stats\statsSystemNode.cpp" />
+    <ClCompile Include="src\parsing\definitions\package\packageReader.cpp" />
     <ClCompile Include="src\parsing\fileReader.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -201,12 +202,13 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\nativePersistencyReader.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\quest\factsDBNode.hpp" />
-    <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReaderNative.hpp" />
+    <ClInclude Include="src\parsing\definitions\rttiHelpers\rttiValueReaderNative.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\craftBook.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\equipmentSystem.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\playerDevelopmentData.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\nativeScriptableReader.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\stats\statsSystemNode.hpp" />
+    <ClInclude Include="src\parsing\definitions\package\packageReader.hpp" />
     <ClInclude Include="src\parsing\fileReader.hpp" />
     <ClInclude Include="src\redscript_api\redscriptBindings.hpp" />
   </ItemGroup>

@@ -2,7 +2,7 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
-#include "../../rttiHelpers/rttiValueReaderNative.hpp"
+#include "../../../rttiHelpers/rttiValueReaderNative.hpp"
 #include <format>
 
 namespace persistency::native

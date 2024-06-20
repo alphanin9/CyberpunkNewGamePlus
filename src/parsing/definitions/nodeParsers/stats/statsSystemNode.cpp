@@ -1,44 +1,58 @@
-#include "statsSystemNode.hpp"
-
+// Dumb project structure strikes again...
 #include "../../../../context/context.hpp"
 
+#include "statsSystemNode.hpp"
+
 #include <RED4ext/Package.hpp>
+#include <RED4ext/Scripting/Natives/Generated/game/StatsStateMapStructure.hpp>
+
+#include "../../package/packageReader.hpp"
 
 namespace cyberpunk
 {
 void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 {
-    // Stats system isn't a special case, I think...
-    // It either is, or my reader is broken
-    // DISABLED FOR NOW
+    // DISABLED FOR NOW, IT TURNS OUT IT NEEDS A COMPLETE REFACTOR OF PACKAGE PARSER (INTEGRATING GENERAL PACKAGE READING CODE WITH PARSING, DUE TO HANDLE FUCKERY)
+    // It's also useless
     const auto packageSize = static_cast<std::uint32_t>(aCursor.readInt());
 
     auto subCursor = aCursor.CreateSubCursor(packageSize);
 
-    Red::ObjectPackageReader packageHeaderReader{subCursor.GetCurrentPtr(), packageSize};
-    Red::ObjectPackageHeader packageHeader{};
+    package::Package package(subCursor);
 
-    packageHeaderReader.ReadHeader(packageHeader);
+    package.ReadPackage();
 
-    Red::ObjectPackageExtractor packageExtractor{packageHeader};
+    auto handlePtr = package.GetChunkByTypeName("gameStatsStateMapStructure");
 
-    packageExtractor.ExtractSync();
-
-    for (const auto& statsObject : packageExtractor.results)
+    if (!handlePtr)
     {
-        if (!statsObject)
-        {
-            continue;
-        }
-
-        const auto objType = statsObject->GetType();
-
-        if (!objType)
-        {
-            continue;
-        }
-
-        PluginContext::Spew(std::format("StatsSystemNode::ReadData, result obj {}...", objType->GetName().ToString()));
+        PluginContext::Spew("Handle ptr missing!");
+        return;
     }
+
+    auto asStatsStateMap = reinterpret_cast<Red::game::StatsStateMapStructure*>(handlePtr->GetPtr());
+    std::size_t playerKey = std::numeric_limits<std::size_t>::max();
+
+    for (std::size_t i = 0; i < asStatsStateMap->keys.size; i++)
+    {
+        const auto& elem = asStatsStateMap->keys[i];
+
+        if (elem.idType == Red::gameStatIDType::EntityID && elem.entityHash == 1)
+        {
+            playerKey = i;
+            break;
+        }
+    }
+
+    if (playerKey == std::numeric_limits<std::size_t>::max())
+    {
+        return;
+    }
+
+    auto& statsObj = asStatsStateMap->values[playerKey];
+
+    auto statCount = statsObj.statModifiers.size;
+
+    PluginContext::Spew(std::format("Stat modifier count: {}", statCount));
 }
 }

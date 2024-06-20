@@ -7,6 +7,7 @@ class PlayerProgressionLoader {
     private let m_ngPlusSystem: ref<NewGamePlusSystem>;
     private let m_player: ref<PlayerPuppet>;
     private let m_equipmentSystem: ref<ScriptableSystem>;
+    private let m_transactionSystem: ref<TransactionSystem>;
     private let m_isEp1: Bool;
 
     public final func LoadPlayerProgression(player: ref<PlayerPuppet>) -> Void {
@@ -19,6 +20,8 @@ class PlayerProgressionLoader {
         }
         this.m_player = player;
         this.m_isEp1 = IsEP1();
+
+        this.m_transactionSystem = GameInstance.GetTransactionSystem(this.m_player.GetGame());
 
         this.LoadPlayerDevelopment();
         this.LoadPlayerInventory();
@@ -51,7 +54,9 @@ class PlayerProgressionLoader {
     private final func LoadPlayerDevelopment() {
         let playerDevelopmentData: ref<PlayerDevelopmentData> = PlayerDevelopmentSystem.GetInstance(this.m_player).GetDevelopmentData(this.m_player);
         playerDevelopmentData.m_isInNgPlus = true;
-        let levelGainReason: telemetryLevelGainReason = telemetryLevelGainReason.IsDebug;
+
+        // FIX: unnecessary perk points getting added despite explicitly being set?
+        let levelGainReason: telemetryLevelGainReason = telemetryLevelGainReason.Ignore;
         playerDevelopmentData
             .SetLevel(
                 gamedataProficiencyType.StrengthSkill,
@@ -113,7 +118,7 @@ class PlayerProgressionLoader {
                 gamedataDevelopmentPointType.Primary,
                 this.m_ngPlusPlayerSaveData.playerPerkPoints
             );
-        
+                
         // Non-EP1 makes this look really wonky
         if this.m_isEp1 {
             playerDevelopmentData.SetDevelopmentsPoint(gamedataDevelopmentPointType.Espionage, this.m_ngPlusPlayerSaveData.playerRelicPoints);
@@ -134,15 +139,21 @@ class PlayerProgressionLoader {
         GameInstance
             .GetStatsSystem(this.m_player.GetGame())
             .AddSavedModifier(Cast<StatsObjectID>(this.m_player.GetEntityID()), permaMod);
-        let transactionSystem: ref<TransactionSystem> = GameInstance.GetTransactionSystem(this.m_player.GetGame());
         // Results in an annoying notification, I will not have that in MY Cyberpunk
         //  transactionSystem.GiveMoney(this.m_player, this.m_ngPlusPlayerSaveData.playerMoney, n"money");
 
-        transactionSystem.GiveItem(this.m_player, ItemID.FromTDBID(t"Items.money"), this.m_ngPlusPlayerSaveData.playerMoney);
+        this.m_transactionSystem.GiveItem(this.m_player, ItemID.FromTDBID(t"Items.money"), this.m_ngPlusPlayerSaveData.playerMoney);
 
         for inventoryItem in this.m_ngPlusPlayerSaveData.playerItems {
-            transactionSystem
-                .GiveItem(this.m_player, inventoryItem.itemId, inventoryItem.itemQuantity);
+            let modParams: ItemModParams;
+
+            modParams.itemID = inventoryItem.itemId;
+            modParams.quantity = inventoryItem.itemQuantity;
+            modParams.customPartsToInstall = inventoryItem.attachments;
+
+            let itemData = Inventory.CreateItemData(modParams, this.m_player);
+
+            this.m_transactionSystem.GiveItemByItemData(this.m_player, itemData);
         }
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerInventory done!");
@@ -164,11 +175,22 @@ class PlayerProgressionLoader {
     }
 
     private final func LoadPlayerStash() {
-        let transactionSystem: ref<TransactionSystem> = GameInstance.GetTransactionSystem(this.m_player.GetGame());
         let stashEntity = this.GetPlayerStash();
         for inventoryItem in this.m_ngPlusPlayerSaveData.playerStashItems {
-            transactionSystem
-                .GiveItem(stashEntity, inventoryItem.itemId, inventoryItem.itemQuantity);
+            let modParams: ItemModParams;
+            
+            modParams.itemID = inventoryItem.itemId;
+            modParams.quantity = inventoryItem.itemQuantity;
+
+            for attachment in inventoryItem.attachments {
+                let itemId = ItemID.DuplicateRandomSeedWithOffset(attachment, ItemID.GetTDBID(attachment), 0);
+
+                ArrayPush(modParams.customPartsToInstall, itemId);
+            }
+
+            let itemData = Inventory.CreateItemData(modParams, this.m_player);
+
+            this.m_transactionSystem.GiveItemByItemData(stashEntity, itemData);
         }
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerStash done!");
@@ -201,16 +223,37 @@ class PlayerProgressionLoader {
         // Also, cyberware capacity would fuck me over
         // Maybe a new character creation screen where the player can equip their own cyberware selection? Nah, pain in the ass
 
-        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedOperatingSystem, false, 0);
-        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedKiroshis, false, 0);
-        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedArmCyberware, false, 0);
-        this.EquipCyberware(this.m_ngPlusPlayerSaveData.playerEquippedLegCyberware, false, 0);
+        // Might not get wanted CW (with proper stat modifiers) on start I think :(
+        let osItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(this.m_ngPlusPlayerSaveData.playerEquippedOperatingSystem));
+        let kiroshiItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(this.m_ngPlusPlayerSaveData.playerEquippedKiroshis));
+        let armItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(this.m_ngPlusPlayerSaveData.playerEquippedArmCyberware));
+        let legItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(this.m_ngPlusPlayerSaveData.playerEquippedLegCyberware));
+
+        if IsDefined(osItemData) {
+            this.EquipCyberware(osItemData.GetID(), false, -1);
+        }
+
+        if IsDefined(kiroshiItemData) {
+            this.EquipCyberware(kiroshiItemData.GetID(), false, -1);
+        }
+
+        if IsDefined(armItemData) {
+            this.EquipCyberware(armItemData.GetID(), false, -1);
+        }
+
+        if IsDefined(legItemData) {
+            this.EquipCyberware(legItemData.GetID(), false, -1);
+        }
 
         let i = 0;
         // This may fail with Cyberware-EX and other mods that fuck with equip slots?
         for cardiovascularCw in this.m_ngPlusPlayerSaveData.playerEquippedCardiacSystemCW {
-            this.EquipCyberware(cardiovascularCw, false, i);
-            i += 1;
+            let itemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(cardiovascularCw));
+
+            if IsDefined(itemData) {
+                this.EquipCyberware(itemData.GetID(), false, i);
+                i += 1;
+            }
         }
 
         // After testing the Q001 start I've come to the conclusion Q001 is too much of a pain in the ass to do at Level 50 without armor
@@ -224,7 +267,7 @@ class PlayerProgressionLoader {
             subdermalArmorId = ItemID.FromTDBID(t"Items.AdvancedBoringPlatingLegendaryPlus");
         }
 
-        this.EquipCyberware(subdermalArmorId, true, 0); // Might as well add it to inventory as well, free NG+ gift LMAO
+        this.EquipCyberware(subdermalArmorId, true, -1); // Might as well add it to inventory as well, free NG+ gift LMAO
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerEquippedCyberware done!");
     }

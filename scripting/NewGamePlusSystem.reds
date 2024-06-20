@@ -1,6 +1,7 @@
 public native struct RedItemData {
     native let itemId: ItemID;
     native let itemQuantity: Int32;
+    native let attachments: array<ItemID>;
 }
 
 public native struct RedCraftInfo {

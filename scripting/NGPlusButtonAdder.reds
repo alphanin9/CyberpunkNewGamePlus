@@ -3,13 +3,9 @@ module NGPlus.ButtonAdder
 @wrapMethod(gameuiMenuItemListGameController)
 private func AddMenuItem(const label: script_ref<String>, spawnEvent: CName) -> Void {
     wrappedMethod(label, spawnEvent);
-    let singlePlayerMenu = this as SingleplayerMenuGameController;
-    
-    if !IsDefined(singlePlayerMenu) {
-        return;
-    }
 
-    if Equals(ToString(label), GetLocalizedText("UI-ScriptExports-NewGame0")) {
+    // Assuming no modifications, the only call with OnNewGame as an arg should be from singleplayer menu
+    if Equals(spawnEvent, n"OnNewGame") {
         if !GameInstance.GetNewGamePlusSystem().HasPointOfNoReturnSave() {
             return;
         }

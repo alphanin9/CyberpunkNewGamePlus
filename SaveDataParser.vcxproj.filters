@@ -42,6 +42,9 @@
     <ClCompile Include="src\parsing\definitions\nodeParsers\stats\statsSystemNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\parsing\definitions\package\packageReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\filesystem\fs_util.hpp">
@@ -71,7 +74,7 @@
     <ClInclude Include="src\redscript_api\redscriptBindings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\parsing\definitions\nodeParsers\rttiHelpers\rttiValueReaderNative.hpp">
+    <ClInclude Include="src\parsing\definitions\rttiHelpers\rttiValueReaderNative.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\nativeScriptableReader.hpp">
@@ -96,6 +99,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\stats\statsSystemNode.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\package\packageReader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

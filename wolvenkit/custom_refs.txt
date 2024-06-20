@@ -1,3 +1,13 @@
+base\animations\anim_motion_database\cover_action.csv
+base\fx\characters\npc\kerenzikov\ch_kerenzikov_dodge_01.effect
+base\fx\characters\npc\kerenzikov\ch_kerenzikov_dodge_02.effect
+base\fx\characters\npc\kerenzikov\ch_kerenzikov_dodge_03.effect
+base\fx\characters\npc\kerenzikov\ch_kerenzikov_dodge_04.effect
+base\fx\characters\npc\kerenzikov\ch_kerenzikov_dodge_05.effect
+base\fx\characters\npc\kerenzikov\ch_kerenzikov_dodge_06.effect
+base\fx\characters\npc\kerenzikov\ch_kerenzikov_dodge_back_01.effect
+base\fx\characters\npc\kerenzikov\ch_kerenzikov_dodge_left_01.effect
+base\fx\characters\npc\kerenzikov\ch_kerenzikov_dodge_right_01.effect
 base\gameplay\gui\fullscreen\main_menu\new_game_plus_selection_1080p.xbm
 base\gameplay\gui\fullscreen\main_menu\new_game_plus_selection.inkatlas
 base\gameplay\gui\fullscreen\main_menu\new_game_plus_selection.xbm
@@ -74,6 +84,8 @@ mod\quest\newgameplus\new_q101\q101p2vroom.questphase
 mod\quest\newgameplus\new_q101\Q101P2VRoom.questphase
 mod\quest\newgameplus\new_q101\q101setjohnnystuff.questphase
 mod\quest\newgameplus\new_q101\Q101SetJohnnyStuff.questphase
+mod\quest\newgameplus\newNpc\ayumiTest_goodNpc.ent
+mod\quest\newgameplus\newNpc\ayumiTest.ent
 mod\quest\newgameplus\ngplusadditionalcontent.questphase
 mod\quest\newgameplus\NGPlusAdditionalContent.questphase
 mod\quest\newgameplus\ngplusbossencounterloop.questphase

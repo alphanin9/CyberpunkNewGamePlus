@@ -18,6 +18,8 @@ public func GetOpticalCamoUpgradeChance() -> Float = UserConfig.GetOpticalCamoUp
 @if(ModuleExists("NGPlus.CustomConfig"))
 public func GetNetrunnerUpgradeChance() -> Float = UserConfig.GetNetrunnerUpgradeChance();
 
+
+// NOTE: currently unused, will be used in the future to upgrade enemy dodge abilities
 @if(ModuleExists("NGPlus.CustomConfig"))
 public func GetDodgeUpgradeChance() -> Float = UserConfig.GetDodgeUpgradeChance();
 
@@ -39,7 +41,7 @@ public func GetNetrunnerUpgradeChance() -> Float = 50.0;
 @if(!ModuleExists("NGPlus.CustomConfig"))
 public func GetDodgeUpgradeChance() -> Float = 33.0;
 
-// Inherit your UserConfig from this to get default values!
+// Inherit your UserConfig from this to get default values
 public abstract class DefaultDifficultyConfig {
     public static func GetFastUpgradeChance() -> Float = GetFastUpgradeChance();
     public static func GetTankUpgradeChance() -> Float = GetTankUpgradeChance();

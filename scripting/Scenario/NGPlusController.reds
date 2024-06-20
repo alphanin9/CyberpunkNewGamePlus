@@ -150,6 +150,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
         this.m_ngPlusSystem.Spew(s"Progression loader result: \(result)");
 
         if !result {
+            // NOTE: add localization?
             controller.SetInvalid("Failed to parse progression data!\nTry going into a game and saving again.");
             return;
         }
@@ -185,6 +186,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
             let button: wref<inkWidget> = inkCompoundRef.GetWidgetByIndex(this.m_list, i);
             let controller: wref<LoadListItem> = button.GetController() as LoadListItem;
             if controller.Index() == info.saveIndex {
+                // TODO: figure out how PC and console saves differ...
                 if info.isValid && Equals(info.platform, "pc") {
                     controller.SetMetadataForNGPlus(info, this.m_isEp1Enabled);
                     controller.CheckThumbnailCensorship(!characterCustomizationSystem.IsNudityAllowed());

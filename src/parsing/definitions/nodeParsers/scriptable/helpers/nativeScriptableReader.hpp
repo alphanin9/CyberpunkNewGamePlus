@@ -5,7 +5,7 @@
 #include <RedLib.hpp>
 
 #include "../../../../../context/context.hpp"
-#include "../../rttiHelpers/rttiValueReaderNative.hpp"
+#include "../../../rttiHelpers/rttiValueReaderNative.hpp"
 
 namespace scriptable::native
 {

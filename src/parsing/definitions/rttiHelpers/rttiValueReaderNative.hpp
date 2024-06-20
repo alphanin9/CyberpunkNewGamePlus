@@ -2,8 +2,10 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
-#include "../../../../context/context.hpp"
-#include "../../../cursorDef.hpp"
+#include "../../../context/context.hpp"
+#include "../../cursorDef.hpp"
+
+#include <algorithm>
 
 namespace redRTTI::native
 {
@@ -55,6 +57,35 @@ protected:
         return true;
     }
 
+    void ReadDataBuffer(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept
+    {
+        auto bufPointer = reinterpret_cast<Red::DataBuffer*>(aOut);
+
+        const auto bufferSize = aCursor.readUInt();
+
+        if (bufferSize >= 0x80000000 || !bufferSize)
+        {
+            return;
+        }
+
+        constexpr auto shouldTestDataBuffer = false;
+
+        if (shouldTestDataBuffer)
+        {
+            static const auto fnRawBufferCtor =
+                Red::UniversalRelocFunc<void*(__fastcall*)(Red::RawBuffer * aThis, int64_t aSize, int64_t aAlignment)>(
+                    1306265261u);
+
+            Red::RawBuffer tempBuffer{};
+
+            fnRawBufferCtor(&tempBuffer, bufferSize, 0u); // Arbitrary alignment...
+
+            aCursor.CopyTo(tempBuffer.data, bufferSize);
+
+            PluginContext::Spew(std::format("Buffer size: {}", bufferSize));
+        }
+    }
+
     virtual bool TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
     {
         return false;
@@ -100,6 +131,12 @@ protected:
             else if (typeName == RED4ext::CName{"NodeRef"})
             {
                 ReadNodeRef(aCursor, aOut);
+                return true;
+            }
+            else if (typeName == Red::CName{"DataBuffer"})
+            {
+                ReadDataBuffer(aCursor, aOut);
+                // AAAAAAAAAAAAAAAAAAAA
                 return true;
             }
             break;

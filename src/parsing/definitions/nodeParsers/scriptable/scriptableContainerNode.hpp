@@ -35,8 +35,8 @@ struct RedPackageHeader
     {
         RedPackageHeader header{};
 
-        header.m_version = static_cast<std::byte>(aCursor.readByte());
-        header.m_unk1 = static_cast<std::byte>(aCursor.readByte());
+        header.m_version = aCursor.readValue<std::byte>();
+        header.m_unk1 = aCursor.readValue<std::byte>();
 
         header.m_numSections = aCursor.readUShort();
         header.m_numComponents = aCursor.readUInt();

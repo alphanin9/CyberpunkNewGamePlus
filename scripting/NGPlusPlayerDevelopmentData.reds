@@ -232,3 +232,24 @@ public final func RefreshDevelopmentSystem() {
       };
     };
 }
+
+@replaceMethod(PlayerDevelopmentData)
+public final const func ProcessProficiencyPassiveBonus(profIndex: Int32) -> Void {
+    // Seems to manage effector for stat levelups... maybe?
+
+    let bonusRecord: ref<PassiveProficiencyBonus_Record>;
+    let effectorRecord: ref<Effector_Record>;
+    if this.GetProficiencyRecordByIndex(profIndex).GetPassiveBonusesCount() > 0 {
+        bonusRecord = this.GetProficiencyRecordByIndex(profIndex).GetPassiveBonusesItem(this.m_proficiencies[profIndex].currentLevel - 1);
+        
+        if this.m_isInNgPlus && Equals(bonusRecord.GetRecordID(), t"Proficiencies.AddOnePerkPoint") {
+            // Note: This kept adding unnecessary perk points for ppl
+            return;
+        }
+
+        effectorRecord = bonusRecord.EffectorToTrigger();
+        if IsDefined(effectorRecord) {
+            GameInstance.GetEffectorSystem(this.m_owner.GetGame()).ApplyEffector(this.m_owner.GetEntityID(), this.m_owner, effectorRecord.GetID());
+        };
+    };
+}

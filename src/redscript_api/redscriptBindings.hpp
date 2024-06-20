@@ -52,6 +52,10 @@ struct RedItemData
     Red::ItemID m_itemId{};
     int32_t m_itemQuantity{};
 
+    // HACK: make CW upgrades carry over...
+    // Makes things a bit heavier, but w/e
+    Red::DynArray<Red::ItemID> m_attachments;
+
     RTTI_IMPL_TYPEINFO(RedItemData);
     RTTI_IMPL_ALLOCATOR();
 };
@@ -70,6 +74,7 @@ struct RedCraftInfo
 RTTI_DEFINE_CLASS(redscript::RedItemData, {
     RTTI_PROPERTY(m_itemId);
     RTTI_PROPERTY(m_itemQuantity);
+    RTTI_PROPERTY(m_attachments);
 });
 
 RTTI_DEFINE_CLASS(redscript::RedCraftInfo, {
@@ -143,6 +148,8 @@ struct PlayerSaveData
     // Nah, shit idea, maybe for the Demiurge
     // Seeing as acquiring it is pretty cool
     Red::DynArray<Red::TweakDBID> m_playerVehicleGarage{};
+
+    bool m_addedPerkPointsFromOverflow;
 
     // Later maybe do Equipment-EX transfer too?
 
@@ -463,6 +470,8 @@ public:
 private:
     void HandleUselessStatPoints()
     {
+        // This logic is fucked and results in too many added perk points...
+        // Figure it out later
         constexpr auto minAttributeValue = 3;
         constexpr auto attributeCount = 5;
 
@@ -475,8 +484,10 @@ private:
 
         const auto totalAttributePoints = allocatedAttributePoints + m_saveData.m_playerAttributePoints;
 
-        if (totalAttributePoints >= maxAttributePointCount)
+        if (totalAttributePoints > maxAttributePointCount && m_saveData.m_playerAttributePoints > 0)
         {
+            PluginContext::Spew("Overflow: attributes!");
+            m_saveData.m_addedPerkPointsFromOverflow = true;
             m_saveData.m_playerPerkPoints += m_saveData.m_playerAttributePoints;
             m_saveData.m_playerAttributePoints = 0;
         }
@@ -485,6 +496,8 @@ private:
 
         if (m_saveData.m_playerRelicPoints > maxRelicPoints)
         {
+            PluginContext::Spew("Overflow: Relic!");
+            m_saveData.m_addedPerkPointsFromOverflow = true;
             m_saveData.m_playerPerkPoints += (m_saveData.m_playerRelicPoints - maxRelicPoints);
             m_saveData.m_playerRelicPoints = maxRelicPoints;
         }
@@ -494,6 +507,7 @@ private:
 
         if (m_saveData.m_playerPerkPoints > maxPerkPointCount)
         {
+            PluginContext::Spew("Overflow: perks!");
             m_saveData.m_playerMoney += (1000 * (m_saveData.m_playerPerkPoints - maxPerkPointCount));
             m_saveData.m_playerPerkPoints = maxPerkPointCount;
         }
@@ -869,14 +883,38 @@ private:
 
         return ret;
     }
-
-    void ProcessAttachments(const cyberpunk::ItemSlotPart& aSlotPart, Red::DynArray<RedItemData>& aTargetList)
+    
+    // Now should handle CW upgrades too
+    void ProcessAttachments(const cyberpunk::ItemSlotPart& aSlotPart, Red::DynArray<RedItemData>& aTargetList, RedItemData& aData)
     {
         // Don't bother doing iconic weapon mods
         if (aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.IconicWeaponModLegendary" ||
             aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.IconicMeleeWeaponMod1")
         {
             return;
+        }
+
+        constexpr auto shouldLogCWStatsShards = false;
+
+        if constexpr (shouldLogCWStatsShards)
+        {
+            if (aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.StatsShardSlot")
+            {
+                const auto rngSeed = aSlotPart.m_itemId.rngSeed; // RNG seed seems to determine CW stat mods...
+                const auto tdbId = aSlotPart.m_itemId.tdbid;
+
+                Red::CString str;
+                Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, tdbId);
+
+                PluginContext::Spew(std::format("Shard ID: {}, RNG seed: {}", str.c_str(), rngSeed));                
+            }
+        }
+
+        // FIX: CW stats shards not being transferred
+        // Doesn't work :P
+        if (aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.StatsShardSlot")
+        {
+            aData.m_attachments.PushBack(aSlotPart.m_itemId);
         }
 
         auto itemId = aSlotPart.m_itemId;
@@ -895,7 +933,7 @@ private:
 
         for (const auto& child : aSlotPart.m_children)
         {
-            ProcessAttachments(child, aTargetList);   
+            ProcessAttachments(child, aTargetList, aData);   
         }
     }
 
@@ -935,12 +973,12 @@ private:
         itemData.m_itemId = aExtendedData.m_itemId;
         itemData.m_itemQuantity = aItem.HasQuantity() ? aItem.m_itemQuantity : 1;
 
-        aTargetList.PushBack(itemData);
-
         if (aItem.HasExtendedData())
         {
-            ProcessAttachments(aItem.m_itemSlotPart, aTargetList);
+            ProcessAttachments(aItem.m_itemSlotPart, aTargetList, itemData);
         }
+
+        aTargetList.PushBack(itemData);
     }
 
     void ProcessItem(const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList)

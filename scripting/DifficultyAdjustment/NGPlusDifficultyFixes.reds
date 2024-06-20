@@ -1,8 +1,9 @@
 module NGPlus.Difficulty.Correction
 
-// Unused now that we don't play with power level
+// Unused now that we don't play with power level!!!
+// Not deleted to keep file structure same for manual installs (could set up migration in RED4ext plugin, but later?)
 
-@replaceMethod(DamageSystem)
+/*@replaceMethod(DamageSystem)
 private final func ProcessStealthAttack(hitEvent: ref<gameHitEvent>) {
     let canStealthHit: Bool;
     let hitNotQuickMelee: Bool;
@@ -66,3 +67,4 @@ protected const final func IsPowerLevelDifferentialTooHigh(target: wref<GameObje
 
     return false;
 }
+*/

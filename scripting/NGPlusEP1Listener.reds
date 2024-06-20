@@ -14,7 +14,6 @@ public class NGPlusEP1StatusListener extends ScriptableSystem {
 
         if !hasEp1 {
             // We don't have EP1...
-            ngPlusSystem.Spew("NGPlusEP1StatusListener::OnRestored: EP1 is not installed!");
             return;
         }
 

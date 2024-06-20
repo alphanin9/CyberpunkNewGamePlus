@@ -114,7 +114,6 @@ class NGPlusDifficultySystem extends ScriptableSystem {
     private let m_hasDetectedNgPlus: Bool;
     private let m_ngPlusActive: Bool;
     private let m_playerMaxLevel: Float;
-    private let m_isEP1: Bool;
 
     private func OnAttach() {
         this.m_questsSystem = GameInstance.GetQuestsSystem(this.GetGameInstance());
@@ -130,7 +129,6 @@ class NGPlusDifficultySystem extends ScriptableSystem {
 
     private cb func OnNPCSpawned(event: ref<EntityLifecycleEvent>) {
         if !this.m_hasDetectedNgPlus {
-            this.m_player = GetPlayer(this.GetGameInstance());
             this.m_ngPlusActive = this.m_questsSystem.GetFactStr("ngplus_active") == 1;
             this.m_hasDetectedNgPlus = true;
         }
@@ -138,6 +136,8 @@ class NGPlusDifficultySystem extends ScriptableSystem {
         if !this.m_ngPlusActive {
             return;
         }
+
+        this.m_player = GetPlayer(this.GetGameInstance()); // FIX: breaking with situations where system doesn't attach between V/replacer swaps
 
         // Not for VR Tutorial (though we'll be disabling it...), Johnny, Kurtz or Aguilar
         if this.m_player.IsReplacer() {
