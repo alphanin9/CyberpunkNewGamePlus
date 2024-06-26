@@ -43,7 +43,7 @@ ParseNodeFn FindParser(Red::CName aNodeName)
     GET_UNIQUE_NODE_PARSER(FactsDBNode);
     GET_UNIQUE_NODE_PARSER(FactsTableNode);
 	// Disabled ATM due to issues with DataBuffer, waiting for Psiberx...
-    // GET_UNIQUE_NODE_PARSER(StatsSystemNode); 
+    GET_UNIQUE_NODE_PARSER(StatsSystemNode); 
 
 	return GetParserForNode<DefaultNodeData>;
 }

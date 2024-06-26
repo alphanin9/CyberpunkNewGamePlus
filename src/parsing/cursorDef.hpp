@@ -34,7 +34,8 @@ struct FileCursor {
     // Maybe use in buffer overflow checking, but might get slow
     size_t size;
 
-    FileCursor() = delete;
+    // NOTE: bad, no good, very bad... Is needed to keep default ctor for package reader
+    FileCursor() = default;
     FileCursor(std::byte* baseAddress, size_t size) : baseAddress{ baseAddress }, offset{ 0 }, size{ size } {
 
     }

@@ -1,11 +1,34 @@
 #include "../../../context/context.hpp"
 #include "packageReader.hpp"
 
+#include <unordered_map>
+
 // Currently unused, is meant to replace nativeScriptableReader...
 namespace package
 {
-bool ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aRet)
+bool Package::ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aRet) noexcept
 {
+    // Slow, slow, slow...
+    // Maybe cache them into unordered_map per enum?
+
+    // Not sure if this will work fine across script reloads... :P
+    static std::unordered_map<Red::CName, std::unordered_map<Red::CName, std::int64_t>> s_enumCache;
+
+    const auto enumName = aEnum->GetName();
+
+    if (s_enumCache.contains(enumName))
+    {
+        auto& enumValueMap = s_enumCache[enumName];
+
+        if (enumValueMap.contains(aName))
+        {
+            aRet = enumValueMap[aName];
+            return true;
+        }
+    }
+
+    auto hasValue = false;
+
     aRet = aEnum->valueList.Back();
 
     for (auto i = 0; i < aEnum->hashList.size; i++)
@@ -13,7 +36,8 @@ bool ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aRet)
         if (aEnum->hashList[i] == aName)
         {
             aRet = aEnum->valueList[i];
-            return true;
+            hasValue = true;
+            break;
         }
     }
 
@@ -22,11 +46,35 @@ bool ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aRet)
         if (aEnum->aliasList[i] == aName)
         {
             aRet = aEnum->aliasValueList[i];
-            return true;
+            hasValue = true;
+            break;
         }
     }
 
-    return false;
+    s_enumCache[enumName][aName] = aRet;
+
+    return hasValue;
+}
+
+const char* Package::GetEnumString(Red::CEnum* aEnum, std::int64_t aValue) noexcept
+{
+    for (auto i = 0u; i < aEnum->valueList.size; i++)
+    {
+        if (aEnum->valueList[i] == aValue)
+        {
+            return aEnum->hashList[i].ToString();
+        }
+    }
+
+    for (auto i = 0u; i < aEnum->aliasValueList.size; i++)
+    {
+        if (aEnum->aliasValueList[i] == aValue)
+        {
+            return aEnum->aliasList[i].ToString();
+        }
+    }
+
+    return "Invalid";
 }
 
 Red::CName Package::ReadCNameInternal(FileCursor& aCursor) noexcept
@@ -38,7 +86,7 @@ Red::CName Package::ReadCNameInternal(FileCursor& aCursor) noexcept
         return {};
     }
 
-    return m_names.at(index);
+    return m_names[index];
 }
 
 void Package::ReadCName(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept
@@ -59,6 +107,7 @@ void Package::ReadEnum(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBase
     auto enumValueName = ReadCNameInternal(aCursor);
     auto enumType = static_cast<Red::CEnum*>(aPropType);
 
+    // Note: this is actually pretty slow...
     std::int64_t enumValue{};
     ResolveEnumValue(enumType, enumValueName, enumValue);
 
@@ -162,6 +211,7 @@ bool Package::TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::C
 
 Red::Handle<Red::ISerializable> Package::ReadChunkById(std::size_t aId) noexcept
 {
+    // Note: maybe multi-thread this?
     auto header = m_chunkHeaders[aId];
 
     m_cursor.seekTo(m_baseOffset + header.offset);
@@ -250,10 +300,22 @@ Red::Handle<Red::ISerializable>* Package::GetChunkByTypeName(Red::CName aType) n
         return nullptr;
     }
 
+    // How to MT this (potentially? as long as everything doesn't get turbo-fucked by race conditions ETC)? Make every TryReadValue call into a job closure?
+    // Can same prop be read several times?
+    // Red::JobQueue readerQueue{};
+
     auto objHandle = ReadChunkById(chunkIndex);
 
     m_objects.insert(std::make_pair(chunkIndex, std::move(objHandle)));
 
     return &m_objects.at(chunkIndex);
+}
+
+void Package::Init(FileCursor&& aCursor) noexcept
+{
+    m_cursor = aCursor;
+    m_isRead = false;
+    m_readCruids = false;
+    m_baseOffset = 0;
 }
 }

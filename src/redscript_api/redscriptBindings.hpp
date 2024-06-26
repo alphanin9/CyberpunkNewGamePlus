@@ -10,7 +10,9 @@
 #include "../parsing/definitions/nodeParsers/inventory/inventoryNode.hpp"
 #include "../parsing/definitions/nodeParsers/persistency/persistencySystemNode.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/scriptableContainerNode.hpp"
+#include "../parsing/definitions/nodeParsers/stats/statsSystemNode.hpp"
 
+#include <RED4ext/Scripting/Natives/Generated/game/ConstantStatModifierData_Deprecated.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemCategory_Record.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType_Record.hpp>
@@ -55,6 +57,7 @@ struct RedItemData
     // HACK: make CW upgrades carry over...
     // Makes things a bit heavier, but w/e
     Red::DynArray<Red::ItemID> m_attachments;
+    Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> m_statModifiers;
 
     RTTI_IMPL_TYPEINFO(RedItemData);
     RTTI_IMPL_ALLOCATOR();
@@ -75,6 +78,7 @@ RTTI_DEFINE_CLASS(redscript::RedItemData, {
     RTTI_PROPERTY(m_itemId);
     RTTI_PROPERTY(m_itemQuantity);
     RTTI_PROPERTY(m_attachments);
+    RTTI_PROPERTY(m_statModifiers);
 });
 
 RTTI_DEFINE_CLASS(redscript::RedCraftInfo, {
@@ -85,6 +89,7 @@ RTTI_DEFINE_CLASS(redscript::RedCraftInfo, {
 
 namespace redscript
 {
+// NOTE: needs ISerializable inheritance for handle stuff - later...
 struct PlayerSaveData
 {
     bool m_isValid{};
@@ -151,6 +156,11 @@ struct PlayerSaveData
 
     bool m_addedPerkPointsFromOverflow;
 
+    // NOTE: these do not account for perks like Edgerunner/whatever else... only shards
+    // Whatever, we won't be overallocating CW cap anyway :P
+    float m_playerCyberwareCapacity{};
+    float m_playerCarryCapacity{};
+
     // Later maybe do Equipment-EX transfer too?
 
     // In theory we don't need this
@@ -186,6 +196,8 @@ RTTI_DEFINE_CLASS(redscript::PlayerSaveData, {
     RTTI_PROPERTY(m_playerEquippedArmCyberware);
     RTTI_PROPERTY(m_playerEquippedCardiacSystemCW);
     RTTI_PROPERTY(m_playerVehicleGarage);
+    RTTI_PROPERTY(m_playerCyberwareCapacity);
+    RTTI_PROPERTY(m_playerCarryCapacity);
 });
 
 namespace BlacklistedTDBIDs
@@ -402,6 +414,9 @@ public:
 
             m_tweakDb = Red::TweakDB::Get();
 
+            // Needs to be shared across several transferrers :P
+            m_statsSystemPtr = parser.LookupNodeData<cyberpunk::StatsSystemNode>();
+
             if (const auto inventory = parser.LookupNodeData<cyberpunk::InventoryNode>())
             {
                 LoadInventoryNew(inventory);
@@ -440,6 +455,8 @@ public:
                     LoadCraftBook(craftBook);
                 }
             }
+
+            LoadStatModifiers();
         }
         catch (std::exception e)
         {
@@ -454,7 +471,7 @@ public:
         PluginContext::Spew(std::format("Time taken: {}", duration));
 
         m_saveData.m_isValid = true;
-        return true;
+         return true;
     }
 
     // Some users don't have LogChannel defined :P
@@ -486,7 +503,6 @@ private:
 
         if (totalAttributePoints > maxAttributePointCount && m_saveData.m_playerAttributePoints > 0)
         {
-            PluginContext::Spew("Overflow: attributes!");
             m_saveData.m_addedPerkPointsFromOverflow = true;
             m_saveData.m_playerPerkPoints += m_saveData.m_playerAttributePoints;
             m_saveData.m_playerAttributePoints = 0;
@@ -496,7 +512,6 @@ private:
 
         if (m_saveData.m_playerRelicPoints > maxRelicPoints)
         {
-            PluginContext::Spew("Overflow: Relic!");
             m_saveData.m_addedPerkPointsFromOverflow = true;
             m_saveData.m_playerPerkPoints += (m_saveData.m_playerRelicPoints - maxRelicPoints);
             m_saveData.m_playerRelicPoints = maxRelicPoints;
@@ -507,9 +522,40 @@ private:
 
         if (m_saveData.m_playerPerkPoints > maxPerkPointCount)
         {
-            PluginContext::Spew("Overflow: perks!");
             m_saveData.m_playerMoney += (1000 * (m_saveData.m_playerPerkPoints - maxPerkPointCount));
             m_saveData.m_playerPerkPoints = maxPerkPointCount;
+        }
+    }
+
+    void LoadStatModifiers()
+    {
+        constexpr auto playerStatObjectId = 1ull;
+
+        auto statBuffer = m_statsSystemPtr->GetStatModifiers(playerStatObjectId);
+
+        using namespace Red::game;
+        using Red::game::data::StatType;
+
+        for (auto& stat : statBuffer)
+        {
+            if (!stat)
+            {
+                continue;
+            }
+
+            // NOTE: all CW shards/carry capacity shards seem to come in constant stat mod...
+            // Maybe it would be better to have a DynArray of added stat mods?
+            if (const auto& asConstant = Red::Cast<ConstantStatModifierData_Deprecated>(stat))
+            {
+                if (stat->statType == StatType::Humanity)
+                {
+                    m_saveData.m_playerCyberwareCapacity += asConstant->value;
+                }
+                else if (stat->statType == StatType::CarryCapacity)
+                {
+                    m_saveData.m_playerCarryCapacity += asConstant->value;
+                }
+            }
         }
     }
 
@@ -849,7 +895,7 @@ private:
             if (auto nameValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(typeFk, ".name")))
             {
                 static auto typeEnum = Red::GetEnum<Red::gamedataItemType>();
-                // Ugly...
+                // Ugly... 
                 if (typeEnum)
                 {
                     auto enumName = *nameValuePtr->GetValue<Red::CName>();
@@ -911,7 +957,6 @@ private:
         }
 
         // FIX: CW stats shards not being transferred
-        // Doesn't work :P
         if (aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.StatsShardSlot")
         {
             aData.m_attachments.PushBack(aSlotPart.m_itemId);
@@ -928,6 +973,8 @@ private:
             itemData.m_itemId = itemId;
             itemData.m_itemQuantity = 1;
 
+            ProcessStatModifiers(itemData);
+
             aTargetList.PushBack(itemData);
         }
 
@@ -937,7 +984,7 @@ private:
         }
     }
 
-    void AddItemToInventory(const ExtendedItemData& aExtendedData, const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList)
+    void AddItemToInventory(const ExtendedItemData& aExtendedData, const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList, std::unordered_set<Red::TweakDBID>& aAddedIconics)
     {
         // Sorry, but these REALLY annoy me
         if (BlacklistedTDBIDs::IsForbidden(aExtendedData.m_tdbId))
@@ -968,28 +1015,104 @@ private:
             return;
         }
 
+        auto isIconic = false;
+
+        // Don't add multiple same iconics to one save...
+        if (aExtendedData.HasTag("IconicWeapon"))
+        {
+            isIconic = true;
+            // NOTE: this will murder item mods on X-MOD2...
+            // Dirty hack fix
+            if (aAddedIconics.contains(aItem.GetItemID().tdbid))
+            {
+                if (aItem.HasExtendedData())
+                {
+                    RedItemData dummy{};
+                    ProcessAttachments(aItem.m_itemSlotPart, aTargetList, dummy);
+                }
+
+                return;
+            }
+
+            aAddedIconics.insert(aItem.GetItemID().tdbid);
+        }
+
+        constexpr auto testStatsOnWeapons = false;
+
+        if constexpr (testStatsOnWeapons)
+        {
+            if (aExtendedData.HasTag("Weapon"))
+            {
+                Red::CString str;
+                Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aExtendedData.m_itemId.tdbid);
+
+                PluginContext::Spew(std::format("Gun {}", str.c_str()));
+
+                auto statsObjectId = cyberpunk::StatsSystemNode::GetEntityHashFromItemId(aExtendedData.m_itemId);
+                auto statModifiers = m_statsSystemPtr->GetStatModifiers(statsObjectId);
+
+                if (!statModifiers.size)
+                {
+                    PluginContext::Spew("No stat modifiers on weapon!");
+                }
+            }
+        }
+
         RedItemData itemData{};
 
         itemData.m_itemId = aExtendedData.m_itemId;
         itemData.m_itemQuantity = aItem.HasQuantity() ? aItem.m_itemQuantity : 1;
+
+        ProcessStatModifiers(itemData);
 
         if (aItem.HasExtendedData())
         {
             ProcessAttachments(aItem.m_itemSlotPart, aTargetList, itemData);
         }
 
-        aTargetList.PushBack(itemData);
+        if (isIconic)
+        {
+            // Force all iconic weapons to main list
+            m_saveData.m_playerItems.PushBack(itemData);
+        }
+        else
+        {
+            aTargetList.PushBack(itemData);
+        }
     }
 
-    void ProcessItem(const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList)
+    void ProcessItem(const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList, std::unordered_set<Red::TweakDBID>& aAddedIconics)
     {
         auto extendedItemData = CreateExtendedData(aItem.GetItemID());
 
-        AddItemToInventory(extendedItemData, aItem, aTargetList);
+        AddItemToInventory(extendedItemData, aItem, aTargetList, aAddedIconics);
+    }
+
+    void ProcessStatModifiers(RedItemData& aData)
+    {
+        const auto statsObjectId = m_statsSystemPtr->GetEntityHashFromItemId(aData.m_itemId);
+        auto modifiers = m_statsSystemPtr->GetStatModifiers(statsObjectId);
+
+        for (auto& modifier : modifiers)
+        {
+            if (!modifier)
+            {
+                continue;
+            }
+
+            if (modifier->statType == Red::game::data::StatType::Invalid)
+            {
+                continue;
+            }
+
+            aData.m_statModifiers.PushBack(std::move(modifier));
+        }
     }
 
     void LoadInventoryNew(cyberpunk::InventoryNode* const aInventory)
     {
+        std::unordered_set<Red::TweakDBID> addedIconics{};
+
         auto& inventoryLocal = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdLocal);
         auto& inventoryCarStash = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdCarStash);
 
@@ -998,12 +1121,12 @@ private:
 
         for (const auto& item : inventoryLocal.inventoryItems)
         {
-            ProcessItem(item, m_saveData.m_playerItems);
+            ProcessItem(item, m_saveData.m_playerItems, addedIconics);
         }
 
         for (const auto& item : inventoryCarStash.inventoryItems)
         {
-            ProcessItem(item, m_saveData.m_playerStashItems);
+            ProcessItem(item, m_saveData.m_playerStashItems, addedIconics);
         }
     }
 
@@ -1034,6 +1157,7 @@ private:
     PlayerSaveData m_saveData{};
 
     Red::TweakDB* m_tweakDb;
+    cyberpunk::StatsSystemNode* m_statsSystemPtr;
 
     RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
     RTTI_IMPL_ALLOCATOR();

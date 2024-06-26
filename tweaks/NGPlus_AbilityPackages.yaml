@@ -26,7 +26,7 @@ ArchetypeData.NGPlusAbilityGroup_Tanky:
 ArchetypeData.NGPlusAbilityGroup_Regen:
   $type: GameplayAbilityGroup
   abilities:
-    - Ability.HasPassiveHealthRegeneration
+    - Ability.HasStrongHealthRegeneration
     - Ability.HasLoweredHitReactions
     - Ability.HasPainEditor
 

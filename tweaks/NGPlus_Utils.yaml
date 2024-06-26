@@ -59,6 +59,25 @@ Ability.HasMidHealthRegeneration:
         statPoolType: "Health"
         modificationType: "Regeneration"
 
+Ability.HasStrongHealthRegeneration:
+  $type: GameplayAbility
+  abilityPackage:
+    effectors:
+      -
+        $type: ModifyStatPoolModifierEffector
+        prereqRecord: "Prereqs.AlwaysTruePrereq"
+        effectorClassName: "ModifyStatPoolModifierEffector"
+        poolModifier:
+          $type: PoolValueModifier
+          enabled: true
+          rangeBegin: 30.0
+          rangeEnd: 100.0
+          startDelay: 0.0
+          valuePerSec: 4
+          delayOnChange: false
+        statPoolType: "Health"
+        modificationType: "Regeneration"
+
 # Yes, I know Burondo wasn't one of the Ghosts
 # I also know Ghosts were Arasaka and Q115 Blackhand sure as fuck ain't Saka
 # It's a cool easter egg for those in the know

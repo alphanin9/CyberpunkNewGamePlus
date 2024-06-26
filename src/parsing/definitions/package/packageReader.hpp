@@ -66,7 +66,6 @@ private:
     std::span<Red::PackageHeader::Chunk> m_chunkHeaders;
     std::unordered_map<std::size_t, Red::Handle<Red::ISerializable>> m_objects;
 
-    // Cursor has copy ctor on purpose
     Red::CName ReadCNameInternal(FileCursor& aCursor) noexcept;
     virtual void ReadCName(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept final;
     virtual void ReadNodeRef(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept final;
@@ -80,12 +79,26 @@ private:
 public:
     bool m_readCruids;
 
+    // Cursor has copy ctor on purpose
     Package(FileCursor aCursor)
         : m_cursor(aCursor)
         , m_readCruids(false)
         , m_isRead(false)
+        , m_baseOffset(0)
     {
     }
+
+    Package() = default;
+    Package(Package&&) = default;
+
+    // Helper func - generally useful, resolves enum value based on name...
+    static bool ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aRet) noexcept;
+
+    // const char* is fine for this, enum value names are kept in CNamePool anyway...
+    static const char* GetEnumString(Red::CEnum* aEnum, std::int64_t aValue) noexcept;
+
+    // When default ctor is called...
+    void Init(FileCursor&& aCursor) noexcept;
 
     bool ReadPackage() noexcept;
 

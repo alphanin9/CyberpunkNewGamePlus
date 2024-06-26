@@ -18,35 +18,42 @@ public func GetOpticalCamoUpgradeChance() -> Float = UserConfig.GetOpticalCamoUp
 @if(ModuleExists("NGPlus.CustomConfig"))
 public func GetNetrunnerUpgradeChance() -> Float = UserConfig.GetNetrunnerUpgradeChance();
 
+// NOTE: Used to determine if you should start in the landfill or in V's room in Post-Heist start
+@if(ModuleExists("NGPlus.CustomConfig"))
+public func GetShouldFastForwardQ101Start() -> Bool = UserConfig.GetShouldFastForwardQ101Start();
 
 // NOTE: currently unused, will be used in the future to upgrade enemy dodge abilities
 @if(ModuleExists("NGPlus.CustomConfig"))
 public func GetDodgeUpgradeChance() -> Float = UserConfig.GetDodgeUpgradeChance();
 
 @if(!ModuleExists("NGPlus.CustomConfig"))
-public func GetFastUpgradeChance() -> Float = 77.0;
+public func GetFastUpgradeChance() -> Float = DefaultDifficultyConfig.GetFastUpgradeChance();
 
 @if(!ModuleExists("NGPlus.CustomConfig"))
-public func GetTankUpgradeChance() -> Float = 55.0;
+public func GetTankUpgradeChance() -> Float = DefaultDifficultyConfig.GetTankUpgradeChance();
 
 @if(!ModuleExists("NGPlus.CustomConfig"))
-public func GetRegenUpgradeChance() -> Float = 44.0;
+public func GetRegenUpgradeChance() -> Float = DefaultDifficultyConfig.GetRegenUpgradeChance();
 
 @if(!ModuleExists("NGPlus.CustomConfig"))
-public func GetOpticalCamoUpgradeChance() -> Float = 20.0;
+public func GetOpticalCamoUpgradeChance() -> Float = DefaultDifficultyConfig.GetOpticalCamoUpgradeChance();
 
 @if(!ModuleExists("NGPlus.CustomConfig"))
-public func GetNetrunnerUpgradeChance() -> Float = 50.0;
+public func GetNetrunnerUpgradeChance() -> Float = DefaultDifficultyConfig.GetNetrunnerUpgradeChance();
 
 @if(!ModuleExists("NGPlus.CustomConfig"))
-public func GetDodgeUpgradeChance() -> Float = 33.0;
+public func GetDodgeUpgradeChance() -> Float = DefaultDifficultyConfig.GetDodgeUpgradeChance();
+
+@if(!ModuleExists("NGPlus.CustomConfig"))
+public func GetShouldFastForwardQ101Start() -> Bool = DefaultDifficultyConfig.GetShouldFastForwardQ101Start();
 
 // Inherit your UserConfig from this to get default values
 public abstract class DefaultDifficultyConfig {
-    public static func GetFastUpgradeChance() -> Float = GetFastUpgradeChance();
-    public static func GetTankUpgradeChance() -> Float = GetTankUpgradeChance();
-    public static func GetRegenUpgradeChance() -> Float = GetRegenUpgradeChance();
-    public static func GetOpticalCamoUpgradeChance() -> Float = GetOpticalCamoUpgradeChance();
-    public static func GetNetrunnerUpgradeChance() -> Float = GetNetrunnerUpgradeChance();
-    public static func GetDodgeUpgradeChance() -> Float = GetDodgeUpgradeChance();
+    public static func GetFastUpgradeChance() -> Float = 77.0;
+    public static func GetTankUpgradeChance() -> Float = 55.0;
+    public static func GetRegenUpgradeChance() -> Float = 44.0;
+    public static func GetOpticalCamoUpgradeChance() -> Float = 20.0;
+    public static func GetNetrunnerUpgradeChance() -> Float = 50.0;
+    public static func GetDodgeUpgradeChance() -> Float = 33.0;
+    public static func GetShouldFastForwardQ101Start() -> Bool = false;
 }

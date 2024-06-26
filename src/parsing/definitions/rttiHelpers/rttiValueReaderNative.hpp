@@ -59,6 +59,36 @@ protected:
 
     void ReadDataBuffer(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept
     {
+        // NOTE: this is necessary because, unlike SDK RawBuffer dtor, game RawBuffer dtor does not check if buf allocator is valid...
+        // Since we already manage the memory of decompressed save data and we don't use classes after parser gets destructed, it should be fine
+        struct RawBufferAllocatorNoFree
+        {
+            virtual void sub_0()
+            {
+                // Do nothing, we don't know what this does...
+            }
+
+            virtual void Free(void* aPtr)
+            {
+                constexpr auto shouldLogFreeCalls = false;
+
+                if constexpr (shouldLogFreeCalls)
+                {
+                    PluginContext::Spew(std::format("RawBufferAllocatorNoFree::Free called, buf: {:#x}",
+                                                    reinterpret_cast<uintptr_t>(aPtr)));
+                }
+                // Do nothing, again...
+                // We clean up the memory anyway
+            }
+
+            virtual Red::Memory::IAllocator* GetAllocator()
+            {
+                return Red::Memory::RTTIAllocator::Get();
+            }
+
+            std::uint64_t m_unknown{};
+        };
+
         auto bufPointer = reinterpret_cast<Red::DataBuffer*>(aOut);
 
         const auto bufferSize = aCursor.readUInt();
@@ -68,22 +98,14 @@ protected:
             return;
         }
 
-        constexpr auto shouldTestDataBuffer = false;
+        auto& rawBuf = bufPointer->buffer;
 
-        if (shouldTestDataBuffer)
-        {
-            static const auto fnRawBufferCtor =
-                Red::UniversalRelocFunc<void*(__fastcall*)(Red::RawBuffer * aThis, int64_t aSize, int64_t aAlignment)>(
-                    1306265261u);
+        new (rawBuf.allocator) RawBufferAllocatorNoFree();
+        
+        rawBuf.data = aCursor.GetCurrentPtr();
+        rawBuf.size = bufferSize;
 
-            Red::RawBuffer tempBuffer{};
-
-            fnRawBufferCtor(&tempBuffer, bufferSize, 0u); // Arbitrary alignment...
-
-            aCursor.CopyTo(tempBuffer.data, bufferSize);
-
-            PluginContext::Spew(std::format("Buffer size: {}", bufferSize));
-        }
+        aCursor.offset += bufferSize;
     }
 
     virtual bool TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept

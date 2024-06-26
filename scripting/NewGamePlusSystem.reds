@@ -2,6 +2,7 @@ public native struct RedItemData {
     native let itemId: ItemID;
     native let itemQuantity: Int32;
     native let attachments: array<ItemID>;
+    native let statModifiers: array<ref<gameStatModifierData>>;
 }
 
 public native struct RedCraftInfo {
@@ -38,6 +39,9 @@ public native struct PlayerSaveData {
     native let playerVehicleGarage: array<TweakDBID>;
 
     native let knownRecipeTargetItems: array<RedCraftInfo>;
+
+    native let playerCyberwareCapacity: Float;
+    native let playerCarryCapacity: Float;
 }
 
 enum ENewGamePlusStartType {
