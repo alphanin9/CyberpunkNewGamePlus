@@ -32,7 +32,7 @@ Ability.HasWeakHealthRegeneration:
         poolModifier:
           $type: PoolValueModifier
           enabled: true
-          rangeBegin: 0.0
+          rangeBegin: 25.0
           rangeEnd: 100.0
           startDelay: 0.0
           valuePerSec: 0.66

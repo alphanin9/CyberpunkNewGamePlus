@@ -40,8 +40,8 @@ public native struct PlayerSaveData {
 
     native let knownRecipeTargetItems: array<RedCraftInfo>;
 
-    native let playerCyberwareCapacity: Float;
-    native let playerCarryCapacity: Float;
+    native let playerCyberwareCapacity: array<Float>;
+    native let playerCarryCapacity: array<Float>;
 }
 
 enum ENewGamePlusStartType {
