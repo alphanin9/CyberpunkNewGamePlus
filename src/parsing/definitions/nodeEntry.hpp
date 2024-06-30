@@ -52,7 +52,7 @@ namespace cyberpunk {
 		static NodeEntry FromCursor(FileCursor& fileCursor) {
 			NodeEntry ret{};
 
-			ret.name = fileCursor.ReadLengthPrefixedANSI();
+			ret.name = fileCursor.OptimizedReadLengthPrefixedANSI();
 			ret.nextId = fileCursor.readInt();
 			ret.childId = fileCursor.readInt();
 			ret.offset = fileCursor.readInt();

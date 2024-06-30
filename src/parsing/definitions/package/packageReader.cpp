@@ -1,6 +1,8 @@
 #include "../../../context/context.hpp"
 #include "packageReader.hpp"
 
+#include <RED4ext/Scripting/Natives/Generated/game/data/StatType.hpp>
+
 #include <unordered_map>
 
 // Currently unused, is meant to replace nativeScriptableReader...
@@ -8,26 +10,12 @@ namespace package
 {
 bool Package::ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aRet) noexcept
 {
-    // Slow, slow, slow...
-    // Maybe cache them into unordered_map per enum?
+    static EnumCache s_cache{};
 
-    // Not sure if this will work fine across script reloads... :P
-    static std::unordered_map<Red::CName, std::unordered_map<Red::CName, std::int64_t>> s_enumCache;
-
-    const auto enumName = aEnum->GetName();
-
-    if (s_enumCache.contains(enumName))
+    if (s_cache.Resolve(aEnum, aName, aRet))
     {
-        auto& enumValueMap = s_enumCache[enumName];
-
-        if (enumValueMap.contains(aName))
-        {
-            aRet = enumValueMap[aName];
-            return true;
-        }
+        return true;
     }
-
-    auto hasValue = false;
 
     aRet = aEnum->valueList.Back();
 
@@ -36,8 +24,7 @@ bool Package::ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t
         if (aEnum->hashList[i] == aName)
         {
             aRet = aEnum->valueList[i];
-            hasValue = true;
-            break;
+            return true;
         }
     }
 
@@ -46,14 +33,11 @@ bool Package::ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t
         if (aEnum->aliasList[i] == aName)
         {
             aRet = aEnum->aliasValueList[i];
-            hasValue = true;
-            break;
+            return true;
         }
     }
 
-    s_enumCache[enumName][aName] = aRet;
-
-    return hasValue;
+    return false;
 }
 
 const char* Package::GetEnumString(Red::CEnum* aEnum, std::int64_t aValue) noexcept
@@ -75,6 +59,40 @@ const char* Package::GetEnumString(Red::CEnum* aEnum, std::int64_t aValue) noexc
     }
 
     return "Invalid";
+}
+
+bool EnumCache::Resolve(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aValue) noexcept
+{
+    static const auto statTypes = Red::GetEnum<Red::game::data::StatType>();
+
+    if (aEnum != statTypes)
+    {
+        return false;
+    }
+
+    if (!m_map.contains(aName))
+    {
+        aValue = statTypes->valueList.Back();
+        return true;
+    }
+
+    aValue = m_map[aName];
+    return true;
+}
+
+EnumCache::EnumCache() noexcept
+{
+    static const auto statTypes = Red::GetEnum<Red::game::data::StatType>();
+
+    for (std::size_t i = 0u; i < statTypes->hashList.size; i++)
+    {
+        m_map.insert_or_assign(statTypes->hashList[i], statTypes->valueList[i]);
+    }
+
+    for (std::size_t i = 0u; i < statTypes->aliasList.size; i++)
+    {
+        m_map.insert_or_assign(statTypes->aliasList[i], statTypes->aliasValueList[i]);
+    }
 }
 
 Red::CName Package::ReadCNameInternal(FileCursor& aCursor) noexcept
@@ -301,7 +319,7 @@ Red::Handle<Red::ISerializable>* Package::GetChunkByTypeName(Red::CName aType) n
     }
 
     // How to MT this (potentially? as long as everything doesn't get turbo-fucked by race conditions ETC)? Make every TryReadValue call into a job closure?
-    // Can same prop be read several times?
+    // Can same prop/chunk be read several times?
     // Red::JobQueue readerQueue{};
 
     auto objHandle = ReadChunkById(chunkIndex);

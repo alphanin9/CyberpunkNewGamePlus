@@ -158,8 +158,8 @@ struct PlayerSaveData
 
     // NOTE: these do not account for perks like Edgerunner/whatever else... only shards
     // Whatever, we won't be overallocating CW cap anyway :P
-    float m_playerCyberwareCapacity{};
-    float m_playerCarryCapacity{};
+    Red::DynArray<float> m_playerCyberwareCapacity{};
+    Red::DynArray<float> m_playerCarryCapacity{};
 
     // Later maybe do Equipment-EX transfer too?
 
@@ -471,7 +471,7 @@ public:
         PluginContext::Spew(std::format("Time taken: {}", duration));
 
         m_saveData.m_isValid = true;
-         return true;
+        return true;
     }
 
     // Some users don't have LogChannel defined :P
@@ -549,11 +549,11 @@ private:
             {
                 if (stat->statType == StatType::Humanity)
                 {
-                    m_saveData.m_playerCyberwareCapacity += asConstant->value;
+                    m_saveData.m_playerCyberwareCapacity.PushBack(asConstant->value);
                 }
                 else if (stat->statType == StatType::CarryCapacity)
                 {
-                    m_saveData.m_playerCarryCapacity += asConstant->value;
+                    m_saveData.m_playerCarryCapacity.PushBack(asConstant->value);
                 }
             }
         }
@@ -1037,7 +1037,7 @@ private:
             aAddedIconics.insert(aItem.GetItemID().tdbid);
         }
 
-        constexpr auto testStatsOnWeapons = false;
+        constexpr auto testStatsOnWeapons = true;
 
         if constexpr (testStatsOnWeapons)
         {
@@ -1055,6 +1055,15 @@ private:
                 {
                     PluginContext::Spew("No stat modifiers on weapon!");
                 }
+
+                m_statsSystemPtr->DumpStatModifiersToConsole(statModifiers);
+
+                static const auto statTypes = Red::GetEnum<Red::game::data::StatType>();
+
+                for (auto i : m_statsSystemPtr->GetDisabledModifiers(statsObjectId))
+                {
+                    PluginContext::Spew(std::format("\tDisabled: {}", package::Package::GetEnumString(statTypes, static_cast<std::int64_t>(i))));
+                }
             }
         }
 
@@ -1070,12 +1079,20 @@ private:
             ProcessAttachments(aItem.m_itemSlotPart, aTargetList, itemData);
         }
 
-        if (isIconic)
-        {
-            // Force all iconic weapons to main list
-            m_saveData.m_playerItems.PushBack(itemData);
-        }
-        else
+        using namespace Red::game;
+        using Red::game::data::StatType;
+
+        auto isScalingBlocked = [](Red::Handle<StatModifierData_Deprecated>& aHandle) { 
+            return aHandle && aHandle->statType == StatType::ScalingBlocked;
+        };
+
+        //if (isIconic && std::any_of(itemData.m_statModifiers.begin(), itemData.m_statModifiers.end(), isScalingBlocked))
+        //{
+        //    // Force all iconic weapons to main list
+        //    // Should probably only put it there if stat modifiers has the ScalingBlocked modifier - that seems to really break shit in stash...
+        //    m_saveData.m_playerItems.PushBack(itemData);
+        //}
+        //else
         {
             aTargetList.PushBack(itemData);
         }

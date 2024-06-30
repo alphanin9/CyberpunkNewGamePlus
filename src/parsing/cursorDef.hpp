@@ -221,6 +221,29 @@ struct FileCursor {
         return ret;
     }
 
+    // WILL ONLY WORK ON ANSI STRINGS!!!
+    std::string OptimizedReadLengthPrefixedANSI()
+    {
+        int prefix = readVlqInt32();
+        std::size_t length = std::abs(int(prefix));
+
+        if (length > 0)
+        {
+            if (prefix > 0)
+            {
+                offset += length * sizeof(std::uint16_t);
+                return "";
+            }
+            else
+            {
+                std::string ret(reinterpret_cast<char*>(GetCurrentPtr()), length);
+                offset += length;
+
+                return ret;
+            }
+        }
+    }
+
     std::string ReadLengthPrefixedANSI()
     {
         auto buffer = readLengthPrefixedString();

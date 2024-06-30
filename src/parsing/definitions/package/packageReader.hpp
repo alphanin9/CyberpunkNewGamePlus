@@ -49,6 +49,19 @@ struct PackageHeader
     }
 };
 
+class EnumCache
+{
+private:
+    // NOTE: we only store the biggest used enum - gamedataStatType, looking up through it causes a bunch of perf loss :(
+    // No point wasting map lookups on smth small, we have cache for that - don't we?
+    // Plus, this should be thread-safe, I think...
+    using EnumValueMap = std::unordered_map<Red::CName, std::int64_t>;
+    EnumValueMap m_map;
+public:
+    EnumCache() noexcept;
+    bool Resolve(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aValue) noexcept;
+};
+
 // Generic package parser for packages found in saves...
 class Package : public redRTTI::native::NativeReader
 {

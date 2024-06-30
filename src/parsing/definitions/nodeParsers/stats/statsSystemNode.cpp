@@ -26,7 +26,7 @@ Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetStatModifi
 
     while (bufCursor.getRemaining())
     {
-        CName className = bufCursor.ReadLengthPrefixedANSI().c_str();
+        CName className = bufCursor.OptimizedReadLengthPrefixedANSI().c_str();
 
         const auto statName = bufCursor.ReadCNameHash();
         const auto modifierType = bufCursor.readValue<game::StatModifierType>();
@@ -78,8 +78,8 @@ Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetStatModifi
         }
         case CName("gameCurveStatModifier").hash:
         {
-            CName curveName = bufCursor.ReadLengthPrefixedANSI().c_str();
-            CName colName = bufCursor.ReadLengthPrefixedANSI().c_str();
+            CName curveName = bufCursor.OptimizedReadLengthPrefixedANSI().c_str();
+            CName colName = bufCursor.OptimizedReadLengthPrefixedANSI().c_str();
 
             const auto curveStatName = bufCursor.ReadCNameHash();
 
@@ -117,6 +117,21 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 
     m_package.Init(aCursor.CreateSubCursor(packageSize));
     m_package.ReadPackage();
+
+    auto handlePtr = m_package.GetChunkByTypeName("gameStatsStateMapStructure");
+
+    if (!handlePtr)
+    {
+        return;
+    }
+
+    // Ugly, but inheritance is fucked on this struct...
+    auto asStatsStateMap = reinterpret_cast<Red::game::StatsStateMapStructure*>(handlePtr->GetPtr());
+
+    for (std::size_t i = 0u; i < asStatsStateMap->keys.size; i++)
+    {
+        m_statsMap.insert_or_assign(asStatsStateMap->keys[i].entityHash, &asStatsStateMap->values[i]); 
+    }
     
     constexpr auto shouldDumpPlayerStatModifiers = false;
 
@@ -274,41 +289,24 @@ void StatsSystemNode::DumpStatModifiersToConsole(
 
 Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> StatsSystemNode::GetStatModifiers(std::uint64_t aEntityHash) noexcept
 {
-    auto handlePtr = m_package.GetChunkByTypeName("gameStatsStateMapStructure");
-
-    if (!handlePtr)
+    if (!m_statsMap.contains(aEntityHash))
     {
         return {};
     }
-
-    auto statsMap = reinterpret_cast<Red::game::StatsStateMapStructure*>(handlePtr->GetPtr());
-
-    std::size_t entityIndex{};
-
-    for (; entityIndex < statsMap->keys.size; entityIndex++)
-    {
-        if (statsMap->keys[entityIndex].entityHash == aEntityHash)
-        {
-            break;
-        }
-    }
-
-    if (entityIndex == statsMap->keys.size)
-    {
-        return {};
-    }
-
-    auto valueBuffer = &statsMap->values[entityIndex].modifiersBuffer;
-
-    constexpr auto shouldDumpAllStatsForID = true;
-
-    auto modifiers = GetStatModifiersInternal(valueBuffer);
-    if constexpr (shouldDumpAllStatsForID)
-    {
-        PluginContext::Spew("Modifiers: ");
-        DumpStatModifiersToConsole(modifiers);
-    }
+    
+    auto savedStatsDataPtr = m_statsMap[aEntityHash];
+    auto modifiers = GetStatModifiersInternal(&savedStatsDataPtr->modifiersBuffer);
 
     return modifiers;
+}
+
+Red::DynArray<Red::game::data::StatType> StatsSystemNode::GetDisabledModifiers(std::uint64_t aEntityHash) noexcept 
+{
+    if (!m_statsMap.contains(aEntityHash))
+    {
+        return {};
+    }
+
+    return m_statsMap[aEntityHash]->inactiveStats;
 }
 }

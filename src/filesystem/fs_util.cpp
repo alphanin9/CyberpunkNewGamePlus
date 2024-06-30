@@ -14,26 +14,25 @@
 
 #include "fs_util.hpp"
 
+#include "../context/context.hpp"
+
 namespace files
 {
 std::filesystem::path GetCpSaveFolder()
 {
-    PWSTR savedGamesPath = nullptr;
+    PWSTR userProfilePath{};
 
-    const auto getSavedGamesResult =
-        SHGetKnownFolderPath(FOLDERID_SavedGames, KF_FLAG_CREATE, nullptr, &savedGamesPath);
-
-    if (!savedGamesPath)
+    // NOTE: CP2077 doesn't actually seem to use FOLDERID_SavedGames - does this current method play nice with other language versions of Windows?
+    SHGetKnownFolderPath(FOLDERID_Profile, KF_FLAG_CREATE, nullptr, &userProfilePath);
+    if (!userProfilePath)
     {
         return std::filesystem::path{};
     }
 
-    auto path = std::filesystem::path{savedGamesPath};
+    static const std::filesystem::path basePath = userProfilePath;
+    static const std::filesystem::path finalPath = basePath / "Saved Games" / "CD Projekt Red" / "Cyberpunk 2077";
 
-    path /= L"CD Projekt Red";
-    path /= L"Cyberpunk 2077";
-
-    return path;
+    return finalPath;
 }
 
 constexpr auto minSupportedGameVersion = 2000;
@@ -66,6 +65,13 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 {
     static const auto basePath = GetCpSaveFolder();
 
+    constexpr auto shouldSpewSavePathForGoldy = false;
+
+    if constexpr (shouldSpewSavePathForGoldy)
+    {
+        PluginContext::Spew(std::format("Processing save {}...", (basePath / aSaveName / "metadata.9.json").string()));
+    }
+
     if (aSaveName.starts_with("EndGameSave"))
     {
         // Hack, not sure if necessary...
@@ -78,6 +84,10 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     if (!std::filesystem::is_regular_file(metadataPath, ec))
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("Metadata is not regular file!");
+        }
         return false;
     }
 
@@ -85,6 +95,10 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     if (padded.error() != simdjson::SUCCESS)
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("Failed to load metadata into padded string!");
+        }
         return false;
     }
 
@@ -93,16 +107,28 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     if (parser.parse(padded.value()).get(document) != simdjson::SUCCESS)
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("Failed to parse metadata!");
+        }
         return false;
     }
 
     if (!document.is_object())
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("Metadata is not object!");
+        }
         return false;
     }
 
     if (!document.at_key("RootType").is_string())
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("Missing RootType!");
+        }
         return false;
     }
     
@@ -110,6 +136,10 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     if (document.at_key("Data").at_key("metadata").get(saveMetadata) != simdjson::SUCCESS)
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("Inner metadata not found!");
+        }
         return false;
     }
 
@@ -120,11 +150,19 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     if (saveMetadata.at_key("gameVersion").get_int64().get(gameVersion) != simdjson::SUCCESS)
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("Bad game version!");
+        }
         return false;
     }
 
     if (minSupportedGameVersion > gameVersion)
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("Save is too old!");
+        }
         return false;
     }
 
@@ -134,6 +172,10 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     if (saveMetadata.at_key("playthroughID").get_string().get(playthroughId) != simdjson::SUCCESS)
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("playthroughID not found!");
+        }
         return false;
     }
 
@@ -148,6 +190,10 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     if (saveMetadata.at_key("finishedQuests").get_string().get(questsDone) != simdjson::SUCCESS)
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("finishedQuests not found!");
+        }
         return false;
     }
 
@@ -155,9 +201,13 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
     auto questsSplitRange = std::views::split(questsDone, " "sv);
 
     std::unordered_set<std::string_view> questsSet(questsSplitRange.begin(), questsSplitRange.end());
-    
+
     if (questsSet.contains("q104") && questsSet.contains("q110") && questsSet.contains("q112"))
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("Necessary quests done, NG+ can be done!");
+        }
         return true;
     }
 
@@ -167,10 +217,14 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     if (!saveMetadata.at_key("facts").get_array().get(importantFacts) != simdjson::SUCCESS)
     {
+        if constexpr (shouldSpewSavePathForGoldy)
+        {
+            PluginContext::Spew("Important facts not found!");
+        }
         return false;
     }
 
-    for (auto fact : importantFacts)
+    for (const auto& fact : importantFacts)
     {
         std::string_view factValueString{};
 
@@ -185,6 +239,10 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
         }
     }
 
+    if constexpr (shouldSpewSavePathForGoldy)
+    {
+        PluginContext::Spew("Save does not meet criteria!");
+    }
     return false;
 }
 

@@ -98,5 +98,7 @@ mod\quest\newgameplus\setbandageoutfit.questphase
 mod\quest\newgameplus\SetBandageOutfit.questphase
 mod\quest\newgameplus\setplayerprogression.questphase
 mod\quest\newgameplus\SetPlayerProgression.questphase
+mod\quest\newgameplus\vrtutorialhack\q000vrtutorial.questphase
+mod\quest\newgameplus\vrTutorialHack\Q000VRTutorial.questphase
 mod\quest\newgameplus\vrtutorialhack\vrtutorialforq001start.questphase
 mod\quest\newgameplus\vrTutorialHack\VRTutorialForQ001Start.questphase
