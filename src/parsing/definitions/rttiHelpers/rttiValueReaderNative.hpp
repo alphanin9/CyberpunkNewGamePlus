@@ -44,6 +44,15 @@ protected:
 
         arrayType->Resize(aOut, arraySize);
 
+        // Optimization: simple types can just be copied... (I think?)
+        if (innerType->GetType() == Red::ERTTIType::Fundamental)
+        {
+            auto begin = arrayType->GetElement(aOut, 0);
+            aCursor.CopyTo(begin, arraySize * innerType->GetSize());
+
+            return true;
+        }
+
         for (auto i = 0; i < arraySize; i++)
         {
             // Array elements are constructed on resize, we don't need to create a new instance
@@ -136,8 +145,30 @@ protected:
             }
             break;
         case ERTTIType::Fundamental:
-            aCursor.CopyTo(aOut, aPropType->GetSize());
+        {
+            const auto propSize = aPropType->GetSize();
+
+            switch (propSize)
+            {
+            case 1u:
+                *reinterpret_cast<std::int8_t*>(aOut) = aCursor.readByte();
+                break;
+            case 2u:
+                *reinterpret_cast<std::int16_t*>(aOut) = aCursor.readShort();
+                break;
+            case 4u:
+                *reinterpret_cast<std::int32_t*>(aOut) = aCursor.readInt();
+                break;
+            case 8u:
+                *reinterpret_cast<std::int64_t*>(aOut) = aCursor.readInt64();
+                break;
+            default:
+                aCursor.CopyTo(aOut, propSize);
+                break;
+            }
+
             return true;
+        }
         case ERTTIType::Class:
             return TryReadClass(aCursor, aOut, aPropType);
         case ERTTIType::Array:

@@ -87,15 +87,19 @@ private:
     virtual bool TryReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept final;
     virtual bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept final;
 
-    Red::Handle<Red::ISerializable> ReadChunkById(std::size_t aId) noexcept;
+    bool TryReadRootClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept;
+
+    Red::Handle<Red::ISerializable> ReadChunkById(std::size_t aId, bool aRoot) noexcept;
 
 public:
     bool m_readCruids;
+    bool m_useRootClassOptimization;
 
     // Cursor has copy ctor on purpose
     Package(FileCursor aCursor)
         : m_cursor(aCursor)
         , m_readCruids(false)
+        , m_useRootClassOptimization(false)
         , m_isRead(false)
         , m_baseOffset(0)
     {

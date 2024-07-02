@@ -1,8 +1,10 @@
 #include "../../../context/context.hpp"
 #include "packageReader.hpp"
 
+#include <RED4ext/Scripting/Natives/Generated/game/StatIDType.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/StatType.hpp>
 
+#include <chrono>
 #include <unordered_map>
 
 // Currently unused, is meant to replace nativeScriptableReader...
@@ -63,7 +65,32 @@ const char* Package::GetEnumString(Red::CEnum* aEnum, std::int64_t aValue) noexc
 
 bool EnumCache::Resolve(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aValue) noexcept
 {
+    // NOTE: another very often hit one is StatIDType
     static const auto statTypes = Red::GetEnum<Red::game::data::StatType>();
+    static const auto statIdTypes = Red::GetEnum<Red::game::StatIDType>();
+
+    if (aEnum == statIdTypes)
+    {
+        // Red::game::StatIDType::EntityID
+        // Red::game::StatIDType::ItemID
+        // Red::game::StatIDType::Invalid
+
+        constexpr Red::CName entityId = "EntityID";
+        constexpr Red::CName itemId = "ItemID";
+
+        switch (aName.hash)
+        {
+        case entityId.hash:
+            aValue = static_cast<std::int64_t>(Red::game::StatIDType::EntityID);
+            return true;
+        case itemId.hash:
+            aValue = static_cast<std::int64_t>(Red::game::StatIDType::ItemID);
+            return true;
+        default:
+            aValue = static_cast<std::int64_t>(Red::game::StatIDType::Invalid);
+            return true;
+        }
+    }
 
     if (aEnum != statTypes)
     {
@@ -147,7 +174,7 @@ bool Package::TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::
 
     auto handlePtr = reinterpret_cast<Red::Handle<Red::ISerializable>*>(aOut);
 
-    auto chunkHandle = ReadChunkById(chunkId);
+    auto chunkHandle = ReadChunkById(chunkId, false);
 
     handlePtr->Swap(chunkHandle);
 
@@ -174,16 +201,20 @@ RED4EXT_ASSERT_OFFSET(PackageFieldDescriptor, m_nameId, 0);
 RED4EXT_ASSERT_OFFSET(PackageFieldDescriptor, m_typeId, 2);
 RED4EXT_ASSERT_OFFSET(PackageFieldDescriptor, m_offset, 4);
 
-bool Package::TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept
+bool Package::TryReadRootClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept
 {
     auto classType = static_cast<Red::CClass*>(aType);
 
     const auto baseOffset = aCursor.offset;
     const auto fieldCount = aCursor.readUShort();
 
+    // Mostly a copy of TryReadClass with the difference of using MT for property reading...
+
+    Red::JobQueue readerQueue{};
+
     for (auto desc : aCursor.ReadSpan<PackageFieldDescriptor>(fieldCount))
     {
-        const auto propData = classType->GetProperty(m_names.at(desc.m_nameId));
+        const auto propData = classType->GetProperty(m_names[desc.m_nameId]);
 
         // No prop...
         if (!propData)
@@ -191,7 +222,75 @@ bool Package::TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::C
             continue;
         }
 
-        const auto propTypeExpected = PluginContext::m_rtti->GetType(m_names.at(desc.m_typeId));
+        // Don't use .at(), we're noexcept anyway - no difference between segfault and abort()
+        const auto propTypeExpected = PluginContext::m_rtti->GetType(m_names[desc.m_typeId]);
+
+        if (propData->type != propTypeExpected)
+        {
+            auto isCompatible = false;
+
+            // NOTE: we don't resolve wrefs, so we don't care about type mismatches there...
+            if (propTypeExpected && propData->type->GetType() == Red::ERTTIType::Handle)
+            {
+                auto asHandle = static_cast<Red::CRTTIHandleType*>(propData->type);
+                auto asHandleExpected = static_cast<Red::CRTTIHandleType*>(propTypeExpected);
+
+                isCompatible =
+                    static_cast<Red::CClass*>(asHandleExpected->GetInnerType())->IsA(asHandle->GetInnerType());
+            }
+
+            if (!isCompatible)
+            {
+                continue;
+            }
+        }
+
+        Red::JobQueue reader{};
+
+        aCursor.seekTo(baseOffset + desc.m_offset);
+        FileCursor propCursor{aCursor.GetCurrentPtr()};
+
+        auto propPtr = propData->GetValuePtr<void>(aOut);
+
+        reader.Dispatch(
+            [this, propCursor, propPtr, propTypeExpected] { 
+                auto cursorCpy = propCursor;
+                this->TryReadValue(cursorCpy, propPtr, propTypeExpected);
+            });
+
+        readerQueue.Wait(reader.Capture());
+    }
+
+    Red::WaitForQueue(readerQueue, std::chrono::seconds(5));
+
+    return true;
+}
+
+bool Package::TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept
+{
+    // NOTE:
+    // I do not believe this can be multi-threaded with any luck
+    // The issue lies with arrays
+    // We don't know the final size of whatever we're reading before we actually read it
+    // Thus we run into unfixable (as far as I can guess) issues...
+
+    auto classType = static_cast<Red::CClass*>(aType);
+
+    const auto baseOffset = aCursor.offset;
+    const auto fieldCount = aCursor.readUShort();
+
+    for (auto desc : aCursor.ReadSpan<PackageFieldDescriptor>(fieldCount))
+    {
+        const auto propData = classType->GetProperty(m_names[desc.m_nameId]);
+
+        // No prop...
+        if (!propData)
+        {
+            continue;
+        }
+
+        // Don't use .at(), we're noexcept anyway - no difference between segfault and abort()
+        const auto propTypeExpected = PluginContext::m_rtti->GetType(m_names[desc.m_typeId]);
 
         if (propData->type != propTypeExpected)
         {
@@ -217,7 +316,7 @@ bool Package::TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::C
 
         auto propPtr = propData->GetValuePtr<void>(aOut);
 
-        if (!TryReadValue(aCursor, propPtr, propTypeExpected))
+        if (!this->TryReadValue(aCursor, propPtr, propTypeExpected))
         {
             PluginContext::Error(std::format("NativeScriptableReader::TryReadClass, failed to read prop {}::{}",
                                              classType->GetName().ToString(), propData->name.ToString()));
@@ -227,16 +326,26 @@ bool Package::TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::C
     return true;
 }
 
-Red::Handle<Red::ISerializable> Package::ReadChunkById(std::size_t aId) noexcept
+Red::Handle<Red::ISerializable> Package::ReadChunkById(std::size_t aId, bool aRoot) noexcept
 {
     // Note: maybe multi-thread this?
     auto header = m_chunkHeaders[aId];
 
     m_cursor.seekTo(m_baseOffset + header.offset);
 
-    auto handle = Red::MakeScriptedHandle(m_names.at(header.typeID));
+    auto handle = Red::MakeScriptedHandle(m_names[header.typeID]);
+    auto ret = false;
+
+    if (aRoot)
+    {
+        ret = TryReadRootClass(m_cursor, handle.GetPtr(), handle->GetType());
+    }
+    else
+    {
+        ret = TryReadClass(m_cursor, handle.GetPtr(), handle->GetType());
+    }
     
-    if (!TryReadClass(m_cursor, handle.GetPtr(), handle->GetType()))
+    if (!ret)
     {
         PluginContext::Error(std::format("Package::ReadChunkById failed reading chunk {}!", aId));
     }
@@ -285,20 +394,19 @@ bool Package::ReadPackage() noexcept
 
 Red::Handle<Red::ISerializable>* Package::GetChunkByTypeName(Red::CName aType) noexcept
 {
-    std::size_t chunkIndex = std::numeric_limits<std::size_t>::max();
+    std::size_t chunkIndex = 0;
 
-    for (std::size_t i = 0; i < m_chunkHeaders.size(); i++)
+    for (; chunkIndex < m_chunkHeaders.size(); chunkIndex++)
     {
-        auto header = m_chunkHeaders[i];
+        auto header = m_chunkHeaders[chunkIndex];
 
-        if (m_names.at(header.typeID) == aType)
+        if (m_names[header.typeID] == aType)
         {
-            chunkIndex = i;
             break;
         }
     }
 
-    if (chunkIndex == std::numeric_limits<std::size_t>::max())
+    if (chunkIndex == m_chunkHeaders.size())
     {
         return nullptr;
     }
@@ -320,9 +428,11 @@ Red::Handle<Red::ISerializable>* Package::GetChunkByTypeName(Red::CName aType) n
 
     // How to MT this (potentially? as long as everything doesn't get turbo-fucked by race conditions ETC)? Make every TryReadValue call into a job closure?
     // Can same prop/chunk be read several times?
+    // NOTE: issue is very different and not really solvable
+    // Root object could potentially have MT, but nothing else (otherwise arrays etc. get fucked)!
     // Red::JobQueue readerQueue{};
 
-    auto objHandle = ReadChunkById(chunkIndex);
+    auto objHandle = ReadChunkById(chunkIndex, m_useRootClassOptimization);
 
     m_objects.insert(std::make_pair(chunkIndex, std::move(objHandle)));
 

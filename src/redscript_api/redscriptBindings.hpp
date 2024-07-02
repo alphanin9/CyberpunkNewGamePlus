@@ -6,8 +6,8 @@
 #include "../filesystem/fs_util.hpp"
 #include "../parsing/fileReader.hpp"
 
-#include "../parsing/definitions/nodeParsers/parserHelper.hpp"
 #include "../parsing/definitions/nodeParsers/inventory/inventoryNode.hpp"
+#include "../parsing/definitions/nodeParsers/parserHelper.hpp"
 #include "../parsing/definitions/nodeParsers/persistency/persistencySystemNode.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/scriptableContainerNode.hpp"
 #include "../parsing/definitions/nodeParsers/stats/statsSystemNode.hpp"
@@ -20,9 +20,9 @@
 
 #include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
 
+#include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/craftBook.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/equipmentSystem.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/playerDevelopmentData.hpp"
-#include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/craftBook.hpp"
 
 #include <chrono>
 
@@ -31,21 +31,21 @@
 // NOT A GOOD IDEA TO HAVE IN A HEADER
 // But who cares?
 
+using scriptable::native::CraftBook::CraftBook;
 using scriptable::native::EquipmentSystem::EquipmentSystemPlayerData;
 using scriptable::native::PlayerDevelopment::PlayerDevelopmentData;
-using scriptable::native::CraftBook::CraftBook;
 
 // Enums
 using scriptable::native::PlayerDevelopment::AttributeDataType;
 using scriptable::native::PlayerDevelopment::EspionageMilestonePerks;
 
 // Wrappers
+using scriptable::native::CraftBook::ItemRecipe;
 using scriptable::native::PlayerDevelopment::SAttribute;
 using scriptable::native::PlayerDevelopment::SAttributeData;
 using scriptable::native::PlayerDevelopment::SDevelopmentPoints;
 using scriptable::native::PlayerDevelopment::SNewPerk;
 using scriptable::native::PlayerDevelopment::SProficiency;
-using scriptable::native::CraftBook::ItemRecipe;
 
 namespace redscript
 {
@@ -131,7 +131,7 @@ struct PlayerSaveData
     // in native or on the Redscript side?
     Red::DynArray<RedItemData> m_playerItems{};
     Red::DynArray<RedItemData> m_playerStashItems{};
-    
+
     Red::DynArray<RedCraftInfo> m_knownRecipeTargetItems{};
 
     // Most distinctive cyberware needs to be equipped
@@ -247,7 +247,6 @@ inline constexpr auto Q003ChipCrackedFunds = Red::TweakDBID("Items.q003_chip_cra
 
 inline constexpr auto CyberdeckSplinter = Red::TweakDBID("Items.CyberdeckSplinter");
 
-
 inline bool IsForbidden(Red::TweakDBID aId)
 {
     // Disgusting
@@ -255,10 +254,9 @@ inline bool IsForbidden(Red::TweakDBID aId)
            aId == PersonalLink2 || aId == MaTppHead || aId == WaTppHead || aId == FppHead || aId == HolsteredFists ||
            aId == MQ024DataCarrier || aId == Skippy || aId == SkippyPostQuest || aId == PresetSkippy ||
            aId == PresetSkippyPostQuest || aId == SaburoDataCarrier || aId == SaburoDataCarrierCracked ||
-           aId == Q003Chip || aId == Q003ChipCracked || aId == Q003ChipCrackedFunds ||
-           aId == CyberdeckSplinter;
+           aId == Q003Chip || aId == Q003ChipCracked || aId == Q003ChipCrackedFunds || aId == CyberdeckSplinter;
 }
-};
+}; // namespace BlacklistedTDBIDs
 
 namespace redscript
 {
@@ -299,7 +297,7 @@ public:
         // Vtable index 62
         // Sig: 48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 33 ED B8
         constexpr auto addQuestHash = 1617892594u;
-        
+
         // Maybe check if EP1 is already running? Eh, the Redscript side already does...
 
         static const auto fnAddQuest = Red::UniversalRelocFunc<void(__fastcall*)(
@@ -357,7 +355,7 @@ public:
 
         // We don't need sorting, the game already sorts the saves before passing them to Redscript
         auto& saveList = *aSaves;
-        
+
         std::unordered_set<std::uint64_t> playthroughIds{};
 
         Red::DynArray<int> returnedData{};
@@ -381,10 +379,10 @@ public:
             }
 
             playthroughIds.insert(hash);
-            
+
             returnedData.PushBack(i);
         }
-        
+
         return returnedData;
     }
 
@@ -415,6 +413,7 @@ public:
             m_tweakDb = Red::TweakDB::Get();
 
             // Needs to be shared across several transferrers :P
+            // NOTE: maybe error check this? Eh, shouldn't fail...
             m_statsSystemPtr = parser.LookupNodeData<cyberpunk::StatsSystemNode>();
 
             if (const auto inventory = parser.LookupNodeData<cyberpunk::InventoryNode>())
@@ -426,7 +425,8 @@ public:
             {
                 // Vehicle garage can technically not be present in a savegame
 
-                if (auto garageComponent = persistencySystem->LookupInstanceAs<Red::GarageComponentPS>("vehicleGarageComponentPS"))
+                if (auto garageComponent =
+                        persistencySystem->LookupInstanceAs<Red::GarageComponentPS>("vehicleGarageComponentPS"))
                 {
                     LoadGarageNative(garageComponent);
                 }
@@ -484,11 +484,13 @@ public:
     {
         PluginContext::Error(aStr->c_str());
     }
+
 private:
     void HandleUselessStatPoints()
     {
         // This logic is fucked and results in too many added perk points...
         // Figure it out later
+        // NVM, wasn't the fault of this - was the fault of proficiency effectors...
         constexpr auto minAttributeValue = 3;
         constexpr auto attributeCount = 5;
 
@@ -547,11 +549,19 @@ private:
             // Maybe it would be better to have a DynArray of added stat mods?
             if (const auto& asConstant = Red::Cast<ConstantStatModifierData_Deprecated>(stat))
             {
-                if (stat->statType == StatType::Humanity)
+                constexpr auto arbitraryBigStatValue = 300.f; // Should be big enough
+                if (asConstant->value > arbitraryBigStatValue)
+                {
+                    // Old NG+ added really big carry cap/humanity modifiers
+                    // This should filter them out...
+                    continue;
+                }
+
+                if (asConstant->statType == StatType::Humanity)
                 {
                     m_saveData.m_playerCyberwareCapacity.PushBack(asConstant->value);
                 }
-                else if (stat->statType == StatType::CarryCapacity)
+                else if (asConstant->statType == StatType::CarryCapacity)
                 {
                     m_saveData.m_playerCarryCapacity.PushBack(asConstant->value);
                 }
@@ -566,19 +576,21 @@ private:
         auto pSaveData = &m_saveData;
 
         const auto developmentPointIterator = [pSaveData](SDevelopmentPoints aDevPoints)
-        { 
+        {
             auto spentCount = aDevPoints.GetSpent();
             auto unspentCount = aDevPoints.GetUnspent();
 
+            using Red::game::data::DevelopmentPointType;
+
             switch (aDevPoints.GetType())
             {
-            case Red::gamedataDevelopmentPointType::Espionage: // Relic
+            case DevelopmentPointType::Espionage: // Relic
                 pSaveData->m_playerRelicPoints += unspentCount;
                 break;
-            case Red::gamedataDevelopmentPointType::Attribute:
+            case DevelopmentPointType::Attribute:
                 pSaveData->m_playerAttributePoints += unspentCount;
                 break;
-            case Red::gamedataDevelopmentPointType::Primary: // Perks
+            case DevelopmentPointType::Primary: // Perks
                 pSaveData->m_playerPerkPoints += unspentCount;
                 break;
             default:
@@ -588,11 +600,11 @@ private:
 
         aPlayerDevelopmentData.IterateOverDevPoints(developmentPointIterator);
 
-        const auto attributeDataIterator = [pSaveData](SAttributeData aAttributeData) 
-        { 
+        const auto attributeDataIterator = [pSaveData](SAttributeData aAttributeData)
+        {
             auto isEspionage = aAttributeData.GetType() == AttributeDataType::EspionageAttributeData;
 
-            const auto newPerkIterator = [pSaveData, isEspionage](SNewPerk aNewPerk) 
+            const auto newPerkIterator = [pSaveData, isEspionage](SNewPerk aNewPerk)
             {
                 auto currLevel = aNewPerk.GetCurrLevel();
 
@@ -617,31 +629,31 @@ private:
 
         aPlayerDevelopmentData.IterateOverAttributesData(attributeDataIterator);
 
-        const auto proficiencyIterator = [pSaveData](SProficiency aProficiency) 
+        const auto proficiencyIterator = [pSaveData](SProficiency aProficiency)
         {
             const auto currLevel = aProficiency.GetCurrentLevel();
-            using Red::gamedataProficiencyType;
+            using Red::game::data::ProficiencyType;
             switch (aProficiency.GetType())
             {
-            case gamedataProficiencyType::Level:
+            case ProficiencyType::Level:
                 pSaveData->m_playerLevel = std::clamp(currLevel, 1, 50);
                 break;
-            case gamedataProficiencyType::StreetCred:
+            case ProficiencyType::StreetCred:
                 pSaveData->m_playerStreetCred = currLevel;
                 break;
-            case gamedataProficiencyType::StrengthSkill:
+            case ProficiencyType::StrengthSkill:
                 pSaveData->m_playerBodySkillLevel = currLevel;
                 break;
-            case gamedataProficiencyType::ReflexesSkill:
+            case ProficiencyType::ReflexesSkill:
                 pSaveData->m_playerReflexSkillLevel = currLevel;
                 break;
-            case gamedataProficiencyType::TechnicalAbilitySkill:
+            case ProficiencyType::TechnicalAbilitySkill:
                 pSaveData->m_playerTechSkillLevel = currLevel;
                 break;
-            case gamedataProficiencyType::IntelligenceSkill:
+            case ProficiencyType::IntelligenceSkill:
                 pSaveData->m_playerIntelligenceSkillLevel = currLevel;
                 break;
-            case gamedataProficiencyType::CoolSkill:
+            case ProficiencyType::CoolSkill:
                 pSaveData->m_playerCoolSkillLevel = currLevel;
                 break;
             }
@@ -649,27 +661,27 @@ private:
 
         aPlayerDevelopmentData.IterateOverProficiencies(proficiencyIterator);
 
-        const auto attributeIterator = [pSaveData](SAttribute aAttribute) 
+        const auto attributeIterator = [pSaveData](SAttribute aAttribute)
         {
             const auto currLevel = aAttribute.GetValue();
 
-            using Red::gamedataStatType;
+            using Red::game::data::StatType;
 
             switch (aAttribute.GetAttributeName())
             {
-            case gamedataStatType::Strength:
+            case StatType::Strength:
                 pSaveData->m_playerBodyAttribute = currLevel;
                 break;
-            case gamedataStatType::Reflexes:
+            case StatType::Reflexes:
                 pSaveData->m_playerReflexAttribute = currLevel;
                 break;
-            case gamedataStatType::TechnicalAbility:
+            case StatType::TechnicalAbility:
                 pSaveData->m_playerTechAttribute = currLevel;
                 break;
-            case gamedataStatType::Intelligence:
+            case StatType::Intelligence:
                 pSaveData->m_playerIntelligenceAttribute = currLevel;
                 break;
-            case gamedataStatType::Cool:
+            case StatType::Cool:
                 pSaveData->m_playerCoolAttribute = currLevel;
                 break;
             }
@@ -690,13 +702,18 @@ private:
             return;
         }
 
-        using Red::gamedataEquipmentArea;
+        using Red::game::data::EquipmentArea;
 
         for (auto& area : loadoutData->equipAreas)
         {
             switch (area.areaType)
             {
-            case gamedataEquipmentArea::EyesCW:
+            case EquipmentArea::EyesCW:
+                if (m_saveData.m_playerEquippedKiroshis.IsValid())
+                {
+                    break;
+                }
+
                 for (auto& equippedItemData : area.equipSlots)
                 {
                     // We need to get rid of the cybermask
@@ -707,14 +724,7 @@ private:
                         continue;
                     }
 
-                    // Check if the CW exists at all (sanity)
-                    auto tweakRecord = m_tweakDb->GetRecord(itemId.tdbid);
-
-                    if (!tweakRecord)
-                    {
-                        continue;
-                    }
-
+                    // NOTE: no need to check for CW record existence, we know it exists if flat ptr exists
                     Red::TweakDBID tagsFlat(itemId.tdbid, ".tags");
 
                     auto flat = m_tweakDb->GetFlatValue(tagsFlat);
@@ -733,7 +743,12 @@ private:
                     }
                 }
                 break;
-            case gamedataEquipmentArea::SystemReplacementCW:
+            case EquipmentArea::SystemReplacementCW:
+                if (m_saveData.m_playerEquippedOperatingSystem.IsValid())
+                {
+                    break;
+                }
+
                 for (auto& equippedItemData : area.equipSlots)
                 {
                     auto& itemId = equippedItemData.itemID;
@@ -747,7 +762,11 @@ private:
                     break;
                 }
                 break;
-            case gamedataEquipmentArea::CardiovascularSystemCW:
+            case EquipmentArea::CardiovascularSystemCW:
+                if (m_saveData.m_playerEquippedCardiacSystemCW.size > 0)
+                {
+                    break;
+                }
                 for (auto& equippedItemData : area.equipSlots)
                 {
                     auto& itemId = equippedItemData.itemID;
@@ -760,7 +779,11 @@ private:
                     m_saveData.m_playerEquippedCardiacSystemCW.PushBack(itemId);
                 }
                 break;
-            case gamedataEquipmentArea::ArmsCW:
+            case EquipmentArea::ArmsCW:
+                if (m_saveData.m_playerEquippedArmCyberware.IsValid())
+                {
+                    break;
+                }
                 for (auto& equippedItemData : area.equipSlots)
                 {
                     auto& itemId = equippedItemData.itemID;
@@ -774,7 +797,11 @@ private:
                     break;
                 }
                 break;
-            case gamedataEquipmentArea::LegsCW:
+            case EquipmentArea::LegsCW:
+                if (m_saveData.m_playerEquippedLegCyberware.IsValid())
+                {
+                    break;
+                }
                 for (auto& equippedItemData : area.equipSlots)
                 {
                     auto& itemId = equippedItemData.itemID;
@@ -797,7 +824,8 @@ private:
         auto pSaveData = &m_saveData;
 
         aCraftBook.IterateOverRecipes(
-            [pSaveData](ItemRecipe aRecipe) { 
+            [pSaveData](ItemRecipe aRecipe)
+            {
                 RedCraftInfo craftInfo{};
 
                 craftInfo.m_hideOnItemsAdded = aRecipe.GetHideOnAdded();
@@ -805,10 +833,9 @@ private:
                 craftInfo.m_targetItem = aRecipe.GetTargetItem();
 
                 pSaveData->m_knownRecipeTargetItems.PushBack(std::move(craftInfo));
-            }
-        );
+            });
     }
- 
+
     struct ExtendedItemData
     {
         Red::ItemID m_itemId;
@@ -836,28 +863,29 @@ private:
         bool IsAllowedType() const
         {
             using Red::gamedataItemType;
+            using Red::game::data::ItemType;
             switch (m_itemType)
             {
-            case gamedataItemType::Con_Edible:
-            case gamedataItemType::Gen_DataBank:
-            case gamedataItemType::CyberwareStatsShard:
-            case gamedataItemType::Gen_Jewellery:
-            case gamedataItemType::Gen_Junk:
-            case gamedataItemType::Gen_Keycard:
-            case gamedataItemType::Gen_MoneyShard:
-            case gamedataItemType::Gen_Misc:
-            case gamedataItemType::Gen_Readable:
-            case gamedataItemType::Prt_Receiver:
-            case gamedataItemType::Prt_Magazine:
-            case gamedataItemType::Prt_ScopeRail:
-            case gamedataItemType::Prt_Stock:
-            case gamedataItemType::Gen_Tarot:
-            case gamedataItemType::VendorToken:
-            case gamedataItemType::Wea_Fists:
-            case gamedataItemType::Wea_VehicleMissileLauncher:
-            case gamedataItemType::Wea_VehiclePowerWeapon:
-            case gamedataItemType::Invalid:
-            case gamedataItemType::Grenade_Core:    
+            case ItemType::Con_Edible:
+            case ItemType::Gen_DataBank:
+            case ItemType::CyberwareStatsShard:
+            case ItemType::Gen_Jewellery:
+            case ItemType::Gen_Junk:
+            case ItemType::Gen_Keycard:
+            case ItemType::Gen_MoneyShard:
+            case ItemType::Gen_Misc:
+            case ItemType::Gen_Readable:
+            case ItemType::Prt_Receiver:
+            case ItemType::Prt_Magazine:
+            case ItemType::Prt_ScopeRail:
+            case ItemType::Prt_Stock:
+            case ItemType::Gen_Tarot:
+            case ItemType::VendorToken:
+            case ItemType::Wea_Fists:
+            case ItemType::Wea_VehicleMissileLauncher:
+            case ItemType::Wea_VehiclePowerWeapon:
+            case ItemType::Invalid:
+            case ItemType::Grenade_Core:
                 return false;
             }
 
@@ -879,59 +907,39 @@ private:
     {
         ExtendedItemData ret{};
 
+        using namespace Red;
+        using game::data::ItemType;
+
         ret.m_itemId = aItemId;
         ret.m_tdbId = aItemId.tdbid;
-        ret.m_itemType = Red::gamedataItemType::Invalid;
-        
-        if (auto tagValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(ret.m_tdbId, ".tags")))
+        ret.m_itemType = ItemType::Invalid;
+
+        if (auto tagValuePtr = m_tweakDb->GetFlatValue(TweakDBID(ret.m_tdbId, ".tags")))
         {
-            ret.m_tags = tagValuePtr->GetValue<Red::DynArray<Red::CName>>();
+            ret.m_tags = tagValuePtr->GetValue<DynArray<CName>>();
         }
 
-        if (auto typeValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(ret.m_tdbId, ".itemType")))
+        if (auto typeValuePtr = m_tweakDb->GetFlatValue(TweakDBID(ret.m_tdbId, ".itemType")))
         {
-            auto typeFk = *typeValuePtr->GetValue<Red::TweakDBID>();
+            auto typeFk = *typeValuePtr->GetValue<TweakDBID>();
 
-            if (auto nameValuePtr = m_tweakDb->GetFlatValue(Red::TweakDBID(typeFk, ".name")))
+            if (auto nameValuePtr = m_tweakDb->GetFlatValue(TweakDBID(typeFk, ".name")))
             {
-                static auto typeEnum = Red::GetEnum<Red::gamedataItemType>();
-                // Ugly... 
-                if (typeEnum)
-                {
-                    auto enumName = *nameValuePtr->GetValue<Red::CName>();
+                static const auto typeEnum = GetEnum<ItemType>();
 
-                    auto isFound = false;
+                std::int64_t itemType{};
+                package::Package::ResolveEnumValue(typeEnum, *nameValuePtr->GetValue<CName>(), itemType);
 
-                    for (auto i = 0; i < typeEnum->hashList.size; i++)
-                    {
-                        if (typeEnum->hashList[i] == enumName)
-                        {
-                            ret.m_itemType = static_cast<Red::gamedataItemType>(typeEnum->valueList[i]);
-                            isFound = true;
-                            break;
-                        }
-                    }
-
-                    if (!isFound)
-                    {
-                        for (auto i = 0; i < typeEnum->aliasList.size; i++)
-                        {
-                            if (typeEnum->aliasList[i] == enumName)
-                            {
-                                ret.m_itemType = static_cast<Red::gamedataItemType>(typeEnum->aliasValueList[i]);
-                                break;
-                            }
-                        }
-                    }
-                }
+                ret.m_itemType = static_cast<ItemType>(itemType);
             }
         }
 
         return ret;
     }
-    
+
     // Now should handle CW upgrades too
-    void ProcessAttachments(const cyberpunk::ItemSlotPart& aSlotPart, Red::DynArray<RedItemData>& aTargetList, RedItemData& aData)
+    void ProcessAttachments(const cyberpunk::ItemSlotPart& aSlotPart, Red::DynArray<RedItemData>& aTargetList,
+                            RedItemData& aData)
     {
         // Don't bother doing iconic weapon mods
         if (aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.IconicWeaponModLegendary" ||
@@ -952,7 +960,7 @@ private:
                 Red::CString str;
                 Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, tdbId);
 
-                PluginContext::Spew(std::format("Shard ID: {}, RNG seed: {}", str.c_str(), rngSeed));                
+                PluginContext::Spew(std::format("Shard ID: {}, RNG seed: {}", str.c_str(), rngSeed));
             }
         }
 
@@ -975,16 +983,17 @@ private:
 
             ProcessStatModifiers(itemData);
 
-            aTargetList.PushBack(itemData);
+            aTargetList.PushBack(std::move(itemData));
         }
 
         for (const auto& child : aSlotPart.m_children)
         {
-            ProcessAttachments(child, aTargetList, aData);   
+            ProcessAttachments(child, aTargetList, aData);
         }
     }
 
-    void AddItemToInventory(const ExtendedItemData& aExtendedData, const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList, std::unordered_set<Red::TweakDBID>& aAddedIconics)
+    void AddItemToInventory(const ExtendedItemData& aExtendedData, const cyberpunk::ItemData& aItem,
+                            Red::DynArray<RedItemData>& aTargetList, std::unordered_set<Red::TweakDBID>& aAddedIconics)
     {
         // Sorry, but these REALLY annoy me
         if (BlacklistedTDBIDs::IsForbidden(aExtendedData.m_tdbId))
@@ -1015,15 +1024,12 @@ private:
             return;
         }
 
-        auto isIconic = false;
-
         // Don't add multiple same iconics to one save...
         if (aExtendedData.HasTag("IconicWeapon"))
         {
-            isIconic = true;
             // NOTE: this will murder item mods on X-MOD2...
             // Dirty hack fix
-            if (aAddedIconics.contains(aItem.GetItemID().tdbid))
+            if (aAddedIconics.contains(aExtendedData.m_tdbId))
             {
                 if (aItem.HasExtendedData())
                 {
@@ -1034,21 +1040,21 @@ private:
                 return;
             }
 
-            aAddedIconics.insert(aItem.GetItemID().tdbid);
+            aAddedIconics.insert(aExtendedData.m_tdbId);
         }
 
-        constexpr auto testStatsOnWeapons = true;
+        constexpr auto testStatsOnWeapons = false;
 
         if constexpr (testStatsOnWeapons)
         {
             if (aExtendedData.HasTag("Weapon"))
             {
                 Red::CString str;
-                Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aExtendedData.m_itemId.tdbid);
+                Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aExtendedData.m_tdbId);
 
                 PluginContext::Spew(std::format("Gun {}", str.c_str()));
 
-                auto statsObjectId = cyberpunk::StatsSystemNode::GetEntityHashFromItemId(aExtendedData.m_itemId);
+                auto statsObjectId = m_statsSystemPtr->GetEntityHashFromItemId(aExtendedData.m_itemId);
                 auto statModifiers = m_statsSystemPtr->GetStatModifiers(statsObjectId);
 
                 if (!statModifiers.size)
@@ -1062,7 +1068,8 @@ private:
 
                 for (auto i : m_statsSystemPtr->GetDisabledModifiers(statsObjectId))
                 {
-                    PluginContext::Spew(std::format("\tDisabled: {}", package::Package::GetEnumString(statTypes, static_cast<std::int64_t>(i))));
+                    PluginContext::Spew(std::format(
+                        "\tDisabled: {}", package::Package::GetEnumString(statTypes, static_cast<std::int64_t>(i))));
                 }
             }
         }
@@ -1079,26 +1086,11 @@ private:
             ProcessAttachments(aItem.m_itemSlotPart, aTargetList, itemData);
         }
 
-        using namespace Red::game;
-        using Red::game::data::StatType;
-
-        auto isScalingBlocked = [](Red::Handle<StatModifierData_Deprecated>& aHandle) { 
-            return aHandle && aHandle->statType == StatType::ScalingBlocked;
-        };
-
-        //if (isIconic && std::any_of(itemData.m_statModifiers.begin(), itemData.m_statModifiers.end(), isScalingBlocked))
-        //{
-        //    // Force all iconic weapons to main list
-        //    // Should probably only put it there if stat modifiers has the ScalingBlocked modifier - that seems to really break shit in stash...
-        //    m_saveData.m_playerItems.PushBack(itemData);
-        //}
-        //else
-        {
-            aTargetList.PushBack(itemData);
-        }
+        aTargetList.PushBack(std::move(itemData));
     }
 
-    void ProcessItem(const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList, std::unordered_set<Red::TweakDBID>& aAddedIconics)
+    void ProcessItem(const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList,
+                     std::unordered_set<Red::TweakDBID>& aAddedIconics)
     {
         auto extendedItemData = CreateExtendedData(aItem.GetItemID());
 

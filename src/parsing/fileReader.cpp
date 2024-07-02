@@ -141,6 +141,7 @@ void Parser::DecompressFile()
     emptyByteSize += chunkCountActual * (sizeof(int) * 3);
     emptyByteSize += (tableEntriesCount - chunkCountActual) * 12;
 
+    // Hold on, ain't this just the offset of the first compression block? O_o...
     const auto nodeOffsetChangeAmount = compressionTablePosition + emptyByteSize;
 
     for (auto& node : m_flatNodes)
@@ -149,7 +150,7 @@ void Parser::DecompressFile()
     }
 
     // Timeout value is arbitrary
-    Red::WaitForQueue(waiterJob, std::chrono::seconds(1));
+    Red::WaitForQueue(waiterJob, std::chrono::seconds(15));
 }
 
 void Parser::FindChildren(cyberpunk::NodeEntry& node, int maxNextId)
@@ -298,6 +299,8 @@ bool Parser::LoadNodes()
 
     CalculateTrueSizes(m_nodeList, m_decompressedDataSize);
 
+    // NOTE: why are we going through m_flatNodes instead of m_nodeList? Makes no real sense?
+    // Maybe MT this? Add a m_isReading mutex to node or something...
     for (auto& node : m_flatNodes)
     {
         if (!node.isReadByParent)

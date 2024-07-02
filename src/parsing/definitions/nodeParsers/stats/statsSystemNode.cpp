@@ -26,7 +26,7 @@ Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetStatModifi
 
     while (bufCursor.getRemaining())
     {
-        CName className = bufCursor.OptimizedReadLengthPrefixedANSI().c_str();
+        const auto className = bufCursor.OptimizedReadLengthPrefixedCName();
 
         const auto statName = bufCursor.ReadCNameHash();
         const auto modifierType = bufCursor.readValue<game::StatModifierType>();
@@ -118,6 +118,8 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     m_package.Init(aCursor.CreateSubCursor(packageSize));
     m_package.ReadPackage();
 
+    m_package.m_useRootClassOptimization = true; // Use MT for root class...
+
     auto handlePtr = m_package.GetChunkByTypeName("gameStatsStateMapStructure");
 
     if (!handlePtr)
@@ -128,9 +130,11 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     // Ugly, but inheritance is fucked on this struct...
     auto asStatsStateMap = reinterpret_cast<Red::game::StatsStateMapStructure*>(handlePtr->GetPtr());
 
+    // Will this help?
+    m_statsMap.reserve(asStatsStateMap->keys.size);
     for (std::size_t i = 0u; i < asStatsStateMap->keys.size; i++)
     {
-        m_statsMap.insert_or_assign(asStatsStateMap->keys[i].entityHash, &asStatsStateMap->values[i]); 
+        m_statsMap.try_emplace(asStatsStateMap->keys[i].entityHash, &asStatsStateMap->values[i]); 
     }
     
     constexpr auto shouldDumpPlayerStatModifiers = false;

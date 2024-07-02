@@ -242,6 +242,32 @@ struct FileCursor {
                 return ret;
             }
         }
+
+        return "";
+    }
+
+    Red::CName OptimizedReadLengthPrefixedCName()
+    {
+        auto prefix = readVlqInt32();
+        std::size_t length = std::abs(int(prefix));
+
+        if (length > 0)
+        {
+            if (prefix > 0)
+            {
+                offset += length * sizeof(std::uint16_t);
+            }
+            else
+            {
+                constexpr auto fnvSeed = 0xCBF29CE484222325;
+                const auto hash = Red::FNV1a64(reinterpret_cast<std::uint8_t*>(GetCurrentPtr()), length, fnvSeed);
+                offset += length;
+
+                return hash;
+            }
+        }
+
+        return {};
     }
 
     std::string ReadLengthPrefixedANSI()

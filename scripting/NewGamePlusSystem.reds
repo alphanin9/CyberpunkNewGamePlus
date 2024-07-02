@@ -1,3 +1,4 @@
+// NOTE: derive these from ISerializable/IScriptable so we can pass them by ref/wref instead of copying them around everywhere
 public native struct RedItemData {
     native let itemId: ItemID;
     native let itemQuantity: Int32;
@@ -40,7 +41,10 @@ public native struct PlayerSaveData {
 
     native let knownRecipeTargetItems: array<RedCraftInfo>;
 
+    // Done this way to make sure the player's CW cap modifiers look the same as basegame
     native let playerCyberwareCapacity: array<Float>;
+
+    // Currently unused
     native let playerCarryCapacity: array<Float>;
 }
 

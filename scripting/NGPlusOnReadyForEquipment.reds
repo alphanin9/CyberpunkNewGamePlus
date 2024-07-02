@@ -26,6 +26,22 @@ class PlayerProgressionLoader {
         this.m_transactionSystem = GameInstance.GetTransactionSystem(this.m_player.GetGame());
         this.m_statsSystem = GameInstance.GetStatsSystem(this.m_player.GetGame());
         this.m_delaySystem = GameInstance.GetDelaySystem(this.m_player.GetGame());
+        this.m_equipmentSystem = GameInstance.GetScriptableSystemsContainer(this.m_player.GetGame()).Get(n"EquipmentSystem");
+
+        let questsSystem = GameInstance.GetQuestsSystem(this.m_player.GetGame());
+
+        if questsSystem.GetFactStr("ngplus_q001_start") == 1 {
+            // Equip V's clothes...
+            // NOTE: this might double add them? Fix it in questphase... (probably)
+            
+            let shirtId = ItemID.FromTDBID(t"Items.Q001_TShirt");
+            let pantsId = ItemID.FromTDBID(t"Items.Q001_Pants");
+            let shoesId = ItemID.FromTDBID(t"Items.Q001_Shoes");
+
+            this.EquipCyberware(shirtId, true, 0);
+            this.EquipCyberware(pantsId, true, 0);
+            this.EquipCyberware(shoesId, true, 0);
+        }
 
         this.LoadPlayerDevelopment();
         this.LoadPlayerInventory();
@@ -271,8 +287,6 @@ class PlayerProgressionLoader {
             let permaMod = RPGManager.CreateStatModifier(gamedataStatType.Humanity, gameStatModifierType.Additive, cyberwareAddedModifier);
             this.m_statsSystem.AddSavedModifier(Cast<StatsObjectID>(this.m_player.GetEntityID()), permaMod);
         }
-
-        this.m_equipmentSystem = GameInstance.GetScriptableSystemsContainer(this.m_player.GetGame()).Get(n"EquipmentSystem");
 
         // In theory, we could just eat all the cyberware a player has - but I think that's kind of boring and gives more hassle with rebuilding
         // Also, cyberware capacity would fuck me over
