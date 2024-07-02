@@ -23,16 +23,11 @@ jobs:
       with:
         submodules: 'recursive'
 
-    - name: Lookup commits since last release
-      id: changes
-      uses: simbo/changes-since-last-release-action@v1
-
     - name: Create environment variables
       run: |
           $versionPrefix = "refs/tags/v"
           $version = $env:GITHUB_REF.Substring($versionPrefix.Length)
           $commitSha = (git rev-parse --short $env:GITHUB_SHA)
-          $changes = ${{ steps.changes.outputs.log }}
           echo "NGPLUS_COMMIT_SHA=${commitSha}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
           echo "NGPLUS_VERSION=${version}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
           echo "NGPLUS_COMMITS_SINCE_LAST_TAG=${changes} | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append"
@@ -95,7 +90,5 @@ jobs:
         body: |
           ### SHA256 of release:
           - ${{env.NGPLUS_SHA256}}
-          ### Commits
-          - ${{env.NGPLUS_COMMITS_SINCE_LAST_TAG}}
         files: | 
           NewGamePlus_${{env.NGPLUS_VERSION }}.zip
