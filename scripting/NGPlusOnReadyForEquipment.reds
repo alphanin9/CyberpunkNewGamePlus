@@ -212,6 +212,10 @@ class PlayerProgressionLoader {
     }
 
     public final static func AddItemToInventory(transactionSystem: ref<TransactionSystem>, delaySystem: ref<DelaySystem>, item: RedItemData, target: ref<GameObject>, statsSystem: ref<StatsSystem>, addStats: Bool) -> Bool {
+        addStats = addStats && Equals(item.itemId.GetStructure(), gamedataItemStructure.Unique);
+
+        item.itemQuantity = Max(1, item.itemQuantity);
+
         if ArraySize(item.attachments) > 0 {
             let modParams: ItemModParams;
 
@@ -226,7 +230,7 @@ class PlayerProgressionLoader {
             }
 
             if addStats {
-                PlayerProgressionLoader.ApplyStatModifiers(statsSystem, item, Cast<StatsObjectID>(item.itemId));
+                PlayerProgressionLoader.ApplyStatModifiers(statsSystem, item, itemData.GetStatsObjectID());
             }
             
             return true;

@@ -211,6 +211,7 @@
     <ClInclude Include="src\parsing\definitions\package\packageReader.hpp" />
     <ClInclude Include="src\parsing\fileReader.hpp" />
     <ClInclude Include="src\redscript_api\redscriptBindings.hpp" />
+    <ClInclude Include="src\util\threads.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NewGamePlus.rc" />

@@ -104,6 +104,9 @@
     <ClInclude Include="src\parsing\definitions\package\packageReader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\util\threads.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NewGamePlus.rc">

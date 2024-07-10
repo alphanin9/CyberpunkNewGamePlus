@@ -24,6 +24,8 @@
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/equipmentSystem.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/playerDevelopmentData.hpp"
 
+#include "../util/threads.hpp"
+
 #include <chrono>
 
 #include <simdjson.h>
@@ -354,17 +356,15 @@ public:
         static const auto basePath = files::GetCpSaveFolder();
 
         // We don't need sorting, the game already sorts the saves before passing them to Redscript
-        auto& saveList = *aSaves;
-
         std::unordered_set<std::uint64_t> playthroughIds{};
 
         Red::DynArray<int> returnedData{};
-        returnedData.Reserve(saveList.size);
+        returnedData.Reserve(aSaves->size);
         // Technically a signed/unsigned mismatch, but I have doubts about people having 2 billion+ saves
-        for (auto i = 0; i < saveList.size; i++)
+        for (auto i = 0; i < aSaves->size; i++)
         {
             // We need the save index for this...
-            auto& saveName = saveList.entries[i];
+            auto& saveName = aSaves->entries[i];
 
             std::uint64_t hash{};
 
@@ -1029,6 +1029,8 @@ private:
         {
             // NOTE: this will murder item mods on X-MOD2...
             // Dirty hack fix
+            std::unique_lock lock{m_iconicsMutex};
+
             if (aAddedIconics.contains(aExtendedData.m_tdbId))
             {
                 if (aItem.HasExtendedData())
@@ -1126,17 +1128,30 @@ private:
         auto& inventoryCarStash = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdCarStash);
 
         m_saveData.m_playerItems.Reserve(inventoryLocal.inventoryItems.size());
-        m_saveData.m_playerStashItems.Reserve(inventoryLocal.inventoryItems.size());
+        m_saveData.m_playerStashItems.Reserve(inventoryCarStash.inventoryItems.size());
 
-        for (const auto& item : inventoryLocal.inventoryItems)
-        {
-            ProcessItem(item, m_saveData.m_playerItems, addedIconics);
-        }
+        Red::JobQueue adderWaiter{};
 
-        for (const auto& item : inventoryCarStash.inventoryItems)
-        {
-            ProcessItem(item, m_saveData.m_playerStashItems, addedIconics);
-        }
+        // I don't know if this is efficient...
+        adderWaiter.Wait(util::job::MakeJob(
+            [this, &inventoryLocal, &addedIconics]()
+            {
+                for (const auto& item : inventoryLocal.inventoryItems)
+                {
+                    ProcessItem(item, m_saveData.m_playerItems, addedIconics);
+                }
+            }));
+
+       adderWaiter.Wait(util::job::MakeJob(
+            [this, &inventoryCarStash, &addedIconics]()
+            {
+                for (const auto& item : inventoryCarStash.inventoryItems)
+                {
+                    ProcessItem(item, m_saveData.m_playerStashItems, addedIconics);
+                }
+            }));
+
+       Red::WaitForQueue(adderWaiter, std::chrono::seconds(1));
     }
 
     void LoadGarageNative(Red::GarageComponentPS* aGarage)
@@ -1167,6 +1182,9 @@ private:
 
     Red::TweakDB* m_tweakDb;
     cyberpunk::StatsSystemNode* m_statsSystemPtr;
+
+    // Multithreading inventory - assures two queues don't screw each other up...
+    mutable std::shared_mutex m_iconicsMutex;
 
     RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
     RTTI_IMPL_ALLOCATOR();
