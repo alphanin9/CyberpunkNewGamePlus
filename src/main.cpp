@@ -31,6 +31,8 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 				return false;
 			}
 
+			// NOTE: this could be done better, accounting for version migration on manual installs...
+			// Would make including some crap in mod folder pointless too
 			if (!aSdk->scripts->Add(aHandle, L"redscript\\"))
             {
                 PluginContext::Error("Failed to add scripts from the plugin's folder, quitting...");
@@ -68,7 +70,7 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::PluginInfo* aInfo)
 {
 	aInfo->name = L"New Game+";
 	aInfo->author = L"not_alphanine";
-    aInfo->version = RED4EXT_SEMVER_EX(1, 0, 3, RED4EXT_V0_SEMVER_PRERELEASE_TYPE_RC, 0); // Set your version here.
+    aInfo->version = RED4EXT_SEMVER_EX(1, 0, 3, RED4EXT_V0_SEMVER_PRERELEASE_TYPE_RC, 1); // Set your version here.
 	aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
 	aInfo->sdk = RED4EXT_SDK_LATEST;
 }
