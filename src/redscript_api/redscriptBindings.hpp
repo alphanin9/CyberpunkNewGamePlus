@@ -68,7 +68,7 @@ struct RedItemData
 struct RedCraftInfo
 {
     Red::TweakDBID m_targetItem;
-    int m_amount;
+    int m_amount{};
     Red::DynArray<Red::ItemID> m_hideOnItemsAdded;
 
     RTTI_IMPL_TYPEINFO(RedCraftInfo);
@@ -156,7 +156,7 @@ struct PlayerSaveData
     // Seeing as acquiring it is pretty cool
     Red::DynArray<Red::TweakDBID> m_playerVehicleGarage{};
 
-    bool m_addedPerkPointsFromOverflow;
+    bool m_addedPerkPointsFromOverflow{};
 
     // NOTE: these do not account for perks like Edgerunner/whatever else... only shards
     // Whatever, we won't be overallocating CW cap anyway :P
@@ -223,31 +223,35 @@ namespace BlacklistedTDBIDs
             Red::TweakDBID{"Items.Preset_Lexington_Wilson"}, Red::TweakDBID{"Items.mq011_wilson_gun"}
 }
 */
-inline constexpr auto MaskCW = Red::TweakDBID("Items.MaskCW");
-inline constexpr auto MaskCWPlus = Red::TweakDBID("Items.MaskCWPlus");
-inline constexpr auto MaskCWPlusPlus = Red::TweakDBID("Items.MaskCWPlusPlus");
-inline constexpr auto Fists = Red::TweakDBID("Items.w_melee_004__fists_a");
-inline constexpr auto PersonalLink = Red::TweakDBID("Items.PersonalLink");
 
-inline constexpr auto PersonalLink2 = Red::TweakDBID("Items.personal_link");
-inline constexpr auto MaTppHead = Red::TweakDBID("Items.PlayerMaTppHead");
-inline constexpr auto WaTppHead = Red::TweakDBID("Items.PlayerWaTppHead");
-inline constexpr auto FppHead = Red::TweakDBID("Items.PlayerFppHead");
-inline constexpr auto HolsteredFists = Red::TweakDBID("Items.HolsteredFists");
+using Red::TweakDBID;
+inline constexpr auto MaskCW = TweakDBID("Items.MaskCW");
+inline constexpr auto MaskCWPlus = TweakDBID("Items.MaskCWPlus");
+inline constexpr auto MaskCWPlusPlus = TweakDBID("Items.MaskCWPlusPlus");
+inline constexpr auto Fists = TweakDBID("Items.w_melee_004__fists_a");
+inline constexpr auto PersonalLink = TweakDBID("Items.PersonalLink");
 
-inline constexpr auto MQ024DataCarrier = Red::TweakDBID("Items.mq024_sandra_data_carrier");
-inline constexpr auto Skippy = Red::TweakDBID("Items.mq007_skippy");
-inline constexpr auto SkippyPostQuest = Red::TweakDBID("Items.mq007_skippy_post_quest");
-inline constexpr auto PresetSkippy = Red::TweakDBID("Items.Preset_Yukimura_Skippy");
-inline constexpr auto PresetSkippyPostQuest = Red::TweakDBID("Items.Preset_Yukimura_Skippy_PostQuest");
+inline constexpr auto PersonalLink2 = TweakDBID("Items.personal_link");
+inline constexpr auto MaTppHead = TweakDBID("Items.PlayerMaTppHead");
+inline constexpr auto WaTppHead = TweakDBID("Items.PlayerWaTppHead");
+inline constexpr auto FppHead = TweakDBID("Items.PlayerFppHead");
+inline constexpr auto HolsteredFists = TweakDBID("Items.HolsteredFists");
 
-inline constexpr auto SaburoDataCarrier = Red::TweakDBID("Items.q005_saburo_data_carrier");
-inline constexpr auto SaburoDataCarrierCracked = Red::TweakDBID("Items.q005_saburo_data_carrier_cracked");
-inline constexpr auto Q003Chip = Red::TweakDBID("Items.q003_chip");
-inline constexpr auto Q003ChipCracked = Red::TweakDBID("Items.q003_chip_cracked");
-inline constexpr auto Q003ChipCrackedFunds = Red::TweakDBID("Items.q003_chip_cracked_funds");
+inline constexpr auto MQ024DataCarrier = TweakDBID("Items.mq024_sandra_data_carrier");
+inline constexpr auto Skippy = TweakDBID("Items.mq007_skippy");
+inline constexpr auto SkippyPostQuest = TweakDBID("Items.mq007_skippy_post_quest");
+inline constexpr auto PresetSkippy = TweakDBID("Items.Preset_Yukimura_Skippy");
+inline constexpr auto PresetSkippyPostQuest = TweakDBID("Items.Preset_Yukimura_Skippy_PostQuest");
 
-inline constexpr auto CyberdeckSplinter = Red::TweakDBID("Items.CyberdeckSplinter");
+inline constexpr auto SaburoDataCarrier = TweakDBID("Items.q005_saburo_data_carrier");
+inline constexpr auto SaburoDataCarrierCracked = TweakDBID("Items.q005_saburo_data_carrier_cracked");
+inline constexpr auto Q003Chip = TweakDBID("Items.q003_chip");
+inline constexpr auto Q003ChipCracked = TweakDBID("Items.q003_chip_cracked");
+inline constexpr auto Q003ChipCrackedFunds = TweakDBID("Items.q003_chip_cracked_funds");
+
+inline constexpr auto CyberdeckSplinter = TweakDBID("Items.CyberdeckSplinter");
+inline constexpr auto TiconGwent = TweakDBID("Items.Preset_Ticon_Gwent");
+inline constexpr auto WitcherSword = TweakDBID("Items.Preset_Sword_Witcher");
 
 inline bool IsForbidden(Red::TweakDBID aId)
 {
@@ -256,7 +260,7 @@ inline bool IsForbidden(Red::TweakDBID aId)
            aId == PersonalLink2 || aId == MaTppHead || aId == WaTppHead || aId == FppHead || aId == HolsteredFists ||
            aId == MQ024DataCarrier || aId == Skippy || aId == SkippyPostQuest || aId == PresetSkippy ||
            aId == PresetSkippyPostQuest || aId == SaburoDataCarrier || aId == SaburoDataCarrierCracked ||
-           aId == Q003Chip || aId == Q003ChipCracked || aId == Q003ChipCrackedFunds || aId == CyberdeckSplinter;
+           aId == Q003Chip || aId == Q003ChipCracked || aId == Q003ChipCrackedFunds || aId == CyberdeckSplinter || aId == TiconGwent || aId == WitcherSword;
 }
 }; // namespace BlacklistedTDBIDs
 
@@ -273,9 +277,12 @@ enum class ENewGamePlusStartType
     Invalid
 };
 
+// NOTE: THIS IS ACTUALLY BAD
+// EITHER SOMEONE FIGURES OUT A WAY TO MAKE OVER 160 GAME SYSTEMS WORK (PROBABLY PSIBERX) - OR NG+ WON'T BE COMPATIBLE WITH MULTIPLAYER!!!
 class NewGamePlusSystem : public Red::IGameSystem
 {
 public:
+    // Should really be ref/wref...
     PlayerSaveData GetSaveData()
     {
         return m_saveData;
@@ -305,7 +312,9 @@ public:
         static const auto fnAddQuest = Red::UniversalRelocFunc<void(__fastcall*)(
             Red::quest::QuestsSystem * aQuestsSystem, Red::ResourcePath aPath)>(addQuestHash);
 
-        fnAddQuest(Red::GetGameSystem<Red::quest::QuestsSystem>(), R"(ep1\quest\ep1.quest)");
+        constexpr Red::ResourcePath EP1 = R"(ep1\quest\ep1.quest)";
+
+        fnAddQuest(Red::GetGameSystem<Red::quest::QuestsSystem>(), EP1);
     }
 
     void SetNewGamePlusGameDefinition(ENewGamePlusStartType aStartType)
@@ -412,6 +421,9 @@ public:
 
             m_tweakDb = Red::TweakDB::Get();
 
+            // I think best way to optimize this would be to do async node loading...
+            // Not sure if it's worth anything, though...
+
             // Needs to be shared across several transferrers :P
             // NOTE: maybe error check this? Eh, shouldn't fail...
             m_statsSystemPtr = parser.LookupNodeData<cyberpunk::StatsSystemNode>();
@@ -424,7 +436,7 @@ public:
             if (const auto persistencySystem = parser.LookupNodeData<cyberpunk::PersistencySystemNode>())
             {
                 // Vehicle garage can technically not be present in a savegame
-
+                // NOTE: really should be using handles instead of custom handle-likes...
                 if (auto garageComponent =
                         persistencySystem->LookupInstanceAs<Red::GarageComponentPS>("vehicleGarageComponentPS"))
                 {
@@ -438,7 +450,9 @@ public:
 
                 // Yes, I should be resolving them through handles
                 // But that adds more complexity to the scriptable parser
+                // We have a full package parser figured out, though... but no, won't be used for this just yet
 
+                // Maybe EquipmentEX compat later...
                 if (auto playerDevelopmentData = scriptableSystemsContainer->LookupInstance("PlayerDevelopmentData"))
                 {
                     LoadPlayerDevelopmentData(playerDevelopmentData);
@@ -520,7 +534,8 @@ private:
         }
 
         // https://old.reddit.com/r/LowSodiumCyberpunk/comments/1690oq4/mathed_out_the_new_perk_trees_coming_in_20_over/
-        constexpr auto maxPerkPointCount = 41 + 46 + 44 + 42 + 46;
+        constexpr auto maxPerkPointCount = 41 + 46 + 44 + 42 + 46 + 2;
+        // 219 is not enough, max seems to be 221...
 
         if (m_saveData.m_playerPerkPoints > maxPerkPointCount)
         {
@@ -549,7 +564,11 @@ private:
             // Maybe it would be better to have a DynArray of added stat mods?
             if (const auto& asConstant = Red::Cast<ConstantStatModifierData_Deprecated>(stat))
             {
-                constexpr auto arbitraryBigStatValue = 300.f; // Should be big enough
+                constexpr auto arbitraryBigStatValue = 25.f; // Should be big enough
+                // Normal CW capacity shards range from 2 to 6
+                // Debug ones are around 25-30?
+                // Old NG+ gives 1000+ modifier...
+
                 if (asConstant->value > arbitraryBigStatValue)
                 {
                     // Old NG+ added really big carry cap/humanity modifiers
@@ -629,6 +648,7 @@ private:
 
         aPlayerDevelopmentData.IterateOverAttributesData(attributeDataIterator);
 
+        // NOTE: I'm 80% sure this could be achieved with stats system
         const auto proficiencyIterator = [pSaveData](SProficiency aProficiency)
         {
             const auto currLevel = aProficiency.GetCurrentLevel();
@@ -840,24 +860,40 @@ private:
     {
         Red::ItemID m_itemId;
         Red::TweakDBID m_tdbId;
-        Red::Handle<Red::TweakDBRecord> m_itemRecord;
         Red::DynArray<Red::CName>* m_tags;
 
         Red::gamedataItemType m_itemType;
 
+        static constexpr Red::CName HideInUI = "HideInUI";
+        static constexpr Red::CName HideAtVendor = "HideAtVendor";
+        static constexpr Red::CName WeaponMod = "WeaponMod";
+        static constexpr Red::CName LexingtonWilson = "Lexington_Wilson";
+        static constexpr Red::CName DLCStashItem = "DLCStashItem";
+        static constexpr Red::CName IconicWeapon = "IconicWeapon";
+
         bool IsHiddenInUI() const
         {
-            return HasTag("HideInUI") || HasTag("HideAtVendor");
+            return HasTag(HideInUI) || HasTag(HideAtVendor);
         }
 
         bool IsValidAttachment() const
         {
-            return HasTag("WeaponMod") || m_itemType == Red::gamedataItemType::Prt_Program;
+            return HasTag(WeaponMod) || m_itemType == Red::gamedataItemType::Prt_Program;
         }
 
         bool IsDyingNight() const
         {
-            return HasTag("Lexington_Wilson");
+            return HasTag(LexingtonWilson);
+        }
+
+        bool IsDLCStashItem() const
+        {
+            return HasTag(DLCStashItem);
+        }
+
+        bool IsIconicWeapon() const
+        {
+            return HasTag(IconicWeapon);
         }
 
         bool IsAllowedType() const
@@ -934,6 +970,22 @@ private:
             }
         }
 
+        constexpr auto shouldLogInvalidItems = false;
+
+        if constexpr (shouldLogInvalidItems)
+        {
+            if (ret.m_itemType == ItemType::Invalid)
+            {
+                std::unique_lock lock{m_itemDataLoggerMutex};
+
+                Red::CString str;
+                Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, ret.m_tdbId);
+
+                PluginContext::Spew(
+                    std::format("Failed to add item {} (TDBID {:#X})", str.c_str(), std::uint64_t{ret.m_tdbId}));
+            }
+        }
+
         return ret;
     }
 
@@ -941,9 +993,13 @@ private:
     void ProcessAttachments(const cyberpunk::ItemSlotPart& aSlotPart, Red::DynArray<RedItemData>& aTargetList,
                             RedItemData& aData)
     {
+        constexpr Red::TweakDBID iconicWeaponModLegendary = "AttachmentSlots.IconicWeaponModLegendary";
+        constexpr Red::TweakDBID iconicMeleeWeaponMod1 = "AttachmentSlots.IconicMeleeWeaponMod1";
+        constexpr Red::TweakDBID statsShardSlot = "AttachmentSlots.StatsShardSlot";
+
         // Don't bother doing iconic weapon mods
-        if (aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.IconicWeaponModLegendary" ||
-            aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.IconicMeleeWeaponMod1")
+        if (aSlotPart.m_attachmentSlotTdbId == iconicWeaponModLegendary ||
+            aSlotPart.m_attachmentSlotTdbId == iconicMeleeWeaponMod1)
         {
             return;
         }
@@ -965,7 +1021,7 @@ private:
         }
 
         // FIX: CW stats shards not being transferred
-        if (aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.StatsShardSlot")
+        if (aSlotPart.m_attachmentSlotTdbId == statsShardSlot)
         {
             aData.m_attachments.PushBack(aSlotPart.m_itemId);
         }
@@ -995,26 +1051,28 @@ private:
     void AddItemToInventory(const ExtendedItemData& aExtendedData, const cyberpunk::ItemData& aItem,
                             Red::DynArray<RedItemData>& aTargetList, std::unordered_set<Red::TweakDBID>& aAddedIconics)
     {
+        constexpr Red::TweakDBID moneyItem = "Items.money";
+
+        if (aExtendedData.m_tdbId == moneyItem)
+        {
+            m_saveData.m_playerMoney += aItem.m_itemQuantity;
+            return;
+        }
+
         // Sorry, but these REALLY annoy me
         if (BlacklistedTDBIDs::IsForbidden(aExtendedData.m_tdbId))
         {
             return;
         }
 
-        if (aExtendedData.IsDyingNight())
-        {
-            // Just fuck off...
-            return;
-        }
-
-        if (aExtendedData.m_tdbId == "Items.money")
-        {
-            m_saveData.m_playerMoney += aItem.m_itemQuantity;
-            return;
-        }
-
         if (!aExtendedData.IsAllowedType())
         {
+            return;
+        }
+
+        if (aExtendedData.IsDyingNight() || aExtendedData.IsDLCStashItem())
+        {
+            // Just fuck off...
             return;
         }
 
@@ -1025,11 +1083,14 @@ private:
         }
 
         // Don't add multiple same iconics to one save...
-        if (aExtendedData.HasTag("IconicWeapon"))
+        if (aExtendedData.IsIconicWeapon())
         {
             // NOTE: this will murder item mods on X-MOD2...
             // Dirty hack fix
-            std::unique_lock lock{m_iconicsMutex};
+            // 
+            // Unused, I don't think there's a point in MT for this...
+            // Maybe do async magic for node loading? .....
+            // std::unique_lock lock{m_iconicsMutex};
 
             if (aAddedIconics.contains(aExtendedData.m_tdbId))
             {
@@ -1079,7 +1140,9 @@ private:
         RedItemData itemData{};
 
         itemData.m_itemId = aExtendedData.m_itemId;
-        itemData.m_itemQuantity = aItem.HasQuantity() ? aItem.m_itemQuantity : 1;
+
+        // NOTE: sometimes quantity is 0, leads to odd behavior with consumables (grenades, healing items...)
+        itemData.m_itemQuantity = aItem.HasQuantity() ? std::max(1u, aItem.m_itemQuantity) : 1;
 
         ProcessStatModifiers(itemData);
 
@@ -1088,6 +1151,18 @@ private:
             ProcessAttachments(aItem.m_itemSlotPart, aTargetList, itemData);
         }
 
+        constexpr auto shouldLogAddedItems = false;
+        if constexpr (shouldLogAddedItems)
+        {
+            if (aTargetList.entries == m_saveData.m_playerItems.entries)
+            {
+                Red::CString str{};
+                Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aExtendedData.m_tdbId);
+
+                PluginContext::Spew(std::format("Adding item {} to inventory!", str.c_str()));
+            }
+        }
+        
         aTargetList.PushBack(std::move(itemData));
     }
 
@@ -1130,36 +1205,23 @@ private:
         m_saveData.m_playerItems.Reserve(inventoryLocal.inventoryItems.size());
         m_saveData.m_playerStashItems.Reserve(inventoryCarStash.inventoryItems.size());
 
-        Red::JobQueue adderWaiter{};
+        for (const auto& item : inventoryLocal.inventoryItems)
+        {
+            ProcessItem(item, m_saveData.m_playerItems, addedIconics);
+        }
 
-        // I don't know if this is efficient...
-        adderWaiter.Wait(util::job::MakeJob(
-            [this, &inventoryLocal, &addedIconics]()
-            {
-                for (const auto& item : inventoryLocal.inventoryItems)
-                {
-                    ProcessItem(item, m_saveData.m_playerItems, addedIconics);
-                }
-            }));
-
-       adderWaiter.Wait(util::job::MakeJob(
-            [this, &inventoryCarStash, &addedIconics]()
-            {
-                for (const auto& item : inventoryCarStash.inventoryItems)
-                {
-                    ProcessItem(item, m_saveData.m_playerStashItems, addedIconics);
-                }
-            }));
-
-       Red::WaitForQueue(adderWaiter, std::chrono::seconds(1));
+        for (const auto& item : inventoryCarStash.inventoryItems)
+        {
+            ProcessItem(item, m_saveData.m_playerStashItems, addedIconics);
+        }
     }
 
     void LoadGarageNative(Red::GarageComponentPS* aGarage)
     {
-        static constexpr auto Demiurge = Red::TweakDBID("Vehicle.v_utility4_thorton_mackinaw_bmf_player");
-        static constexpr auto Hoon = Red::TweakDBID("Vehicle.v_sport2_quadra_type66_nomad_tribute");
-        static constexpr auto JackieArch = Red::TweakDBID("Vehicle.v_sportbike2_arch_jackie_player");
-        static constexpr auto JackieTunedArch = Red::TweakDBID("Vehicle.v_sportbike2_arch_jackie_tuned_player");
+        constexpr Red::TweakDBID Demiurge = "Vehicle.v_utility4_thorton_mackinaw_bmf_player";
+        constexpr Red::TweakDBID Hoon = "Vehicle.v_sport2_quadra_type66_nomad_tribute";
+        constexpr Red::TweakDBID JackieArch = "Vehicle.v_sportbike2_arch_jackie_player";
+        constexpr Red::TweakDBID JackieTunedArch = "Vehicle.v_sportbike2_arch_jackie_tuned_player";
 
         // Hardcoded HACK
 
@@ -1184,7 +1246,9 @@ private:
     cyberpunk::StatsSystemNode* m_statsSystemPtr;
 
     // Multithreading inventory - assures two queues don't screw each other up...
+    // No longer used...
     mutable std::shared_mutex m_iconicsMutex;
+    mutable std::shared_mutex m_itemDataLoggerMutex;
 
     RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
     RTTI_IMPL_ALLOCATOR();

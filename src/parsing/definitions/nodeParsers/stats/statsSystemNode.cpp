@@ -139,7 +139,7 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     
     constexpr auto shouldDumpPlayerStatModifiers = false;
 
-    if (shouldDumpPlayerStatModifiers)
+    if constexpr (shouldDumpPlayerStatModifiers)
     {
         auto handlePtr = m_package.GetChunkByTypeName("gameStatsStateMapStructure");
 

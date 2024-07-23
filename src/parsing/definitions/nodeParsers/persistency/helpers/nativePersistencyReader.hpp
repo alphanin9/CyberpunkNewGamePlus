@@ -89,27 +89,14 @@ public:
 
             auto expectedType = PluginContext::m_rtti->GetType(propTypeStr);
 
-            if (expectedType != prop->type)
+            if (!Red::IsCompatible(prop->type, expectedType))
             {
-                auto isCompatible = false;
 
-                // Handles can point to abstract stuff, thus we need to know expected type
-                if (prop->type->GetType() == Red::ERTTIType::Handle)
-                {
-                    auto asHandleType = static_cast<Red::CRTTIHandleType*>(prop->type);
-                    auto asHandleExpectedType = static_cast<Red::CRTTIHandleType*>(expectedType);
-
-                    isCompatible = static_cast<Red::CClass*>(asHandleExpectedType->GetInnerType())
-                                       ->IsA(asHandleType->GetInnerType());
-                }
-
-                if (!isCompatible)
-                {
-                    PluginContext::Error(std::format("Prop {}::{} type mismatch, {} != {}!", classType->name.ToString(),
+                PluginContext::Error(std::format("Prop {}::{} type mismatch, {} != {}!", classType->name.ToString(),
                                                      propName.ToString(), prop->type->GetName().ToString(),
                                                      propTypeStr.ToString()));
-                    return false;
-                }
+                return false;
+                
             }
 
             auto valuePtr = prop->GetValuePtr<std::remove_pointer_t<Red::ScriptInstance>>(aOut);

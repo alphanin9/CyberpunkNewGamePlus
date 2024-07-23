@@ -292,24 +292,10 @@ bool Package::TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::C
         // Don't use .at(), we're noexcept anyway - no difference between segfault and abort()
         const auto propTypeExpected = PluginContext::m_rtti->GetType(m_names[desc.m_typeId]);
 
-        if (propData->type != propTypeExpected)
+        if (!Red::IsCompatible(propTypeExpected, propData->type))
         {
-            auto isCompatible = false;
-
-            // NOTE: we don't resolve wrefs, so we don't care about type mismatches there...
-            if (propTypeExpected && propData->type->GetType() == Red::ERTTIType::Handle)
-            {
-                auto asHandle = static_cast<Red::CRTTIHandleType*>(propData->type);
-                auto asHandleExpected = static_cast<Red::CRTTIHandleType*>(propTypeExpected);
-
-                isCompatible =
-                    static_cast<Red::CClass*>(asHandleExpected->GetInnerType())->IsA(asHandle->GetInnerType());
-            }
-
-            if (!isCompatible)
-            {
-                continue;
-            }
+            // This can, in theory, cause issues with array reading if incompatible val ends up the last field in class...
+            continue;
         }
 
         aCursor.seekTo(baseOffset + desc.m_offset);

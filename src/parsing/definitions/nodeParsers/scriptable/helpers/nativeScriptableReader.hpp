@@ -32,7 +32,7 @@ class ScriptableReader : redRTTI::native::NativeReader
 
         if (index >= m_names->size())
         {
-             return {};
+            return {};
         }
 
         return m_names->at(index);
@@ -87,7 +87,7 @@ class ScriptableReader : redRTTI::native::NativeReader
     {
         auto enumValueName = ReadCNameInternal(aCursor);
         auto enumType = static_cast<Red::CEnum*>(aPropType);
-        
+
         std::int64_t enumValue{};
         ResolveEnumValue(enumType, enumValueName, enumValue);
 
@@ -96,7 +96,7 @@ class ScriptableReader : redRTTI::native::NativeReader
         {
             s_enumSizes.insert(enumType->actualSize);
         }
-        
+
         // Scriptable systems only seem to use actualSize=4
         if (enumType->actualSize == 0)
         {
@@ -109,7 +109,8 @@ class ScriptableReader : redRTTI::native::NativeReader
         memcpy(aOut, &enumValue, enumType->actualSize);
     }
 
-    virtual bool TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept final
+    virtual bool TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut,
+                               Red::CBaseRTTIType* aPropType) noexcept final
     {
         // We don't resolve handles... yet....
         // And probably never will (actually NVM, might do it sometime...)
@@ -118,7 +119,8 @@ class ScriptableReader : redRTTI::native::NativeReader
         return true;
     }
 
-    virtual bool TryReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept final
+    virtual bool TryReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut,
+                                   Red::CBaseRTTIType* aPropType) noexcept final
     {
         // Again, no resolving handles just yet
         aCursor.readInt();
@@ -130,7 +132,6 @@ public:
     inline ScriptableReader(std::vector<Red::CName>* aNames)
         : m_names(aNames)
     {
-    
     }
 
     // This puts the reader into an invalid state by default, as we don't know any names
@@ -138,7 +139,6 @@ public:
 
     virtual ~ScriptableReader()
     {
-        
     }
 
     inline std::vector<Red::CName>* GetNames()
@@ -151,7 +151,8 @@ public:
         m_names = aNames;
     }
 
-    inline virtual bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept final
+    inline virtual bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut,
+                                     Red::CBaseRTTIType* aType) noexcept final
     {
         auto classType = static_cast<Red::CClass*>(aType);
 
@@ -178,37 +179,22 @@ public:
             const auto propTypeName = m_names->at(desc.m_typeId);
             const auto propTypeExpected = PluginContext::m_rtti->GetType(propTypeName);
 
-            if (propData->type != propTypeExpected)
+            if (!Red::IsCompatible(propTypeExpected, propData->type))
             {
-                auto isCompatible = false;
-
-                // NOTE: we don't resolve wrefs, so we don't care about type mismatches there...
-                if (propTypeExpected && propData->type->GetType() == Red::ERTTIType::Handle)
+                if constexpr (m_reportNonCriticalErrors)
                 {
-                    auto asHandle = static_cast<Red::CRTTIHandleType*>(propData->type);
-                    auto asHandleExpected = static_cast<Red::CRTTIHandleType*>(propTypeExpected);
-
-                    isCompatible =
-                        static_cast<Red::CClass*>(asHandleExpected->GetInnerType())->IsA(asHandle->GetInnerType());
+                    PluginContext::Error(
+                        std::format("NativeScriptableReader::TryReadClass, class {}, property type mismatch - {} != {}",
+                                    classType->GetName().ToString(), propData->type->GetName().ToString(),
+                                    m_names->at(desc.m_typeId).ToString()));
                 }
 
-                if (!isCompatible)
-                {
-                    if constexpr (m_reportNonCriticalErrors)
-                    {
-                        PluginContext::Error(std::format(
-                            "NativeScriptableReader::TryReadClass, class {}, property type mismatch - {} != {}",
-                            classType->GetName().ToString(), propData->type->GetName().ToString(),
-                            m_names->at(desc.m_typeId).ToString()));
-                    }
-
-                    continue;
-                }
+                continue;
             }
 
             aCursor.seekTo(baseOffset + desc.m_offset);
 
-            auto propPtr = propData->GetValuePtr<std::remove_pointer_t<Red::ScriptInstance>>(aOut);
+            auto propPtr = propData->GetValuePtr<void>(aOut);
 
             if (!TryReadValue(aCursor, propPtr, propTypeExpected))
             {
@@ -220,4 +206,4 @@ public:
         return true;
     }
 };
-}
+} // namespace scriptable::native
