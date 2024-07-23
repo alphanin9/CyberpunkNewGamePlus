@@ -39,12 +39,12 @@ namespace hooking {
 	namespace StartNewGame {
 		constexpr auto m_fnHash = 3897433288u;
 
-		using StartNewGame = void(__fastcall*)(uintptr_t aState);
+		using StartNewGame = void(__fastcall*)(uintptr_t aThis, uintptr_t aState);
 		StartNewGame m_originalFn = nullptr;
 
-		void __fastcall m_detourFn(uintptr_t aState) {
+		void __fastcall m_detourFn(uintptr_t aThis, uintptr_t aState) {
 			PluginContext::m_isInStartNewGame = true;
-			m_originalFn(aState);
+			m_originalFn(aThis, aState);
 			PluginContext::m_isInStartNewGame = false;
 		}
 	}
