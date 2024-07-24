@@ -219,7 +219,8 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
 
     simdjson::dom::array importantFacts{};
 
-    if (!saveMetadata.at_key("facts").get_array().get(importantFacts) != simdjson::SUCCESS)
+    // Oops, forgot to remove a ! here...
+    if (saveMetadata.at_key("facts").get_array().get(importantFacts) != simdjson::SUCCESS)
     {
         if constexpr (shouldDebugMetadataValidation)
         {
