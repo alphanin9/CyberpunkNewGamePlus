@@ -35,6 +35,7 @@ public func GetTankUpgradeChance() -> Float = DefaultDifficultyConfig.GetTankUpg
 @if(!ModuleExists("NGPlus.CustomConfig"))
 public func GetRegenUpgradeChance() -> Float = DefaultDifficultyConfig.GetRegenUpgradeChance();
 
+// Currently set to 0.0 by default...
 @if(!ModuleExists("NGPlus.CustomConfig"))
 public func GetOpticalCamoUpgradeChance() -> Float = DefaultDifficultyConfig.GetOpticalCamoUpgradeChance();
 
@@ -52,7 +53,7 @@ public abstract class DefaultDifficultyConfig {
     public static func GetFastUpgradeChance() -> Float = 77.0;
     public static func GetTankUpgradeChance() -> Float = 55.0;
     public static func GetRegenUpgradeChance() -> Float = 44.0;
-    public static func GetOpticalCamoUpgradeChance() -> Float = 20.0;
+    public static func GetOpticalCamoUpgradeChance() -> Float = 0.0;
     public static func GetNetrunnerUpgradeChance() -> Float = 50.0;
     public static func GetDodgeUpgradeChance() -> Float = 33.0;
     public static func GetShouldFastForwardQ101Start() -> Bool = false;

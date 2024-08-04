@@ -106,14 +106,15 @@ bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHas
         return false;
     }
 
-    simdjson::dom::parser parser{};
+    static simdjson::dom::parser parser{};
     simdjson::dom::element document{};
 
-    if (parser.parse(padded.value()).get(document) != simdjson::SUCCESS)
+    // NOTE: some users have this fail... Due to arch check, should setting arch to default fix it?
+    if (const auto errorCode = parser.parse(padded.value()).get(document); errorCode != simdjson::SUCCESS)
     {
         if constexpr (shouldDebugMetadataValidation)
         {
-            PluginContext::Spew("Failed to parse metadata!");
+            PluginContext::Spew("Failed to parse metadata! Error {}", simdjson::error_message(errorCode));
         }
         return false;
     }
