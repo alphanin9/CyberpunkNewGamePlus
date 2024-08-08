@@ -16,3 +16,6 @@
 [submodule "deps/tweakxl"]
 	path = deps/tweakxl
 	url = https://github.com/psiberx/cp2077-tweak-xl.git
+[submodule "deps/minhook"]
+	path = deps/minhook
+	url = https://github.com/TsudaKageyu/minhook.git

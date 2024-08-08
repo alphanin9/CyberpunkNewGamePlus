@@ -51,6 +51,8 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 		}
 
 		PluginContext::m_rtti = Red::CRTTISystem::Get();
+		// Maybe this'll fix some crashes? ...
+		PluginContext::m_rtti->AddPostRegisterCallback([]() { PluginContext::m_rttiReady = true; });
 		break;
 	}
 	case RED4ext::EMainReason::Unload:

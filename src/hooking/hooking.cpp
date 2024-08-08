@@ -1,6 +1,9 @@
 #include <RED4ext/RED4ext.hpp>
+#include <RedLib.hpp>
 
 #include "../context/context.hpp"
+
+#include <MinHook.h>
 
 #include <print>
 
@@ -50,22 +53,37 @@ namespace hooking {
 	}
 
 	bool InitializeHooking() {
-		const auto addrSelectGameDefinition =
-			RED4ext::UniversalRelocPtr<uintptr_t>(SelectGameDefinition::m_fnHash).GetAddr();
-		const auto addrStartNewGame = RED4ext::UniversalRelocPtr<uintptr_t>(StartNewGame::m_fnHash).GetAddr();
+		const auto addrSelectGameDefinition = Red::UniversalRelocBase::Resolve(SelectGameDefinition::m_fnHash);
+        const auto addrStartNewGame = Red::UniversalRelocBase::Resolve(StartNewGame::m_fnHash);
 
-		auto hookStatus = PluginContext::m_redSdk->hooking->Attach(PluginContext::m_redPlugin, addrSelectGameDefinition, SelectGameDefinition::m_detourFn, reinterpret_cast<void**>(&SelectGameDefinition::m_originalFn));
+		if (MH_Initialize() != MH_OK)
+        {
+            return false;
+		}
 
-		hookStatus = hookStatus && PluginContext::m_redSdk->hooking->Attach(PluginContext::m_redPlugin, addrStartNewGame, StartNewGame::m_detourFn, reinterpret_cast<void**>(&StartNewGame::m_originalFn));
+		if (MH_CreateHook(reinterpret_cast<void*>(addrSelectGameDefinition), SelectGameDefinition::m_detourFn,
+                          reinterpret_cast<void**>(&SelectGameDefinition::m_originalFn)) != MH_OK)
+        {
+            return false;
+		}
 
-		return hookStatus;
+		if (MH_CreateHook(reinterpret_cast<void*>(addrStartNewGame), StartNewGame::m_detourFn,
+                          reinterpret_cast<void**>(&StartNewGame::m_originalFn)) != MH_OK)
+        {
+            return false;
+		}
+
+		if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK)
+        {
+            return false;
+		}
+
+		return true;
 	}
 
 	bool DetachHooking() {
-		const auto addrSelectGameDefinition =
-			RED4ext::UniversalRelocPtr<uintptr_t>(SelectGameDefinition::m_fnHash).GetAddr();
-		const auto addrStartNewGame = RED4ext::UniversalRelocPtr<uintptr_t>(StartNewGame::m_fnHash).GetAddr();
-
-		return PluginContext::m_redSdk->hooking->Detach(PluginContext::m_redPlugin, addrSelectGameDefinition) && PluginContext::m_redSdk->hooking->Detach(PluginContext::m_redPlugin, addrStartNewGame);
+		auto status = MH_DisableHook(MH_ALL_HOOKS) == MH_OK;
+        
+		return status && MH_Uninitialize() == MH_OK;
 	}
 }

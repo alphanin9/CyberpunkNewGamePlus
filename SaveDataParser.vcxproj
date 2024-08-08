@@ -94,7 +94,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\simdjson\singleheader;deps\lz4\lib;deps\tweakxl\support\red4ext;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\simdjson\singleheader;deps\lz4\lib;deps\tweakxl\support\red4ext;deps\minhook\include;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>
@@ -181,6 +181,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="deps\lz4\lib\lz4.c" />
+    <ClCompile Include="deps\minhook\src\buffer.c" />
+    <ClCompile Include="deps\minhook\src\hde\hde32.c" />
+    <ClCompile Include="deps\minhook\src\hde\hde64.c" />
+    <ClCompile Include="deps\minhook\src\hook.c" />
+    <ClCompile Include="deps\minhook\src\trampoline.c" />
     <ClCompile Include="deps\simdjson\singleheader\simdjson.cpp" />
     <ClCompile Include="src\filesystem\fs_util.cpp" />
     <ClCompile Include="src\hooking\hooking.cpp" />
@@ -192,6 +197,13 @@
     <ClCompile Include="src\parsing\fileReader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="deps\minhook\src\buffer.h" />
+    <ClInclude Include="deps\minhook\src\hde\hde32.h" />
+    <ClInclude Include="deps\minhook\src\hde\hde64.h" />
+    <ClInclude Include="deps\minhook\src\hde\pstdint.h" />
+    <ClInclude Include="deps\minhook\src\hde\table32.h" />
+    <ClInclude Include="deps\minhook\src\hde\table64.h" />
+    <ClInclude Include="deps\minhook\src\trampoline.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\context\context.hpp" />
     <ClInclude Include="src\filesystem\fs_util.hpp" />

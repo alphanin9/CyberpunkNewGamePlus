@@ -1,4 +1,6 @@
-module NewGamePlus.EP1Listener
+module NGPlus.EP1Listener
+
+import NGPlus.DifficultyConfig.*
 
 // General scriptable system-viable retrofixes, old filename is kept for manual installs...
 public class NGPlusEP1StatusListener extends ScriptableSystem {
@@ -9,6 +11,16 @@ public class NGPlusEP1StatusListener extends ScriptableSystem {
         if this.m_questsSystem.GetFactStr("q101_enable_side_content") > 1 {
             this.m_questsSystem.SetFactStr("q101_enable_side_content", 1);
         }
+    }
+
+    public final static func ApplyRandomEncounterDisabler(questsSystem: ref<QuestsSystem>) {
+        let factValue = 0;
+
+        if GetShouldEnableRandomEncounters() {
+            factValue = 1;
+        }        
+
+        questsSystem.SetFactStr("ngplus_enable_random_encounters", factValue);
     }
 
     private final func ActivateEP1() {
@@ -40,5 +52,6 @@ public class NGPlusEP1StatusListener extends ScriptableSystem {
 
         this.RetrofixQ101SideContent();
         this.ActivateEP1();
+        NGPlusEP1StatusListener.ApplyRandomEncounterDisabler(this.m_questsSystem);
     }
 }

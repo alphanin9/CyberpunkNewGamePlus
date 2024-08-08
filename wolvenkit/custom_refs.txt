@@ -87,6 +87,7 @@ mod\quest\newgameplus\new_q101\Q101SetJohnnyStuff.questphase
 mod\quest\newgameplus\newNpc\ayumi.ent
 mod\quest\newgameplus\newNpc\ayumiTest_goodNpc.ent
 mod\quest\newgameplus\newNpc\ayumiTest.ent
+mod\quest\newgameplus\newNpc\blackhand.ent
 mod\quest\newgameplus\ngplusadditionalcontent.questphase
 mod\quest\newgameplus\NGPlusAdditionalContent.questphase
 mod\quest\newgameplus\ngplusbossencounterloop.questphase

@@ -26,6 +26,10 @@ public func GetShouldFastForwardQ101Start() -> Bool = UserConfig.GetShouldFastFo
 @if(ModuleExists("NGPlus.CustomConfig"))
 public func GetDodgeUpgradeChance() -> Float = UserConfig.GetDodgeUpgradeChance();
 
+// NOTE: used to enable/disable random boss encounters people were unhappy with...
+@if(ModuleExists("NGPlus.CustomConfig"))
+public func GetShouldEnableRandomEncounters() -> Bool = UserConfig.GetShouldEnableRandomEncounters();
+
 @if(!ModuleExists("NGPlus.CustomConfig"))
 public func GetFastUpgradeChance() -> Float = DefaultDifficultyConfig.GetFastUpgradeChance();
 
@@ -48,6 +52,9 @@ public func GetDodgeUpgradeChance() -> Float = DefaultDifficultyConfig.GetDodgeU
 @if(!ModuleExists("NGPlus.CustomConfig"))
 public func GetShouldFastForwardQ101Start() -> Bool = DefaultDifficultyConfig.GetShouldFastForwardQ101Start();
 
+@if(!ModuleExists("NGPlus.CustomConfig"))
+public func GetShouldEnableRandomEncounters() -> Bool = DefaultDifficultyConfig.GetShouldEnableRandomEncounters();
+
 // Inherit your UserConfig from this to get default values
 public abstract class DefaultDifficultyConfig {
     public static func GetFastUpgradeChance() -> Float = 77.0;
@@ -57,4 +64,5 @@ public abstract class DefaultDifficultyConfig {
     public static func GetNetrunnerUpgradeChance() -> Float = 50.0;
     public static func GetDodgeUpgradeChance() -> Float = 33.0;
     public static func GetShouldFastForwardQ101Start() -> Bool = false;
+    public static func GetShouldEnableRandomEncounters() -> Bool = true;
 }

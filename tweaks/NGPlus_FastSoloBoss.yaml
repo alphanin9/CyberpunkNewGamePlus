@@ -104,6 +104,8 @@ Character.NGPlus_EncounterFastSoloBoss:
     - !append t"Ability.HasBerserk"
     - !append t"Ability.CanPreciseShoot"
     - !append t"Ability.CanChargedShoot"
+    - !append t"Ability.DealsElectricDamage"
+    - !append t"Ability.CanCauseElectrocution"
 
   objectActions: ["QuickHack.BossBaseBlindHack", "QuickHack.BossSuicideHackBase", "QuickHack.BossBaseWeaponMalfunctionHack", "QuickHack.BossBaseLocomotionMalfunctionHack", "QuickHack.BossBaseOverheatHack", "QuickHack.BossOverloadBaseHack", "QuickHack.BossBrainMeltBaseHack", "QuickHack.BossBaseCyberwareMalfunctionHack", "QuickHack.BossSystemCollapseHackBase", "QuickHack.BossGrenadeHackBase", "QuickHack.BossMadnessHackBase", "QuickHack.BossMemoryWipeHackBase", "QuickHack.BossBaseBlackWallHack", "QuickHack.BaseCommsCallInHack", "QuickHack.BaseCommsNoiseHack", "QuickHack.BasePingHack", "QuickHack.BaseContagionHack", "QuickHack.BaseWhistleHack", "QuickHack.RemoteBreach", "Takedown.NewPerkFinisher", "Takedown.NewPerkFinisherBlunt"]
 
