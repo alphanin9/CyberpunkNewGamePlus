@@ -53,21 +53,23 @@ enum ENewGamePlusStartType {
     StartFromQ101 = 1,
     StartFromQ001_NoEP1 = 2,
     StartFromQ101_NoEP1 = 3,
-    Count = 4,
-    Invalid = 5,
+    StartFromQ101_ProgressionBuild = 4,
+    StartFromQ101_ProgressionBuild_NoEP1 = 5,
+    Count = 6,
+    Invalid = 7
 }
 
 public native class NewGamePlusSystem extends IGameSystem {
-    public native func HasPointOfNoReturnSave() -> Bool ;
+    public native func HasPointOfNoReturnSave() -> Bool;
 
-    public native func ParsePointOfNoReturnSaveData(saveName: script_ref<String>) -> Bool ;
+    public native func ParsePointOfNoReturnSaveData(saveName: script_ref<String>) -> Bool;
 
-    public native func GetNewGamePlusState() -> Bool ;
+    public native func GetNewGamePlusState() -> Bool;
 
-    public native func SetNewGamePlusState(newState: Bool) -> Void ;
+    public native func SetNewGamePlusState(newState: Bool) -> Void;
 
     // Maybe I should pass it around by wref?
-    public native func GetSaveData() -> PlayerSaveData ;
+    public native func GetSaveData() -> PlayerSaveData;
 
     public native func SetNewGamePlusGameDefinition(startType: ENewGamePlusStartType) -> Void ;
 
@@ -80,6 +82,9 @@ public native class NewGamePlusSystem extends IGameSystem {
 
     public native func Spew(str: script_ref<String>) -> Void;
     public native func Error(str: script_ref<String>) -> Void;
+
+    public native func GetStandaloneState() -> Bool;
+    public native func SetStandaloneState(aNewState: Bool) -> Void;
 }
 
 @addMethod(GameInstance)

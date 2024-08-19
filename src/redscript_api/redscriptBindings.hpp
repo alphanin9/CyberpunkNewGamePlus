@@ -273,12 +273,17 @@ enum class ENewGamePlusStartType
     StartFromQ101,
     StartFromQ001_NoEP1,
     StartFromQ101_NoEP1,
+    // Reserved for future use... 
+    // NG+ is getting a start from Q101 option without progression transfer, whenever I can do that
+    StartFromQ101_ProgressionBuild,
+    StartFromQ101_ProgressionBuild_NoEP1,
     Count,
     Invalid
 };
 
 // NOTE: THIS IS ACTUALLY BAD
 // EITHER SOMEONE FIGURES OUT A WAY TO MAKE OVER 160 GAME SYSTEMS WORK (PROBABLY PSIBERX) - OR NG+ WON'T BE COMPATIBLE WITH MULTIPLAYER!!!
+// Seems to be fine with new RED4ext...
 class NewGamePlusSystem : public Red::IGameSystem
 {
 public:
@@ -296,6 +301,16 @@ public:
     void SetNewGamePlusState(bool aNewState)
     {
         PluginContext::m_isNewGamePlusActive = aNewState;
+    }
+
+    bool GetStandaloneState() const
+    {
+        return m_isInStandalone;
+    }
+
+    void SetStandaloneState(bool aNewState)
+    {
+        m_isInStandalone = aNewState;
     }
 
     void LoadExpansionIntoSave()
@@ -326,6 +341,11 @@ public:
         constexpr auto q001PathNoEP1 = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001_NoEP1.gamedef");
         constexpr auto q101PathNoEP1 = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_NoEP1.gamedef");
 
+        // Bare Post-Heist starts, applying EP1 Standalone progression builds...
+        constexpr auto standalonePath = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Standalone.gamedef");
+        constexpr auto standalonePathNoEP1 =
+            Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Standalone_NoEP1.gamedef");
+
         switch (aStartType)
         {
         case ENewGamePlusStartType::StartFromQ001:
@@ -339,6 +359,12 @@ public:
             break;
         case ENewGamePlusStartType::StartFromQ101_NoEP1:
             PluginContext::m_ngPlusGameDefinitionHash = q101PathNoEP1;
+            break;
+        case ENewGamePlusStartType::StartFromQ101_ProgressionBuild:
+            PluginContext::m_ngPlusGameDefinitionHash = standalonePath;
+            break;
+        case ENewGamePlusStartType::StartFromQ101_ProgressionBuild_NoEP1:
+            PluginContext::m_ngPlusGameDefinitionHash = standalonePathNoEP1;
             break;
         default:
             break;
@@ -1250,6 +1276,8 @@ private:
     mutable std::shared_mutex m_iconicsMutex;
     mutable std::shared_mutex m_itemDataLoggerMutex;
 
+    bool m_isInStandalone;
+
     RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
     RTTI_IMPL_ALLOCATOR();
 };
@@ -1269,4 +1297,7 @@ RTTI_DEFINE_CLASS(redscript::NewGamePlusSystem, {
     RTTI_METHOD(LoadExpansionIntoSave);
     RTTI_METHOD(Spew);
     RTTI_METHOD(Error);
+
+    RTTI_METHOD(GetStandaloneState);
+    RTTI_METHOD(SetStandaloneState);
 });

@@ -45,13 +45,19 @@ public class NGPlusEP1StatusListener extends ScriptableSystem {
     public final func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {
         this.m_questsSystem = GameInstance.GetQuestsSystem(this.GetGameInstance());
 
+        let isNGPlus = this.m_questsSystem.GetFactStr("ngplus_active") == 1;
+        let isStandalone = this.m_questsSystem.GetFactStr("ngplus_standalone_q101_start") == 1;
+
         // This is only for NG+
-        if this.m_questsSystem.GetFactStr("ngplus_active") == 0 {
+        if !isNGPlus && !isStandalone {
             return;
         }
 
         this.RetrofixQ101SideContent();
         this.ActivateEP1();
-        NGPlusEP1StatusListener.ApplyRandomEncounterDisabler(this.m_questsSystem);
+
+        if !isStandalone {
+            NGPlusEP1StatusListener.ApplyRandomEncounterDisabler(this.m_questsSystem);
+        }
     }
 }

@@ -54,6 +54,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
         
         this.m_systemHandler = this.GetSystemRequestsHandler();
         this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
+        this.m_ngPlusSystem.SetStandaloneState(false);
         this
             .m_systemHandler
             .RegisterToCallback(n"OnSavesForLoadReady", this, n"OnSavesForLoadReady");

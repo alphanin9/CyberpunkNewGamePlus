@@ -20,7 +20,7 @@ public class NGPlusQ101Helper extends ScriptableSystem {
             return;
         }
 
-        if this.m_questsSystem.GetFactStr("ngplus_active") == 0 {
+        if this.m_questsSystem.GetFactStr("ngplus_active") == 0 && this.m_questsSystem.GetFactStr("ngplus_standalone_q101_start") == 0 {
             this.m_ngPlusSystem.Spew("NGPlusQ101Helper::OnFactChange, NG+ inactive...");
             return;
         }

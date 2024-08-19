@@ -35,7 +35,10 @@ private const final func ModifyProficiencyLevel(proficiencyIndex: Int32, isDebug
             this.m_proficiencies[proficiencyIndex].currentLevel
         );
     this.ProcessProficiencyPassiveBonus(proficiencyIndex);
-    if !this.m_isInNgPlus {
+
+    let isInJohnnyIntroSequence = GameInstance.GetQuestsSystem(this.m_owner.GetGame()).GetFactStr("ngplus_in_johnny_intro_sequence") == 1;
+
+    if !this.m_isInNgPlus && !isInJohnnyIntroSequence {
         Blackboard = GameInstance
             .GetBlackboardSystem(this.m_owner.GetGame())
             .Get(GetAllBlackboardDefs().UI_LevelUp);
@@ -180,7 +183,9 @@ public const final func AddExperience(
                 }
             }
             
-            if !this.m_isInNgPlus {
+            let isInJohnnyIntroSequence = GameInstance.GetQuestsSystem(this.m_owner.GetGame()).GetFactStr("ngplus_in_johnny_intro_sequence") == 1;
+
+            if !this.m_isInNgPlus && !isInJohnnyIntroSequence {
                 // I fucking loathe those notifications
                 proficiencyProgress = new ProficiencyProgressEvent();
                 proficiencyProgress.type = type;

@@ -60,6 +60,7 @@ mod\quest\NewGamePlus_Q001_NoEP1.gamedef
 mod\quest\NewGamePlus_Q001.gamedef
 mod\quest\newgameplus_q001.quest
 mod\quest\NewGamePlus_Q001.quest
+mod\quest\NewGamePlus_Standalone.quest
 mod\quest\NewGamePlus.gamedef
 mod\quest\newgameplus.quest
 mod\quest\NewGamePlus.quest
@@ -103,3 +104,4 @@ mod\quest\newgameplus\vrtutorialhack\q000vrtutorial.questphase
 mod\quest\newgameplus\vrTutorialHack\Q000VRTutorial.questphase
 mod\quest\newgameplus\vrtutorialhack\vrtutorialforq001start.questphase
 mod\quest\newgameplus\vrTutorialHack\VRTutorialForQ001Start.questphase
+mod\quest\progressionBuildApply\SetupProgressionBuildsForStandalone.questphase
