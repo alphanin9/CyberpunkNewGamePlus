@@ -12,6 +12,7 @@ base\gameplay\gui\fullscreen\main_menu\new_game_plus_selection_1080p.xbm
 base\gameplay\gui\fullscreen\main_menu\new_game_plus_selection.inkatlas
 base\gameplay\gui\fullscreen\main_menu\new_game_plus_selection.xbm
 base\gameplay\gui\fullscreen\new_game_plus\newgameplus_select_savegame.inkwidget
+base\gameplay\gui\fullscreen\new_game_plus\newgameplus_select_starting_point_standalone.inkwidget
 base\gameplay\gui\fullscreen\new_game_plus\newgameplus_select_starting_point.inkwidget
 base\gameplay\gui\fullscreen\new_game_plus\newgameplus_stats_adjustment.inkwidget
 base\localization\en-us\new_game_plus\new_game_plus_onscreens.json
@@ -60,6 +61,8 @@ mod\quest\NewGamePlus_Q001_NoEP1.gamedef
 mod\quest\NewGamePlus_Q001.gamedef
 mod\quest\newgameplus_q001.quest
 mod\quest\NewGamePlus_Q001.quest
+mod\quest\NewGamePlus_Standalone_NoEP1.gamedef
+mod\quest\NewGamePlus_Standalone.gamedef
 mod\quest\NewGamePlus_Standalone.quest
 mod\quest\NewGamePlus.gamedef
 mod\quest\newgameplus.quest
@@ -94,6 +97,7 @@ mod\quest\newgameplus\NGPlusAdditionalContent.questphase
 mod\quest\newgameplus\ngplusbossencounterloop.questphase
 mod\quest\newgameplus\NGPlusBossEncounterLoop.questphase
 mod\quest\newgameplus\NGPlusBossEncounterRetrofix.questphase
+mod\quest\newgameplus\progressionBuildApply\SetupProgressionBuildsForStandalone.questphase
 mod\quest\newgameplus\restorehud.questphase
 mod\quest\newgameplus\RestoreHUD.questphase
 mod\quest\newgameplus\setbandageoutfit.questphase
