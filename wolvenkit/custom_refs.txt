@@ -50,12 +50,15 @@ ep1\quest\main_quests\q306\scenes\lipsync\en\q306_10_finale\myers.anims
 ep1\quest\main_quests\q306\scenes\lipsync\en\q306_10_finale\reed.anims
 ep1\quest\main_quests\q306\scenes\lipsync\en\q306_10_finale\songbird.anims
 ep1\quest\main_quests\q306\scenes\lipsync\en\q306_10_finale\v.anims
+mod\quest\changedquests\newgameplus_act_1.questphase
 mod\quest\changedQuests\NewGamePlus_act_1.questphase
+mod\quest\changedquests\newgameplus_additional_game_elements.questphase
 mod\quest\changedQuests\NewGamePlus_additional_game_elements.questphase
 mod\quest\changedquests\newgameplus_cyberpunk2077.questphase
 mod\quest\changedQuests\NewGamePlus_cyberpunk2077.questphase
 mod\quest\changedQuests\NewGamePlus_persistent_content.questphase
 mod\quest\changedQuests\open_world\NewGamePlus_open_world_content.questphase
+mod\quest\content_token_magic\content_token_spammer_test.questphase
 mod\quest\NewGamePlus_NoEP1.gamedef
 mod\quest\NewGamePlus_Q001_NoEP1.gamedef
 mod\quest\NewGamePlus_Q001.gamedef
@@ -97,6 +100,7 @@ mod\quest\newgameplus\NGPlusAdditionalContent.questphase
 mod\quest\newgameplus\ngplusbossencounterloop.questphase
 mod\quest\newgameplus\NGPlusBossEncounterLoop.questphase
 mod\quest\newgameplus\NGPlusBossEncounterRetrofix.questphase
+mod\quest\newgameplus\progressionbuildapply\setupprogressionbuildsforstandalone.questphase
 mod\quest\newgameplus\progressionBuildApply\SetupProgressionBuildsForStandalone.questphase
 mod\quest\newgameplus\restorehud.questphase
 mod\quest\newgameplus\RestoreHUD.questphase

@@ -1,5 +1,7 @@
 module NGPlus.ButtonAdder
 
+
+
 @wrapMethod(gameuiMenuItemListGameController)
 private func AddMenuItem(const label: script_ref<String>, spawnEvent: CName) -> Void {
     wrappedMethod(label, spawnEvent);

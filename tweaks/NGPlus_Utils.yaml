@@ -70,10 +70,10 @@ Ability.HasStrongHealthRegeneration:
         poolModifier:
           $type: PoolValueModifier
           enabled: true
-          rangeBegin: 50.0
+          rangeBegin: 30.0
           rangeEnd: 100.0
-          startDelay: 1.5
-          valuePerSec: 2.5
+          startDelay: 0.0
+          valuePerSec: 4
           delayOnChange: false
         statPoolType: "Health"
         modificationType: "Regeneration"

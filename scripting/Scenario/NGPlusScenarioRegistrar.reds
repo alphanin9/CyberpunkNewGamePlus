@@ -7,43 +7,57 @@ class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
     }
 
     private final func GetNewGamePlusMenuEntry() -> inkMenuEntry {
-        let name = n"new_game_plus";
         let widget = new ResourceRef();
         ResourceRef.LoadPath(widget, ResRef.FromString("base\\gameplay\\gui\\fullscreen\\new_game_plus\\newgameplus_select_savegame.inkwidget"));
 
-        let depth: Uint32 = 100u;
-        let spawnMode = inkSpawnMode.SingleAndMultiplayer;
-        let isAffectedByFadeout = true;
-        let inputContext = n"";
+        let menuEntry: inkMenuEntry;
 
-        return new inkMenuEntry(
-            name,
-            widget,
-            depth,
-            spawnMode,
-            isAffectedByFadeout,
-            inputContext
-        );
+        menuEntry.name = n"new_game_plus";
+        menuEntry.menuWidget = widget;
+        menuEntry.depth = 100u;
+        menuEntry.spawnMode = inkSpawnMode.SingleAndMultiplayer;
+        menuEntry.isAffectedByFadeout = true;
+        menuEntry.inputContext = n"";
+
+        return menuEntry;
     }
 
     private final func GetNewGamePlusSelectStartMenuEntry() -> inkMenuEntry {
-        let name = n"new_game_plus_starting_point";
         let widget = new ResourceRef();
         ResourceRef.LoadPath(widget, ResRef.FromString("base\\gameplay\\gui\\fullscreen\\new_game_plus\\newgameplus_select_starting_point.inkwidget"));
 
-        let depth: Uint32 = 100u;
-        let spawnMode = inkSpawnMode.SingleAndMultiplayer;
-        let isAffectedByFadeout = true;
-        let inputContext = n"";
+        let menuEntry: inkMenuEntry;
 
-        return new inkMenuEntry(
-            name,
-            widget,
-            depth,
-            spawnMode,
-            isAffectedByFadeout,
-            inputContext
-        );
+        menuEntry.name = n"new_game_plus_starting_point";
+        menuEntry.menuWidget = widget;
+        menuEntry.depth = 100u;
+        menuEntry.spawnMode = inkSpawnMode.SingleAndMultiplayer;
+        menuEntry.isAffectedByFadeout = true;
+        menuEntry.inputContext = n"";
+
+        return menuEntry;
+    }
+
+    private final func GetNewGamePlusStandaloneNoEP1Entry() -> inkMenuEntry {
+        let widget = new ResourceRef();
+        ResourceRef.LoadPath(widget, ResRef.FromString("base\\gameplay\\gui\\fullscreen\\new_game_plus\\newgameplus_select_starting_point_standalone.inkwidget"));
+
+        let menuEntry: inkMenuEntry;
+
+        menuEntry.name = n"new_game_plus_standalone_no_ep1";
+        menuEntry.menuWidget = widget;
+        menuEntry.depth = 100u;
+        menuEntry.spawnMode = inkSpawnMode.SingleAndMultiplayer;
+        menuEntry.isAffectedByFadeout = true;
+        menuEntry.inputContext = n"";
+
+        return menuEntry;
+    }
+
+    private final func GetStandaloneMenuEntry() -> inkMenuEntry {
+        let menuEntry: inkMenuEntry;
+
+        return menuEntry;
     }
 
     private final func GetNewGamePlusRegisteredScenarios() -> array<CName> {
@@ -55,6 +69,9 @@ class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
         ArrayPush(ret, n"MenuScenario_NewGamePlusBodyTypeSelection");
         ArrayPush(ret, n"MenuScenario_NewGamePlusCharacterCustomization");
         ArrayPush(ret, n"MenuScenario_NewGamePlusStatsAdjustment");
+
+        // Standalone Q101 without expansion... I guess?
+        ArrayPush(ret, n"MenuScenario_NewGamePlusSelectStandaloneStartNonEP1");
 
         return ret;
     }
@@ -71,11 +88,9 @@ class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
         for scenario in scenarios {
             ArrayPush(resource.scenariosNames, scenario);
         }
-        
-        //ArrayPush(resource.scenariosNames, n"MenuScenario_NewGamePlus");
-        //ArrayPush(resource.scenariosNames, n"MenuScenario_SelectNewGamePlusStart");
 
         ArrayPush(resource.menusEntries, this.GetNewGamePlusMenuEntry());
         ArrayPush(resource.menusEntries, this.GetNewGamePlusSelectStartMenuEntry());
+        ArrayPush(resource.menusEntries, this.GetNewGamePlusStandaloneNoEP1Entry());
     }
 }

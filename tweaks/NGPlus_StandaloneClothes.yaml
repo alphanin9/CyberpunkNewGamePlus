@@ -1,0 +1,116 @@
+# Since CDPR is *exceptionally* smart and decided to gate only the clothing from EP1 Standalone sets to EP1, I needed to add a few more progression builds...
+# I mean thanks but like, could have added the clothing too???
+
+ProgressionBuilds.NGPlus_Standalone_Street_MA_StartingBuild:
+  $base: ProgressionBuilds.EP1_Standalone_StartingBuild
+  startingEquipment:
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Tech_02_basic_02
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Jacket_01_old_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.TShirt_11_old_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Q001_Pants
+    - !append
+      $type: BuildEquipment
+      equipment: Items.CasualShoes_06_rich_01
+
+ProgressionBuilds.NGPlus_Standalone_Street_WA_StartingBuild:
+  $base: ProgressionBuilds.EP1_Standalone_StartingBuild
+  startingEquipment:
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Tech_02_basic_02
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Jacket_01_old_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.TShirt_06_basic_02
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Q001_Pants
+    - !append
+      $type: BuildEquipment
+      equipment: Items.CasualShoes_06_old_02
+
+ProgressionBuilds.NGPlus_Standalone_Corpo_MA_StartingBuild:
+  $base: ProgressionBuilds.EP1_Standalone_StartingBuild
+  startingEquipment:
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Glasses_03_basic_05
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Vest_13_basic_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.FormalShirt_01_basic_02
+    - !append
+      $type: BuildEquipment
+      equipment: Items.FormalPants_01_basic_02
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Boots_02_basic_02
+
+ProgressionBuilds.NGPlus_Standalone_Corpo_WA_StartingBuild:
+  $base: ProgressionBuilds.EP1_Standalone_StartingBuild
+  startingEquipment:
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Glasses_03_basic_05
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Vest_13_basic_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.FormalShirt_01_basic_02
+    - !append
+      $type: BuildEquipment
+      equipment: Items.FormalPants_02_basic_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Boots_02_basic_02
+
+ProgressionBuilds.NGPlus_Standalone_Nomad_MA_StartingBuild:
+  $base: ProgressionBuilds.EP1_Standalone_StartingBuild
+  startingEquipment:
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Glasses_01_basic_03
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Jacket_12_rich_02
+    - !append
+      $type: BuildEquipment
+      equipment: Items.TShirt_11_old_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Pants_09_old_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Boots_10_old_01
+
+ProgressionBuilds.NGPlus_Standalone_Nomad_WA_StartingBuild:
+  $base: ProgressionBuilds.EP1_Standalone_StartingBuild
+  startingEquipment:
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Glasses_01_basic_02
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Jacket_12_rich_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.TShirt_07_old_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Pants_09_old_01
+    - !append
+      $type: BuildEquipment
+      equipment: Items.Boots_10_old_01

@@ -5,6 +5,16 @@ protected cb func OnNewGamePlus() -> Bool {
     this.SwitchToScenario(n"MenuScenario_NewGamePlus");
 }
 
+@replaceMethod(MenuScenario_SingleplayerMenu)
+protected cb func OnNewGame() -> Bool {
+    this.CloseSubMenu();
+    if this.GetSystemRequestsHandler().IsAdditionalContentEnabled(n"EP1") {
+        this.SwitchToScenario(n"MenuScenario_ExpansionNewGame");
+    } else {
+        this.SwitchToScenario(n"MenuScenario_NewGamePlusSelectStandaloneStartNonEP1");
+    };
+}
+
 public class MenuScenario_NewGamePlus extends MenuScenario_PreGameSubMenu {
     protected cb func OnEnterScenario(prevScenario: CName, userData: ref<IScriptable>) -> Bool {
         super.OnEnterScenario(prevScenario, userData);
@@ -43,6 +53,28 @@ public class MenuScenario_SelectNewGamePlusStart extends MenuScenario_PreGameSub
 
     protected cb func OnAccept() -> Bool {
         this.SwitchToScenario(n"MenuScenario_NewGamePlusLifePathSelection");
+    }
+}
+
+// When someone ain't got EP1, we still provide a Post-Heist start for him with EP1 builds!
+public class MenuScenario_NewGamePlusSelectStandaloneStartNonEP1 extends MenuScenario_PreGameSubMenu {
+    protected cb func OnEnterScenario(prevScenario: CName, userData: ref<IScriptable>) -> Bool {
+        super.OnEnterScenario(prevScenario, userData);
+        this.GetMenusState().OpenMenu(n"new_game_plus_standalone_no_ep1");
+    }
+
+    protected cb func OnLeaveScenario(nextScenario: CName) -> Bool {
+        super.OnLeaveScenario(nextScenario);
+        this.GetMenusState().CloseMenu(n"character_customization_background");
+        this.GetMenusState().CloseMenu(n"new_game_plus_standalone_no_ep1");
+    }
+
+    protected cb func OnMainMenuBack() -> Bool {
+        this.SwitchToScenario(this.m_prevScenario);
+    }
+
+    protected cb func OnAccept() -> Bool {
+        this.SwitchToScenario(n"MenuScenario_Difficulty");
     }
 }
 
