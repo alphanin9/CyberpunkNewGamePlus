@@ -73,6 +73,7 @@ mod\quest\NewGamePlus.quest
 mod\quest\newgameplus\bossEncounterTest\bossEncounterTest.gamedef
 mod\quest\newgameplus\bossencountertest\bossencountertest.quest
 mod\quest\newgameplus\bossEncounterTest\bossEncounterTest.quest
+mod\quest\newgameplus\bugfixing\ngplusBugfixing.questphase
 mod\quest\newgameplus\fasttracktoq001.questphase
 mod\quest\newgameplus\FastTrackToQ001.questphase
 mod\quest\newgameplus\fasttracktoq101new.questphase
