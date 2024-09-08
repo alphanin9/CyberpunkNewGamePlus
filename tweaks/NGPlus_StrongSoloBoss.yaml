@@ -12,7 +12,7 @@ Character.NGPlus_EncounterStrongSoloBoss:
   entityTemplatePath: r"ep1\\characters\\entities\\corpo\\corpo__black_ops_mb.ent"
   appearanceName: n"black_ops_mb_heavy__lvl2_02"
 
-  tags: ["Cyberpsycho", "ImmuneToTakedown"]
+  tags: ["Cyberpsycho", "ImmuneToTakedown", "NGPlusBoss"]
   baseAttitudeGroup: n"hostile"
   affiliation: t"Factions.Classified"
   rarity: NPCRarity.Boss

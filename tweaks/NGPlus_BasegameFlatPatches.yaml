@@ -1,0 +1,4 @@
+# Patches are needed because by default game only allows 20 entities to be spawned with DynamicSpawnSystem
+# 60 seems to run fine on 12900K
+DynamicSpawnSystem.setup.totalEntitiesLimit: 100
+DynamicSpawnSystem.setup.numberOfDeadBodiesToTriggerImmediateDespawn: 60

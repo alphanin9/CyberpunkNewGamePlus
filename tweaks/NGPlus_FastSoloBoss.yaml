@@ -29,7 +29,7 @@ Items.NGPlus_FastSoloMantisBlades:
 
 Character.NGPlus_EncounterFastSoloBoss:
   $base: t"Character.afterlife_rare_fmelee3_katana_wa_elite"
-  tags: ["Cyberpsycho", "ImmuneToTakedown"]
+  tags: ["Cyberpsycho", "ImmuneToTakedown", "NGPlusBoss"]
   baseAttitudeGroup: n"hostile"
   rarity: NPCRarity.Boss
   quest: NPCQuestAffiliation.StreetStory

@@ -26,6 +26,9 @@ class PuppetPowerUpSystem {
     }
 
     private final func ApplyAbilityGroup(aGroupId: TweakDBID) {
+        // FIX: multiple armor levels stacking together?
+        let hasSubdermalArmor = this.m_statsSystem.GetStatValue(Cast<StatsObjectID>(this.m_puppet.GetEntityID()), gamedataStatType.HasSubdermalArmor) > 0.0;
+
         let abilityGroup = TweakDBInterface.GetGameplayAbilityGroupRecord(aGroupId);
 
         if !IsDefined(abilityGroup) {
@@ -33,15 +36,40 @@ class PuppetPowerUpSystem {
             return;
         }
 
-        RPGManager.ApplyAbilityGroup(this.m_puppet, abilityGroup);
+        let subdermalArmorAbilities = [t"Ability.HasSubdermalArmorBase", t"Ability.HasSubdermalArmorMedium", t"Ability.HasSubdermalArmorHigh"];   
+
+        let outList: [wref<GameplayAbility_Record>];
+        abilityGroup.Abilities(outList);
+
+        for ability in outList {
+            let isArmorAbility = ArrayContains(subdermalArmorAbilities, ability.GetID());
+
+            if !isArmorAbility || !hasSubdermalArmor {
+                RPGManager.ApplyAbility(this.m_puppet, ability);
+                if isArmorAbility {
+                    hasSubdermalArmor = true;
+                }
+            }
+        }
     }
 
     private final func RandMeetsChance(aChance: Float) -> Bool {
         return RandRangeF(0.0, 1.0) < aChance;
     }
 
+    // Smasher actually has psycho tag, WTF???
+    // Explains NG+ Smasher being a bitch
+    private final func IsSmasher() -> Bool {
+        return Equals(this.m_puppet.GetRecord().ArchetypeName(), n"adamsmasher");
+    }
+
+    // Yeah, I kinda fucked up
+    private final func IsNGPlusBoss() -> Bool {
+        return NPCManager.HasTag(this.m_puppet.GetRecordID(), n"NGPlusBoss");
+    }
+
     private final func AddCyberAbilities() {
-        let isPsycho = this.m_puppet.IsCharacterCyberpsycho();
+        let isPsycho = this.m_puppet.IsCharacterCyberpsycho() && !this.IsSmasher() && !this.IsNGPlusBoss();
 
         // Only buff the normies, don't buff bosses because they're already pretty strong (with the exception of psychos) and drones because I don't care about them
         if (this.m_puppet.IsBoss() && !isPsycho) || this.m_puppet.IsMaxTac() || this.m_puppet.IsDrone() {

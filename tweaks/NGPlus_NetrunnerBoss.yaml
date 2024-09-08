@@ -3,7 +3,7 @@ $dlc: EP1
 
 Character.NGPlus_EncounterNetrunnerBoss:
   $base: t"Character.maxtac_av_netrunner_ma"
-  tags: ["Cyberpsycho", "ImmuneToTakedown"]
+  tags: ["Cyberpsycho", "ImmuneToTakedown", "NGPlusBoss"]
   baseAttitudeGroup: n"hostile"
   affiliation: t"Factions.Arasaka"
   rarity: NPCRarity.Boss

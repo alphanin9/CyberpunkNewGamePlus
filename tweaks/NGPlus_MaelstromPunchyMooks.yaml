@@ -1,0 +1,53 @@
+Character.NewGamePlus_MaelstromMook_Wrench:
+  $base: Character.maelstrom_grunt1_melee1_wrench_wa
+  baseAttitudeGroup: n"hostile"
+  quest: NPCQuestAffiliation.StreetStory
+  priority: t"SpawnableObjectPriority.Quest"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NewGamePlus_MaelstromMook_Wrench_B:
+  $base: Character.maelstrom_grunt1_melee1_wrench_ma
+  baseAttitudeGroup: n"hostile"
+  quest: NPCQuestAffiliation.StreetStory
+  priority: t"SpawnableObjectPriority.Quest"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+
+Character.NewGamePlus_MaelstromMook_Knife:
+  $base: Character.maelstrom_grunt1_melee1_knife_ma
+  baseAttitudeGroup: n"hostile"
+  quest: NPCQuestAffiliation.StreetStory
+  priority: t"SpawnableObjectPriority.Quest"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NewGamePlus_MaelstromMook_Sword:
+  $base: Character.maelstrom_grunt2_melee2_hammer_wa
+  baseAttitudeGroup: n"hostile"
+  quest: NPCQuestAffiliation.StreetStory
+  priority: t"SpawnableObjectPriority.Quest"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+DynamicSpawnSystem.NewGamePlus_MaelstromPunchyMooks:
+  $type: DynamicVehicleData
+  vehicleRecord: Vehicle.cs_savable_chevalier_thrax_maelstrom
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NewGamePlus_MaelstromMook_Wrench"
+      weight: 0.5
+    -
+      $type: WeightedCharacter
+      character: t"Character.NewGamePlus_MaelstromMook_Wrench_B"
+      weight: 0.5
+    -
+      $type: WeightedCharacter
+      character: t"Character.NewGamePlus_MaelstromMook_Knife"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NewGamePlus_MaelstromMook_Sword"
+      weight: 1.0

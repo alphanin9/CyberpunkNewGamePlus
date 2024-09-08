@@ -20,7 +20,8 @@ ArchetypeData.NGPlusAbilityGroup_Tanky:
     - Ability.CanCatchUpDistance
     - Ability.CanCatchUp
     - Ability.HasPainEditor
-    - Ability.HasSubdermalArmorHigh
+    # Temporarily removed...
+    # - Ability.HasSubdermalArmorHigh     
     - Ability.HasBerserk
 
 ArchetypeData.NGPlusAbilityGroup_Regen:

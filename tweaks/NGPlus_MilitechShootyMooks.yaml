@@ -1,0 +1,53 @@
+# Just a lot of squishy shooty Militech lads, should be fun
+Character.NewGamePlus_MilitechMook_SMG:
+  $base: Character.militech_ranger1_ranged1_saratoga_ma
+  baseAttitudeGroup: n"hostile"
+  quest: NPCQuestAffiliation.StreetStory
+  priority: t"SpawnableObjectPriority.Quest"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NewGamePlus_MilitechMook_Pistol:
+  $base: Character.militech_ranger1_ranged1_lexington_ma
+  baseAttitudeGroup: n"hostile"
+  quest: NPCQuestAffiliation.StreetStory
+  priority: t"SpawnableObjectPriority.Quest"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NewGamePlus_MilitechMook_Rifle:
+  $base: Character.militech_ranger2_ranged2_ajax_ma
+  baseAttitudeGroup: n"hostile"
+  quest: NPCQuestAffiliation.StreetStory
+  priority: t"SpawnableObjectPriority.Quest"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  archetypeData:
+    $base: ArchetypeData.GenericRangedT1
+    type:
+      $base: ArchetypeType.GenericRangedT1
+      localizedName: "LocKey#22655"
+  savable: true
+
+
+DynamicSpawnSystem.NewGamePlus_MilitechShootyMooks:
+  $type: DynamicVehicleData
+  vehicleRecord: Vehicle.v_standard3_chevalier_emperor_militech
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NewGamePlus_MilitechMook_SMG"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NewGamePlus_MilitechMook_Pistol"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NewGamePlus_MilitechMook_Pistol"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NewGamePlus_MilitechMook_Rifle"
+      weight: 1.0
+  
+
