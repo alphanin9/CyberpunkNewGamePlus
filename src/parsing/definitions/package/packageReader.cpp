@@ -1,4 +1,3 @@
-#include "../../../context/context.hpp"
 #include "packageReader.hpp"
 
 #include <RED4ext/Scripting/Natives/Generated/game/StatIDType.hpp>
@@ -6,6 +5,8 @@
 
 #include <chrono>
 #include <unordered_map>
+
+#include <context.hpp>
 
 // Currently unused, is meant to replace nativeScriptableReader...
 namespace package

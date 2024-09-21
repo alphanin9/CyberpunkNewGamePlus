@@ -1,7 +1,7 @@
 #pragma once
 #include "../../cursorDef.hpp"
 
-namespace cyberpunk {
+namespace save {
 	struct NodeEntry;
 
 	class NodeDataInterface {

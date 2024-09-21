@@ -5,9 +5,9 @@
 #include "../../nodeEntry.hpp"
 #include "../parserHelper.hpp"
 
-#include "../../../../context/context.hpp"
+#include <context.hpp>
 
-namespace cyberpunk
+namespace save
 {
 void FactsTableNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 {

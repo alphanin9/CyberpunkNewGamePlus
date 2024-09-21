@@ -4,7 +4,7 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
-#include "../../../../../context/context.hpp"
+#include <context.hpp>
 #include "../../../rttiHelpers/rttiValueReaderNative.hpp"
 
 namespace scriptable::native

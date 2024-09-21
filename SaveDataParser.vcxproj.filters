@@ -60,6 +60,18 @@
     <ClCompile Include="deps\minhook\src\trampoline.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\util\migration\migration.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\parsing\definitions\nodeParsers\wardrobe\wardrobeSystemNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\testingDefs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\redscriptBindings.cpp">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\filesystem\fs_util.hpp">
@@ -84,9 +96,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\hooking\hooking.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\redscript_api\redscriptBindings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\rttiHelpers\rttiValueReaderNative.hpp">
@@ -141,6 +150,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="deps\minhook\src\trampoline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\migration\migration.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\wardrobe\wardrobeSystemNode.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\offsetPtr.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

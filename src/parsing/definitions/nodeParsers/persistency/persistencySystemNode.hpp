@@ -8,7 +8,7 @@
 
 #include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
 
-namespace cyberpunk
+namespace save
 {
 struct RedPersistentObject
 {
@@ -183,4 +183,4 @@ public:
         return chunkIt != m_redClasses.end();
     }
 };
-} // namespace cyberpunk
+}

@@ -6,14 +6,14 @@
 #include <RedLib.hpp>
 
 #include "../interfaceNodeData.hpp"
-#include "../../../../context/context.hpp"
-
 #include "../parserHelper.hpp"
+
+#include <context.hpp>
 
 // TODO: Optimize this
 // Make this use Red structures instead of STL for noexcept stuff?
 // Seems to have a bunch of pointless copies - get rid of them later
-namespace cyberpunk {
+namespace save {
 namespace item
 {
 inline Red::ItemID ReadItemId(FileCursor& aCursor)
@@ -101,6 +101,7 @@ enum class ItemStructure : std::uint8_t
 		AdditionalItemInfo m_additionalItemInfo;
 		ItemSlotPart m_itemSlotPart;
 
+		// Actually kinda silly, don't we have TDB?
 		// I hate this
 		bool HasQuantity() const {
             return (m_itemId.structure & static_cast<std::uint8_t>(item::ItemStructure::Quantity)) ==
@@ -163,9 +164,9 @@ enum class ItemStructure : std::uint8_t
 		static constexpr auto inventoryIdLocal = 0x1;
 		static constexpr auto inventoryIdCarStash = 0xF4240;
 
-		// This is actually entityId
-		std::uint64_t inventoryId;
-		std::vector<ItemData> inventoryItems;
+		// This is actually EntityId or NodeRef
+		Red::NodeRef m_inventoryId;
+		std::vector<ItemData> m_inventoryItems;
 	};
 
 	class InventoryNode : public NodeDataInterface {
@@ -173,26 +174,26 @@ enum class ItemStructure : std::uint8_t
 		static constexpr Red::CName m_nodeName = "inventory";
 		std::vector<SubInventory> subInventories;
 	private:
-		SubInventory readSubInventory(FileCursor& cursor, NodeEntry& node, int offset) {
+		SubInventory ReadSubInventory(FileCursor& cursor, NodeEntry& node, int offset) {
 			auto ret = SubInventory{};
 
-			ret.inventoryId = cursor.readUInt64();
+			ret.m_inventoryId = cursor.readUInt64();
 
 			const auto count = cursor.readUInt();
 
-			ret.inventoryItems.reserve(count);
+			ret.m_inventoryItems.reserve(count);
 
 			for (auto i = 0u; i < count; i++) {
 				auto nextItemInfo = item::ReadItemId(cursor);
 
 				// Not a big fan of this... But it has to be done
-				cyberpunk::ParseNode(cursor, *node.nodeChildren.at(offset + i));
+				save::ParseNode(cursor, *node.nodeChildren.at(offset + i));
 				node.nodeChildren.at(offset + i)->isReadByParent = true;
 
 				auto itemInfoActual = reinterpret_cast<ItemDataNode*>(node.nodeChildren.at(offset + i)->nodeData.get());
 				
 				// Relatively big copy
-				ret.inventoryItems.push_back(std::move(itemInfoActual->itemData));
+				ret.m_inventoryItems.push_back(std::move(itemInfoActual->itemData));
 			}
 
 			return ret;
@@ -200,12 +201,12 @@ enum class ItemStructure : std::uint8_t
 	public:
 		virtual void ReadData(FileCursor& cursor, NodeEntry& node) {
 			const auto count = cursor.readInt();
-			auto offset = 0;
+			std::size_t offset = 0u;
 
 			for (auto i = 0; i < count; i++) {
-				auto subInventory = readSubInventory(cursor, node, offset);
+				auto subInventory = ReadSubInventory(cursor, node, offset);
 
-				auto inventorySize = subInventory.inventoryItems.size();
+				auto inventorySize = subInventory.m_inventoryItems.size();
 
 				subInventories.push_back(std::move(subInventory));
 
@@ -215,7 +216,7 @@ enum class ItemStructure : std::uint8_t
 
 		const SubInventory& LookupInventory(std::uint64_t aInventoryId) {
 			auto inventoryIt = std::find_if(subInventories.begin(), subInventories.end(), [aInventoryId](const SubInventory& aSubInventory) {
-				return aSubInventory.inventoryId == aInventoryId;
+				return aSubInventory.m_inventoryId == aInventoryId;
 			});
 
 			// Remove assert later

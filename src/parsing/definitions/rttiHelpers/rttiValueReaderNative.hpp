@@ -1,8 +1,8 @@
 #pragma once
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
+#include <context.hpp>
 
-#include "../../../context/context.hpp"
 #include "../../cursorDef.hpp"
 
 #include <algorithm>

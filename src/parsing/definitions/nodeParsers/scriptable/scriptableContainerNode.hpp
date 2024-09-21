@@ -16,7 +16,7 @@
 #include "helpers/classDefinitions/playerDevelopmentData.hpp"
 #include "helpers/nativeScriptableReader.hpp"
 
-namespace cyberpunk
+namespace save
 {
 struct RedPackageHeader
 {

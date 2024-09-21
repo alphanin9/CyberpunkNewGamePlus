@@ -1,8 +1,15 @@
-#pragma once
 #include <RED4ext/RED4ext.hpp>
+#include <RED4ext/Scripting/Natives/Generated/game/ConstantStatModifierData_Deprecated.hpp>
+#include <RED4ext/Scripting/Natives/Generated/game/data/ItemCategory_Record.hpp>
+#include <RED4ext/Scripting/Natives/Generated/game/data/ItemType.hpp>
+#include <RED4ext/Scripting/Natives/Generated/game/data/ItemType_Record.hpp>
+#include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
+#include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
+
 #include <RedLib.hpp>
 
-#include "../context/context.hpp"
+#include <context.hpp>
+
 #include "../filesystem/fs_util.hpp"
 #include "../parsing/fileReader.hpp"
 
@@ -11,27 +18,25 @@
 #include "../parsing/definitions/nodeParsers/persistency/persistencySystemNode.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/scriptableContainerNode.hpp"
 #include "../parsing/definitions/nodeParsers/stats/statsSystemNode.hpp"
-
-#include <RED4ext/Scripting/Natives/Generated/game/ConstantStatModifierData_Deprecated.hpp>
-#include <RED4ext/Scripting/Natives/Generated/game/data/ItemCategory_Record.hpp>
-#include <RED4ext/Scripting/Natives/Generated/game/data/ItemType.hpp>
-#include <RED4ext/Scripting/Natives/Generated/game/data/ItemType_Record.hpp>
-#include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
-
-#include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
+#include "../parsing/definitions/nodeParsers/wardrobe/wardrobeSystemNode.hpp"
 
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/craftBook.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/equipmentSystem.hpp"
 #include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/playerDevelopmentData.hpp"
 
+#include "../util/offsetPtr.hpp"
 #include "../util/threads.hpp"
 
 #include <chrono>
 
 #include <simdjson.h>
 
-// NOT A GOOD IDEA TO HAVE IN A HEADER
-// But who cares?
+// TODO: redo all of this
+// All of this is SHIT
+// Redesign things: move loaders for different data into their own namespaces, pass handle to progression data around?
+// Maybe figure out how to add things to save metadata and add ngplusActive field to it...
+
+using namespace Red;
 
 using scriptable::native::CraftBook::CraftBook;
 using scriptable::native::EquipmentSystem::EquipmentSystemPlayerData;
@@ -53,13 +58,13 @@ namespace redscript
 {
 struct RedItemData
 {
-    Red::ItemID m_itemId{};
+    ItemID m_itemId{};
     int32_t m_itemQuantity{};
 
     // HACK: make CW upgrades carry over...
     // Makes things a bit heavier, but w/e
-    Red::DynArray<Red::ItemID> m_attachments;
-    Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> m_statModifiers;
+    DynArray<ItemID> m_attachments;
+    DynArray<Handle<game::StatModifierData_Deprecated>> m_statModifiers;
 
     RTTI_IMPL_TYPEINFO(RedItemData);
     RTTI_IMPL_ALLOCATOR();
@@ -67,9 +72,9 @@ struct RedItemData
 
 struct RedCraftInfo
 {
-    Red::TweakDBID m_targetItem;
+    TweakDBID m_targetItem;
     int m_amount{};
-    Red::DynArray<Red::ItemID> m_hideOnItemsAdded;
+    DynArray<ItemID> m_hideOnItemsAdded;
 
     RTTI_IMPL_TYPEINFO(RedCraftInfo);
     RTTI_IMPL_ALLOCATOR();
@@ -131,10 +136,10 @@ struct PlayerSaveData
     // Johnny and Kurtz get their own shit anyway
     // Filter stash items from useless shit like vehicle weapons
     // in native or on the Redscript side?
-    Red::DynArray<RedItemData> m_playerItems{};
-    Red::DynArray<RedItemData> m_playerStashItems{};
+    DynArray<RedItemData> m_playerItems{};
+    DynArray<RedItemData> m_playerStashItems{};
 
-    Red::DynArray<RedCraftInfo> m_knownRecipeTargetItems{};
+    DynArray<RedCraftInfo> m_knownRecipeTargetItems{};
 
     // Most distinctive cyberware needs to be equipped
     // by the scripting side to make
@@ -143,27 +148,27 @@ struct PlayerSaveData
     // will still end up with the player naked
 
     // Cyberware-EX will mess this up, but do we care?
-    Red::ItemID m_playerEquippedOperatingSystem{};
-    Red::ItemID m_playerEquippedKiroshis{};
-    Red::ItemID m_playerEquippedLegCyberware{};
-    Red::ItemID m_playerEquippedArmCyberware{};
+    ItemID m_playerEquippedOperatingSystem{};
+    ItemID m_playerEquippedKiroshis{};
+    ItemID m_playerEquippedLegCyberware{};
+    ItemID m_playerEquippedArmCyberware{};
 
-    Red::DynArray<Red::ItemID> m_playerEquippedCardiacSystemCW;
+    DynArray<ItemID> m_playerEquippedCardiacSystemCW;
 
     // Filter this from quest vehicles?
     // (Quadra, Demiurge, ETC)
     // Nah, shit idea, maybe for the Demiurge
     // Seeing as acquiring it is pretty cool
-    Red::DynArray<Red::TweakDBID> m_playerVehicleGarage{};
+    DynArray<TweakDBID> m_playerVehicleGarage{};
 
     bool m_addedPerkPointsFromOverflow{};
 
     // NOTE: these do not account for perks like Edgerunner/whatever else... only shards
     // Whatever, we won't be overallocating CW cap anyway :P
-    Red::DynArray<float> m_playerCyberwareCapacity{};
-    Red::DynArray<float> m_playerCarryCapacity{};
+    DynArray<float> m_playerCyberwareCapacity{};
+    DynArray<float> m_playerCarryCapacity{};
 
-    // Later maybe do Equipment-EX transfer too?
+    DynArray<save::WardrobeEntry> m_wardrobeEntries{};
 
     // In theory we don't need this
     RTTI_IMPL_TYPEINFO(PlayerSaveData);
@@ -200,31 +205,11 @@ RTTI_DEFINE_CLASS(redscript::PlayerSaveData, {
     RTTI_PROPERTY(m_playerVehicleGarage);
     RTTI_PROPERTY(m_playerCyberwareCapacity);
     RTTI_PROPERTY(m_playerCarryCapacity);
+    RTTI_PROPERTY(m_wardrobeEntries);
 });
 
 namespace BlacklistedTDBIDs
 {
-/*
-{
-            Red::TweakDBID{"Items.MaskCW"}, Red::TweakDBID{"Items.MaskCWPlus"},
-            Red::TweakDBID{"Items.MaskCWPlusPlus"}, Red::TweakDBID{"Items.w_melee_004__fists_a"},
-            Red::TweakDBID{"Items.PersonalLink"}, Red::TweakDBID{"Items.personal_link"},
-            Red::TweakDBID{"Items.PlayerMaTppHead"}, Red::TweakDBID{"Items.PlayerWaTppHead"},
-            Red::TweakDBID{"Items.PlayerFppHead"}, Red::TweakDBID{"Items.HolsteredFists"},
-            Red::TweakDBID{"Items.mq024_sandra_data_carrier"},
-            // And Skippy leads to him talking in the starting cutscene
-            Red::TweakDBID{"Items.mq007_skippy"}, Red::TweakDBID{"Items.mq007_skippy_post_quest"},
-            Red::TweakDBID{"Items.Preset_Yukimura_Skippy"},
-            Red::TweakDBID{"Items.Preset_Yukimura_Skippy_PostQuest"},
-            Red::TweakDBID{"Items.q005_saburo_data_carrier"},
-            Red::TweakDBID{"Items.q005_saburo_data_carrier_cracked"}, Red::TweakDBID{"Items.q003_chip"},
-            Red::TweakDBID{"Items.q003_chip_cracked"}, Red::TweakDBID{"Items.q003_chip_cracked_funds"},
-            Red::TweakDBID{"Items.Preset_Q001_Lexington"}, Red::TweakDBID{"Items.CyberdeckSplinter"},
-            Red::TweakDBID{"Items.Preset_Lexington_Wilson"}, Red::TweakDBID{"Items.mq011_wilson_gun"}
-}
-*/
-
-using Red::TweakDBID;
 inline constexpr auto MaskCW = TweakDBID("Items.MaskCW");
 inline constexpr auto MaskCWPlus = TweakDBID("Items.MaskCWPlus");
 inline constexpr auto MaskCWPlusPlus = TweakDBID("Items.MaskCWPlusPlus");
@@ -253,14 +238,15 @@ inline constexpr auto CyberdeckSplinter = TweakDBID("Items.CyberdeckSplinter");
 inline constexpr auto TiconGwent = TweakDBID("Items.Preset_Ticon_Gwent");
 inline constexpr auto WitcherSword = TweakDBID("Items.Preset_Sword_Witcher");
 
-inline bool IsForbidden(Red::TweakDBID aId)
+inline bool IsForbidden(TweakDBID aId)
 {
     // Disgusting
     return aId == MaskCW || aId == MaskCWPlus || aId == MaskCWPlusPlus || aId == Fists || aId == PersonalLink ||
            aId == PersonalLink2 || aId == MaTppHead || aId == WaTppHead || aId == FppHead || aId == HolsteredFists ||
            aId == MQ024DataCarrier || aId == Skippy || aId == SkippyPostQuest || aId == PresetSkippy ||
            aId == PresetSkippyPostQuest || aId == SaburoDataCarrier || aId == SaburoDataCarrierCracked ||
-           aId == Q003Chip || aId == Q003ChipCracked || aId == Q003ChipCrackedFunds || aId == CyberdeckSplinter || aId == TiconGwent || aId == WitcherSword;
+           aId == Q003Chip || aId == Q003ChipCracked || aId == Q003ChipCrackedFunds || aId == CyberdeckSplinter ||
+           aId == TiconGwent || aId == WitcherSword;
 }
 }; // namespace BlacklistedTDBIDs
 
@@ -273,8 +259,6 @@ enum class ENewGamePlusStartType
     StartFromQ101,
     StartFromQ001_NoEP1,
     StartFromQ101_NoEP1,
-    // Reserved for future use... 
-    // NG+ is getting a start from Q101 option without progression transfer, whenever I can do that
     StartFromQ101_ProgressionBuild,
     StartFromQ101_ProgressionBuild_NoEP1,
     Count,
@@ -282,9 +266,9 @@ enum class ENewGamePlusStartType
 };
 
 // NOTE: THIS IS ACTUALLY BAD
-// EITHER SOMEONE FIGURES OUT A WAY TO MAKE OVER 160 GAME SYSTEMS WORK (PROBABLY PSIBERX) - OR NG+ WON'T BE COMPATIBLE WITH MULTIPLAYER!!!
-// Seems to be fine with new RED4ext...
-class NewGamePlusSystem : public Red::IGameSystem
+// EITHER SOMEONE FIGURES OUT A WAY TO MAKE OVER 160 GAME SYSTEMS WORK (PROBABLY PSIBERX) - OR NG+ WON'T BE COMPATIBLE
+// WITH MULTIPLAYER!!! Seems to be fine with new RED4ext...
+class NewGamePlusSystem : public IGameSystem
 {
 public:
     // Should really be ref/wref...
@@ -313,6 +297,34 @@ public:
         m_isInStandalone = aNewState;
     }
 
+    bool IsInNewGamePlusSave()
+    {
+        auto questsSystem = GetGameSystem<quest::QuestsSystem>();
+
+        if (!questsSystem)
+        {
+            return false;
+        }
+
+        // https://github.com/psiberx/cp2077-archive-xl/blob/9653e9d2eb07831941533fdff3839fc9bef80c8d/src/Red/QuestsSystem.hpp#L169
+        // Should be accessed somewhere in QuestsSystem::OnGameLoad, I think?
+        auto& questsList = util::OffsetPtr<0xA8, DynArray<ResourcePath>>::Ref(questsSystem);
+
+        constexpr std::array c_ngPlusQuests = {ResourcePath(R"(mod\quest\NewGamePlus.quest)"),
+                                               ResourcePath(R"(mod\quest\NewGamePlus_Standalone.quest)"),
+                                               ResourcePath(R"(mod\quest\NewGamePlus_Q001.quest)")};
+
+        for (auto questResource : questsList)
+        {
+            if (std::find(c_ngPlusQuests.begin(), c_ngPlusQuests.end(), questResource) != c_ngPlusQuests.end())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     void LoadExpansionIntoSave()
     {
         // We only have the one expansion... Thank God
@@ -324,27 +336,28 @@ public:
 
         // Maybe check if EP1 is already running? Eh, the Redscript side already does...
 
-        static const auto fnAddQuest = Red::UniversalRelocFunc<void(__fastcall*)(
-            Red::quest::QuestsSystem * aQuestsSystem, Red::ResourcePath aPath)>(addQuestHash);
+        static const auto fnAddQuest =
+            UniversalRelocFunc<void(__fastcall*)(quest::QuestsSystem * aQuestsSystem, ResourcePath aPath)>(
+                addQuestHash);
 
-        constexpr Red::ResourcePath EP1 = R"(ep1\quest\ep1.quest)";
+        constexpr ResourcePath EP1 = R"(ep1\quest\ep1.quest)";
 
-        fnAddQuest(Red::GetGameSystem<Red::quest::QuestsSystem>(), EP1);
+        fnAddQuest(GetGameSystem<quest::QuestsSystem>(), EP1);
     }
 
     void SetNewGamePlusGameDefinition(ENewGamePlusStartType aStartType)
     {
-        constexpr auto q001Path = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001.gamedef");
-        constexpr auto q101Path = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus.gamedef");
+        constexpr auto q001Path = ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001.gamedef");
+        constexpr auto q101Path = ResourcePath::HashSanitized("mod/quest/NewGamePlus.gamedef");
 
         // These ones do not have EP1 enabled by default, but will have it enabled via custom quest starting
-        constexpr auto q001PathNoEP1 = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001_NoEP1.gamedef");
-        constexpr auto q101PathNoEP1 = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_NoEP1.gamedef");
+        constexpr auto q001PathNoEP1 = ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001_NoEP1.gamedef");
+        constexpr auto q101PathNoEP1 = ResourcePath::HashSanitized("mod/quest/NewGamePlus_NoEP1.gamedef");
 
         // Bare Post-Heist starts, applying EP1 Standalone progression builds...
-        constexpr auto standalonePath = Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Standalone.gamedef");
+        constexpr auto standalonePath = ResourcePath::HashSanitized("mod/quest/NewGamePlus_Standalone.gamedef");
         constexpr auto standalonePathNoEP1 =
-            Red::ResourcePath::HashSanitized("mod/quest/NewGamePlus_Standalone_NoEP1.gamedef");
+            ResourcePath::HashSanitized("mod/quest/NewGamePlus_Standalone_NoEP1.gamedef");
 
         switch (aStartType)
         {
@@ -376,12 +389,12 @@ public:
         return files::HasValidPointOfNoReturnSave();
     }
 
-    bool IsSaveValidForNewGamePlus(Red::ScriptRef<Red::CString>& aSaveName)
+    bool IsSaveValidForNewGamePlus(Red::ScriptRef<CString>& aSaveName)
     {
         return files::IsValidForNewGamePlus(aSaveName->c_str());
     }
 
-    Red::DynArray<int> ResolveNewGamePlusSaves(Red::ScriptRef<Red::DynArray<Red::CString>>& aSaves)
+    DynArray<int> ResolveNewGamePlusSaves(Red::ScriptRef<DynArray<CString>>& aSaves)
     {
         if (!aSaves)
         {
@@ -393,7 +406,7 @@ public:
         // We don't need sorting, the game already sorts the saves before passing them to Redscript
         std::unordered_set<std::uint64_t> playthroughIds{};
 
-        Red::DynArray<int> returnedData{};
+        DynArray<int> returnedData{};
         returnedData.Reserve(aSaves->size);
         // Technically a signed/unsigned mismatch, but I have doubts about people having 2 billion+ saves
         for (auto i = 0; i < aSaves->size; i++)
@@ -421,7 +434,7 @@ public:
         return returnedData;
     }
 
-    bool ParsePointOfNoReturnSaveData(Red::ScriptRef<Red::CString>& aSaveName)
+    bool ParsePointOfNoReturnSaveData(Red::ScriptRef<CString>& aSaveName)
     {
         if (!aSaveName)
         {
@@ -445,32 +458,32 @@ public:
                 return false;
             }
 
-            m_tweakDb = Red::TweakDB::Get();
+            m_tweakDb = TweakDB::Get();
 
             // I think best way to optimize this would be to do async node loading...
             // Not sure if it's worth anything, though...
 
             // Needs to be shared across several transferrers :P
             // NOTE: maybe error check this? Eh, shouldn't fail...
-            m_statsSystemPtr = parser.LookupNodeData<cyberpunk::StatsSystemNode>();
+            m_statsSystemPtr = parser.LookupNodeData<save::StatsSystemNode>();
 
-            if (const auto inventory = parser.LookupNodeData<cyberpunk::InventoryNode>())
+            if (const auto inventory = parser.LookupNodeData<save::InventoryNode>())
             {
                 LoadInventoryNew(inventory);
             }
 
-            if (const auto persistencySystem = parser.LookupNodeData<cyberpunk::PersistencySystemNode>())
+            if (const auto persistencySystem = parser.LookupNodeData<save::PersistencySystemNode>())
             {
                 // Vehicle garage can technically not be present in a savegame
                 // NOTE: really should be using handles instead of custom handle-likes...
                 if (auto garageComponent =
-                        persistencySystem->LookupInstanceAs<Red::GarageComponentPS>("vehicleGarageComponentPS"))
+                        persistencySystem->LookupInstanceAs<GarageComponentPS>("vehicleGarageComponentPS"))
                 {
                     LoadGarageNative(garageComponent);
                 }
             }
 
-            if (auto scriptableSystemsContainer = parser.LookupNodeData<cyberpunk::ScriptableSystemsContainerNode>())
+            if (auto scriptableSystemsContainer = parser.LookupNodeData<save::ScriptableSystemsContainerNode>())
             {
                 // All of them kind of have to be present lol
 
@@ -496,6 +509,11 @@ public:
                 }
             }
 
+            if (auto wardrobeSystem = parser.LookupNodeData<save::WardrobeSystemNode>())
+            {
+                LoadWardrobe(wardrobeSystem);
+            }
+
             LoadStatModifiers();
         }
         catch (std::exception e)
@@ -515,12 +533,12 @@ public:
     }
 
     // Some users don't have LogChannel defined :P
-    void Spew(Red::ScriptRef<Red::CString>& aStr)
+    void Spew(Red::ScriptRef<CString>& aStr)
     {
         PluginContext::Spew(aStr->c_str());
     }
 
-    void Error(Red::ScriptRef<Red::CString>& aStr)
+    void Error(Red::ScriptRef<CString>& aStr)
     {
         PluginContext::Error(aStr->c_str());
     }
@@ -576,8 +594,8 @@ private:
 
         auto statBuffer = m_statsSystemPtr->GetStatModifiers(playerStatObjectId);
 
-        using namespace Red::game;
-        using Red::game::data::StatType;
+        using namespace game;
+        using game::data::StatType;
 
         for (auto& stat : statBuffer)
         {
@@ -588,7 +606,7 @@ private:
 
             // NOTE: all CW shards/carry capacity shards seem to come in constant stat mod...
             // Maybe it would be better to have a DynArray of added stat mods?
-            if (const auto& asConstant = Red::Cast<ConstantStatModifierData_Deprecated>(stat))
+            if (const auto& asConstant = Cast<ConstantStatModifierData_Deprecated>(stat))
             {
                 constexpr auto arbitraryBigStatValue = 25.f; // Should be big enough
                 // Normal CW capacity shards range from 2 to 6
@@ -625,7 +643,7 @@ private:
             auto spentCount = aDevPoints.GetSpent();
             auto unspentCount = aDevPoints.GetUnspent();
 
-            using Red::game::data::DevelopmentPointType;
+            using game::data::DevelopmentPointType;
 
             switch (aDevPoints.GetType())
             {
@@ -678,7 +696,7 @@ private:
         const auto proficiencyIterator = [pSaveData](SProficiency aProficiency)
         {
             const auto currLevel = aProficiency.GetCurrentLevel();
-            using Red::game::data::ProficiencyType;
+            using game::data::ProficiencyType;
             switch (aProficiency.GetType())
             {
             case ProficiencyType::Level:
@@ -711,7 +729,7 @@ private:
         {
             const auto currLevel = aAttribute.GetValue();
 
-            using Red::game::data::StatType;
+            using game::data::StatType;
 
             switch (aAttribute.GetAttributeName())
             {
@@ -748,7 +766,7 @@ private:
             return;
         }
 
-        using Red::game::data::EquipmentArea;
+        using game::data::EquipmentArea;
 
         for (auto& area : loadoutData->equipAreas)
         {
@@ -771,7 +789,7 @@ private:
                     }
 
                     // NOTE: no need to check for CW record existence, we know it exists if flat ptr exists
-                    Red::TweakDBID tagsFlat(itemId.tdbid, ".tags");
+                    TweakDBID tagsFlat(itemId.tdbid, ".tags");
 
                     auto flat = m_tweakDb->GetFlatValue(tagsFlat);
 
@@ -780,7 +798,7 @@ private:
                         continue;
                     }
 
-                    auto tagList = flat->GetValue<Red::DynArray<Red::CName>>();
+                    auto tagList = flat->GetValue<DynArray<CName>>();
 
                     if (!tagList->Contains("MaskCW"))
                     {
@@ -884,18 +902,18 @@ private:
 
     struct ExtendedItemData
     {
-        Red::ItemID m_itemId;
-        Red::TweakDBID m_tdbId;
-        Red::DynArray<Red::CName>* m_tags;
+        ItemID m_itemId;
+        TweakDBID m_tdbId;
+        DynArray<CName>* m_tags;
 
-        Red::gamedataItemType m_itemType;
+        gamedataItemType m_itemType;
 
-        static constexpr Red::CName HideInUI = "HideInUI";
-        static constexpr Red::CName HideAtVendor = "HideAtVendor";
-        static constexpr Red::CName WeaponMod = "WeaponMod";
-        static constexpr Red::CName LexingtonWilson = "Lexington_Wilson";
-        static constexpr Red::CName DLCStashItem = "DLCStashItem";
-        static constexpr Red::CName IconicWeapon = "IconicWeapon";
+        static constexpr CName HideInUI = "HideInUI";
+        static constexpr CName HideAtVendor = "HideAtVendor";
+        static constexpr CName WeaponMod = "WeaponMod";
+        static constexpr CName LexingtonWilson = "Lexington_Wilson";
+        static constexpr CName DLCStashItem = "DLCStashItem";
+        static constexpr CName IconicWeapon = "IconicWeapon";
 
         bool IsHiddenInUI() const
         {
@@ -904,7 +922,7 @@ private:
 
         bool IsValidAttachment() const
         {
-            return HasTag(WeaponMod) || m_itemType == Red::gamedataItemType::Prt_Program;
+            return HasTag(WeaponMod) || m_itemType == gamedataItemType::Prt_Program;
         }
 
         bool IsDyingNight() const
@@ -924,8 +942,7 @@ private:
 
         bool IsAllowedType() const
         {
-            using Red::gamedataItemType;
-            using Red::game::data::ItemType;
+            using game::data::ItemType;
             switch (m_itemType)
             {
             case ItemType::Con_Edible:
@@ -954,7 +971,7 @@ private:
             return true;
         }
 
-        bool HasTag(Red::CName aTag) const
+        bool HasTag(CName aTag) const
         {
             if (!m_tags)
             {
@@ -965,7 +982,7 @@ private:
         }
     };
 
-    ExtendedItemData CreateExtendedData(const Red::ItemID& aItemId)
+    ExtendedItemData CreateExtendedData(const ItemID& aItemId)
     {
         ExtendedItemData ret{};
 
@@ -1004,8 +1021,8 @@ private:
             {
                 std::unique_lock lock{m_itemDataLoggerMutex};
 
-                Red::CString str;
-                Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, ret.m_tdbId);
+                CString str;
+                CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, ret.m_tdbId);
 
                 PluginContext::Spew(
                     std::format("Failed to add item {} (TDBID {:#X})", str.c_str(), std::uint64_t{ret.m_tdbId}));
@@ -1016,12 +1033,11 @@ private:
     }
 
     // Now should handle CW upgrades too
-    void ProcessAttachments(const cyberpunk::ItemSlotPart& aSlotPart, Red::DynArray<RedItemData>& aTargetList,
-                            RedItemData& aData)
+    void ProcessAttachments(const save::ItemSlotPart& aSlotPart, DynArray<RedItemData>& aTargetList, RedItemData& aData)
     {
-        constexpr Red::TweakDBID iconicWeaponModLegendary = "AttachmentSlots.IconicWeaponModLegendary";
-        constexpr Red::TweakDBID iconicMeleeWeaponMod1 = "AttachmentSlots.IconicMeleeWeaponMod1";
-        constexpr Red::TweakDBID statsShardSlot = "AttachmentSlots.StatsShardSlot";
+        constexpr TweakDBID iconicWeaponModLegendary = "AttachmentSlots.IconicWeaponModLegendary";
+        constexpr TweakDBID iconicMeleeWeaponMod1 = "AttachmentSlots.IconicMeleeWeaponMod1";
+        constexpr TweakDBID statsShardSlot = "AttachmentSlots.StatsShardSlot";
 
         // Don't bother doing iconic weapon mods
         if (aSlotPart.m_attachmentSlotTdbId == iconicWeaponModLegendary ||
@@ -1039,8 +1055,8 @@ private:
                 const auto rngSeed = aSlotPart.m_itemId.rngSeed; // RNG seed seems to determine CW stat mods...
                 const auto tdbId = aSlotPart.m_itemId.tdbid;
 
-                Red::CString str;
-                Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, tdbId);
+                CString str;
+                CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, tdbId);
 
                 PluginContext::Spew(std::format("Shard ID: {}, RNG seed: {}", str.c_str(), rngSeed));
             }
@@ -1074,10 +1090,10 @@ private:
         }
     }
 
-    void AddItemToInventory(const ExtendedItemData& aExtendedData, const cyberpunk::ItemData& aItem,
-                            Red::DynArray<RedItemData>& aTargetList, std::unordered_set<Red::TweakDBID>& aAddedIconics)
+    void AddItemToInventory(const ExtendedItemData& aExtendedData, const save::ItemData& aItem,
+                            DynArray<RedItemData>& aTargetList, std::unordered_set<TweakDBID>& aAddedIconics)
     {
-        constexpr Red::TweakDBID moneyItem = "Items.money";
+        constexpr TweakDBID moneyItem = "Items.money";
 
         if (aExtendedData.m_tdbId == moneyItem)
         {
@@ -1113,7 +1129,7 @@ private:
         {
             // NOTE: this will murder item mods on X-MOD2...
             // Dirty hack fix
-            // 
+            //
             // Unused, I don't think there's a point in MT for this...
             // Maybe do async magic for node loading? .....
             // std::unique_lock lock{m_iconicsMutex};
@@ -1138,8 +1154,8 @@ private:
         {
             if (aExtendedData.HasTag("Weapon"))
             {
-                Red::CString str;
-                Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aExtendedData.m_tdbId);
+                CString str;
+                CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aExtendedData.m_tdbId);
 
                 PluginContext::Spew(std::format("Gun {}", str.c_str()));
 
@@ -1153,7 +1169,7 @@ private:
 
                 m_statsSystemPtr->DumpStatModifiersToConsole(statModifiers);
 
-                static const auto statTypes = Red::GetEnum<Red::game::data::StatType>();
+                static const auto statTypes = GetEnum<game::data::StatType>();
 
                 for (auto i : m_statsSystemPtr->GetDisabledModifiers(statsObjectId))
                 {
@@ -1182,18 +1198,18 @@ private:
         {
             if (aTargetList.entries == m_saveData.m_playerItems.entries)
             {
-                Red::CString str{};
-                Red::CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aExtendedData.m_tdbId);
+                CString str{};
+                CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aExtendedData.m_tdbId);
 
                 PluginContext::Spew(std::format("Adding item {} to inventory!", str.c_str()));
             }
         }
-        
+
         aTargetList.PushBack(std::move(itemData));
     }
 
-    void ProcessItem(const cyberpunk::ItemData& aItem, Red::DynArray<RedItemData>& aTargetList,
-                     std::unordered_set<Red::TweakDBID>& aAddedIconics)
+    void ProcessItem(const save::ItemData& aItem, DynArray<RedItemData>& aTargetList,
+                     std::unordered_set<TweakDBID>& aAddedIconics)
     {
         auto extendedItemData = CreateExtendedData(aItem.GetItemID());
 
@@ -1212,7 +1228,7 @@ private:
                 continue;
             }
 
-            if (modifier->statType == Red::game::data::StatType::Invalid)
+            if (modifier->statType == game::data::StatType::Invalid)
             {
                 continue;
             }
@@ -1221,33 +1237,33 @@ private:
         }
     }
 
-    void LoadInventoryNew(cyberpunk::InventoryNode* const aInventory)
+    void LoadInventoryNew(save::InventoryNode* const aInventory)
     {
-        std::unordered_set<Red::TweakDBID> addedIconics{};
+        std::unordered_set<TweakDBID> addedIconics{};
 
-        auto& inventoryLocal = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdLocal);
-        auto& inventoryCarStash = aInventory->LookupInventory(cyberpunk::SubInventory::inventoryIdCarStash);
+        auto& inventoryLocal = aInventory->LookupInventory(save::SubInventory::inventoryIdLocal);
+        auto& inventoryCarStash = aInventory->LookupInventory(save::SubInventory::inventoryIdCarStash);
 
-        m_saveData.m_playerItems.Reserve(inventoryLocal.inventoryItems.size());
-        m_saveData.m_playerStashItems.Reserve(inventoryCarStash.inventoryItems.size());
+        m_saveData.m_playerItems.Reserve(inventoryLocal.m_inventoryItems.size());
+        m_saveData.m_playerStashItems.Reserve(inventoryCarStash.m_inventoryItems.size());
 
-        for (const auto& item : inventoryLocal.inventoryItems)
+        for (const auto& item : inventoryLocal.m_inventoryItems)
         {
             ProcessItem(item, m_saveData.m_playerItems, addedIconics);
         }
 
-        for (const auto& item : inventoryCarStash.inventoryItems)
+        for (const auto& item : inventoryCarStash.m_inventoryItems)
         {
             ProcessItem(item, m_saveData.m_playerStashItems, addedIconics);
         }
     }
 
-    void LoadGarageNative(Red::GarageComponentPS* aGarage)
+    void LoadGarageNative(GarageComponentPS* aGarage)
     {
-        constexpr Red::TweakDBID Demiurge = "Vehicle.v_utility4_thorton_mackinaw_bmf_player";
-        constexpr Red::TweakDBID Hoon = "Vehicle.v_sport2_quadra_type66_nomad_tribute";
-        constexpr Red::TweakDBID JackieArch = "Vehicle.v_sportbike2_arch_jackie_player";
-        constexpr Red::TweakDBID JackieTunedArch = "Vehicle.v_sportbike2_arch_jackie_tuned_player";
+        constexpr TweakDBID Demiurge = "Vehicle.v_utility4_thorton_mackinaw_bmf_player";
+        constexpr TweakDBID Hoon = "Vehicle.v_sport2_quadra_type66_nomad_tribute";
+        constexpr TweakDBID JackieArch = "Vehicle.v_sportbike2_arch_jackie_player";
+        constexpr TweakDBID JackieTunedArch = "Vehicle.v_sportbike2_arch_jackie_tuned_player";
 
         // Hardcoded HACK
 
@@ -1266,13 +1282,23 @@ private:
         }
     }
 
+    void LoadWardrobe(save::WardrobeSystemNode* aWardrobe)
+    {
+        m_saveData.m_wardrobeEntries.Reserve(aWardrobe->GetWardrobe().size());
+
+        for (auto& item : aWardrobe->GetWardrobe())
+        {
+            m_saveData.m_wardrobeEntries.PushBack(item);
+        }
+    }
+
     PlayerSaveData m_saveData{};
 
-    Red::TweakDB* m_tweakDb;
-    cyberpunk::StatsSystemNode* m_statsSystemPtr;
+    TweakDB* m_tweakDb;
+    save::StatsSystemNode* m_statsSystemPtr;
 
-    // Multithreading inventory - assures two queues don't screw each other up...
-    // No longer used...
+    // Multithreading inventory - assures two queues don't screw each other up
+    // No longer used
     mutable std::shared_mutex m_iconicsMutex;
     mutable std::shared_mutex m_itemDataLoggerMutex;
 
@@ -1297,7 +1323,7 @@ RTTI_DEFINE_CLASS(redscript::NewGamePlusSystem, {
     RTTI_METHOD(LoadExpansionIntoSave);
     RTTI_METHOD(Spew);
     RTTI_METHOD(Error);
-
     RTTI_METHOD(GetStandaloneState);
     RTTI_METHOD(SetStandaloneState);
+    RTTI_METHOD(IsInNewGamePlusSave);
 });

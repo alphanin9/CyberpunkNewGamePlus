@@ -2,7 +2,7 @@
 
 #include "../cursorDef.hpp"
 
-namespace cyberpunk {
+namespace save {
 	constexpr auto FILE_MAGIC = 0x43534156; // CSAV
 	constexpr auto FILE_DONE = 0x444F4E45; // DONE
 	constexpr auto FILE_NODE = 0x4e4f4445; // NODE

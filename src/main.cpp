@@ -4,14 +4,15 @@
 #include <print>
 #include <vector>
 
-#include "context/context.hpp"
-#include "hooking/hooking.hpp"
-#include "redscript_api/redscriptBindings.hpp" // HACK, maybe that's why RTTI shit wasn't working right?
-
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 #include <ArchiveXL.hpp>
 #include <TweakXL.hpp>
+
+#include <context.hpp>
+
+#include "hooking/hooking.hpp"
+#include "util/migration/migration.hpp"
 
 RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::EMainReason aReason, const RED4ext::Sdk* aSdk)
 {
@@ -50,6 +51,8 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 			return false;
 		}
 
+		migration::RemoveUnusedFiles();
+
 		PluginContext::m_rtti = Red::CRTTISystem::Get();
 		// Maybe this'll fix some crashes? ...
 		PluginContext::m_rtti->AddPostRegisterCallback([]() { PluginContext::m_rttiReady = true; });
@@ -72,7 +75,7 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::PluginInfo* aInfo)
 {
 	aInfo->name = L"New Game+";
 	aInfo->author = L"not_alphanine";
-    aInfo->version = RED4EXT_SEMVER_EX(1, 0, 4, RED4EXT_V0_SEMVER_PRERELEASE_TYPE_NONE, 0); // Set your version here.
+    aInfo->version = RED4EXT_SEMVER_EX(1, 0, 5, RED4EXT_V0_SEMVER_PRERELEASE_TYPE_NONE, 0); // Set your version here.
 	aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
 	aInfo->sdk = RED4EXT_SDK_LATEST;
 }

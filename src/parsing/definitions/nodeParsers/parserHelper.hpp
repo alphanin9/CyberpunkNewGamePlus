@@ -5,7 +5,7 @@
 #include "../nodeEntry.hpp"
 #include "../../cursorDef.hpp"
 
-namespace cyberpunk {
+namespace save {
 	void ParseNode(FileCursor& cursor, NodeEntry& node);
-	void ParseChildren(FileCursor& cursor, std::vector<cyberpunk::NodeEntry*>& nodeChildren);
+	void ParseChildren(FileCursor& cursor, std::vector<save::NodeEntry*>& nodeChildren);
 }

@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace cyberpunk {
+namespace save {
 	struct NodeEntry {
 		std::string name;
 

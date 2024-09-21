@@ -2,7 +2,7 @@
 #include <unordered_map>
 
 #include "../interfaceNodeData.hpp"
-namespace cyberpunk
+namespace save
 {
 class FactsTableNode : public NodeDataInterface
 {

@@ -1,5 +1,5 @@
 // Dumb project structure strikes again...
-#include "../../../../context/context.hpp"
+#include <context.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/game/StatsStateMapStructure.hpp>
 
@@ -11,7 +11,7 @@
 #include "statsSystemNode.hpp"
 #include "../../package/packageReader.hpp"
 
-namespace cyberpunk
+namespace save
 {
 Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetStatModifiersInternal(Red::DataBuffer* aBuffer)
 {

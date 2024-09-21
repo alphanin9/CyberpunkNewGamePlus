@@ -18,7 +18,7 @@
 #include <RedLib.hpp>
 #include <lz4.h>
 
-#include "../context/context.hpp"
+#include <context.hpp>
 
 // Copypasted from WolvenKit :(
 // TODO: Make this noexcept
@@ -39,12 +39,12 @@ bool Parser::ParseSavegame(std::filesystem::path aSavePath)
 
         const auto magic = fileCursor.readUInt();
 
-        if (magic != cyberpunk::FILE_MAGIC)
+        if (magic != save::FILE_MAGIC)
         {
             return false;
         }
 
-        m_header = cyberpunk::SaveHeader::fromCursor(fileCursor);
+        m_header = save::SaveHeader::fromCursor(fileCursor);
     }
 
     if (m_header.gameVersion < 2000)
@@ -59,7 +59,7 @@ bool Parser::ParseSavegame(std::filesystem::path aSavePath)
         reverseCursor.seekTo(FileCursor::SeekTo::End, -8);
 
         infoStart = reverseCursor.readInt();
-        if (reverseCursor.readUInt() != cyberpunk::FILE_DONE)
+        if (reverseCursor.readUInt() != save::FILE_DONE)
         {
             return false;
         }
@@ -68,12 +68,12 @@ bool Parser::ParseSavegame(std::filesystem::path aSavePath)
     auto fileCursor = FileCursor{m_fileStream.data(), m_fileStream.size()};
     fileCursor.seekTo(infoStart);
 
-    if (fileCursor.readUInt() != cyberpunk::FILE_NODE)
+    if (fileCursor.readUInt() != save::FILE_NODE)
     {
         return false;
     }
 
-    m_flatNodes = fileCursor.ReadMultipleClasses<cyberpunk::NodeEntry>(fileCursor.readVlqInt32());
+    m_flatNodes = fileCursor.ReadMultipleClasses<save::NodeEntry>(fileCursor.readVlqInt32());
 
     DecompressFile();
 
@@ -142,6 +142,7 @@ void Parser::DecompressFile()
     emptyByteSize += (tableEntriesCount - chunkCountActual) * 12;
 
     // Hold on, ain't this just the offset of the first compression block? O_o...
+    // Meh, keep it this way - the calc is basically free and gives us perfect result
     const auto nodeOffsetChangeAmount = compressionTablePosition + emptyByteSize;
 
     for (auto& node : m_flatNodes)
@@ -153,7 +154,7 @@ void Parser::DecompressFile()
     Red::WaitForQueue(waiterJob, std::chrono::seconds(15));
 }
 
-void Parser::FindChildren(cyberpunk::NodeEntry& node, int maxNextId)
+void Parser::FindChildren(save::NodeEntry& node, int maxNextId)
 {
     if (node.childId > -1)
     {
@@ -167,7 +168,7 @@ void Parser::FindChildren(cyberpunk::NodeEntry& node, int maxNextId)
         for (auto i = node.childId; i < nextId; i++)
         {
             auto possibleChild = std::find_if(m_flatNodes.begin(), m_flatNodes.end(),
-                                              [i](cyberpunk::NodeEntry& node) { return node.id == i; });
+                                              [i](save::NodeEntry& node) { return node.id == i; });
 
             if (possibleChild != m_flatNodes.end())
             {
@@ -188,12 +189,12 @@ void Parser::FindChildren(cyberpunk::NodeEntry& node, int maxNextId)
     }
 }
 
-void Parser::CalculateTrueSizes(std::vector<cyberpunk::NodeEntry*>& nodes, int maxLength)
+void Parser::CalculateTrueSizes(std::vector<save::NodeEntry*>& nodes, int maxLength)
 {
     for (auto i = 0ull; i < nodes.size(); i++)
     {
-        cyberpunk::NodeEntry* currentNode = nodes.at(i);
-        cyberpunk::NodeEntry* nextNode = nullptr;
+        save::NodeEntry* currentNode = nodes.at(i);
+        save::NodeEntry* nextNode = nullptr;
 
         if ((i + 1) < nodes.size())
         {
@@ -285,7 +286,7 @@ bool Parser::LoadNodes()
         if (node.nextId > -1)
         {
             node.nextNode = &*std::find_if(m_flatNodes.begin(), m_flatNodes.end(),
-                                           [&node](cyberpunk::NodeEntry& aNode) { return node.nextId == aNode.id; });
+                                           [&node](save::NodeEntry& aNode) { return node.nextId == aNode.id; });
         }
     }
 
@@ -305,7 +306,7 @@ bool Parser::LoadNodes()
     {
         if (!node.isReadByParent)
         {
-            cyberpunk::ParseNode(cursor, node);
+            save::ParseNode(cursor, node);
 
             const auto readSize = cursor.offset - node.offset;
             const auto expectedSize = node.GetExpectedSize();
@@ -327,10 +328,10 @@ bool Parser::LoadNodes()
     return true;
 }
 
-cyberpunk::NodeEntry* Parser::LookupNode(Red::CName aNodeName) noexcept
+save::NodeEntry* Parser::LookupNode(Red::CName aNodeName) noexcept
 {
     auto node = std::find_if(m_nodeList.begin(), m_nodeList.end(),
-                             [aNodeName](const cyberpunk::NodeEntry* aNode) { return aNode->m_hash == aNodeName; });
+                             [aNodeName](const save::NodeEntry* aNode) { return aNode->m_hash == aNodeName; });
 
     if (node == m_nodeList.end())
     {

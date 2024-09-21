@@ -102,7 +102,7 @@ struct FileCursor {
     RED4ext::CRUID readCruid() {
         auto ret = RED4ext::CRUID{};
 
-        ret.unk00 = readUInt64();
+        ret.unk00 = readInt64();
 
         return ret;
     }
@@ -151,15 +151,18 @@ struct FileCursor {
 
             value |= (b & 0b01111111) << 6;
 
-            if (byteHasFlag(b, 0b10000000)) {
+            if (byteHasFlag(b, 0b10000000))
+            {
                 b = readByte();
                 value |= (b & 0b01111111) << 13;
 
-                if (byteHasFlag(b, 0b10000000)) {
+                if (byteHasFlag(b, 0b10000000))
+                {
                     b = readByte();
                     value |= (b & 0b01111111) << 20;
 
-                    if (byteHasFlag(b, 0b10000000)) {
+                    if (byteHasFlag(b, 0b10000000))
+                {
                         b = readByte();
                         value |= (b & 0b01111111) << 27;
                     }

@@ -8,23 +8,23 @@
 
 namespace parser {
 	class Parser {
-		cyberpunk::SaveHeader m_header;
-		std::vector<cyberpunk::NodeEntry> m_flatNodes;
-		std::vector<cyberpunk::NodeEntry*> m_nodeList;
+		save::SaveHeader m_header;
+		std::vector<save::NodeEntry> m_flatNodes;
+		std::vector<save::NodeEntry*> m_nodeList;
 		std::vector<std::byte> m_fileStream;
 
 		std::unique_ptr<std::byte[]> m_decompressedDataRaw;
         std::size_t m_decompressedDataSize{};
 
-		void CalculateTrueSizes(std::vector<cyberpunk::NodeEntry*>& nodes, int maxLength);
-		void FindChildren(cyberpunk::NodeEntry& node, int maxNextId);
+		void CalculateTrueSizes(std::vector<save::NodeEntry*>& nodes, int maxLength);
+		void FindChildren(save::NodeEntry& node, int maxNextId);
 
 		void DecompressFile();
 		bool LoadNodes();
 	public:
 		bool ParseSavegame(std::filesystem::path aSavePath);
 
-		cyberpunk::NodeEntry* LookupNode(Red::CName aNodeName) noexcept;
+		save::NodeEntry* LookupNode(Red::CName aNodeName) noexcept;
 
 		template<typename NodeType>
         inline NodeType* LookupNodeData() noexcept
