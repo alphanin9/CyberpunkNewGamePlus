@@ -59,9 +59,13 @@ mod\quest\NewGamePlus_Standalone.quest
 mod\quest\NewGamePlus.gamedef
 mod\quest\newgameplus.quest
 mod\quest\NewGamePlus.quest
+mod\quest\newgameplus\bossencountertest\bossencounterchickentest.scene
 mod\quest\newgameplus\bossEncounterTest\bossencounterchickentest.scene
+mod\quest\newgameplus\bossEncounterTest\bossEncounterChickentest.scene
 mod\quest\newgameplus\bossEncounterTest\bossencounterstresstest.gamedef
+mod\quest\newgameplus\bossEncounterTest\bossEncounterStressTest.gamedef
 mod\quest\newgameplus\bossEncounterTest\bossencounterstresstest.quest
+mod\quest\newgameplus\bossEncounterTest\bossEncounterStressTest.quest
 mod\quest\newgameplus\bossEncounterTest\bossencountertest.gamedef
 mod\quest\newgameplus\bossEncounterTest\bossEncounterTest.gamedef
 mod\quest\newgameplus\bossencountertest\bossencountertest.quest

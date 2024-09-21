@@ -95,3 +95,21 @@ public exec static func RunNetrunnerHordeEncounter() {
 
     NGPlusDynamicSpawnSystem.RequestDynamicSpawnSystemSpawn(arr);
 }
+
+public exec static func MakeAllWeaponsInInventoryGood() {
+    // Kind of a cheat...
+    // Convenient for testing, though!
+    let me = GameInstance.GetPlayerSystem(GetGameInstance()).GetLocalPlayerControlledGameObject();
+    let items: [wref<gameItemData>];
+
+    GameInstance.GetTransactionSystem(GetGameInstance()).GetItemListByTag(me, n"Weapon", items);
+
+    let statsSystem = GameInstance.GetStatsSystem(GetGameInstance());
+
+    for item in items {
+        let statModifier = RPGManager.CreateStatModifier(gamedataStatType.DPS, gameStatModifierType.Additive, 100000000);
+        let statsId = item.GetStatsObjectID();
+
+        statsSystem.AddSavedModifier(statsId, statModifier);        
+    }
+}

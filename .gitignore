@@ -365,5 +365,5 @@ FodyWeavers.xsd
 # WolvenKit artifacts
 *.zip
 
-# Staging directory artifacts
-tools/distribution/staging
+# WolvenKit graph editor states
+wolvenkit/GraphEditorStates/

@@ -105,7 +105,7 @@ Character.NGPlus_EncounterNetrunnerBoss_B:
   $base: Character.NGPlus_EncounterNetrunnerBoss
   entityTemplatePath: r"mod\quest\newgameplus\newNpc\brightman.ent"
   appearanceName: n"max_tac_soldier_01"
-  # Yes, Brightman isn't much of anything - we'll call him a clone?
+  # Yes, Brightman isn't much of anything
   displayName: l"Story-base-quest-tertiary_characters-brightman_displayName"
   fullDisplayName: l"Story-base-quest-tertiary_characters-brightman_displayName"
   affiliation: Factions.Unknown
@@ -158,7 +158,7 @@ DynamicSpawnSystem.NewGamePlus_NetrunnerBossSupport3:
 
 DynamicSpawnSystem.NewGamePlus_NetrunnerBossEncounter_Brightman:
   $type: DynamicVehicleData
-  vehicleRecord: t"Vehicle.NGPlus_Encounter_Bike"
+  vehicleRecord: t"Vehicle.mws_cct_dtn_02_arasaka_car"
   unitRecordsPool:
     -
       $type: WeightedCharacter
