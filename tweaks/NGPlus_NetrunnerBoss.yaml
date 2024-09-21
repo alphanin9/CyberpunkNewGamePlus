@@ -1,16 +1,17 @@
 # TODO: unlink bosses from EP1...
 $dlc: EP1
 
+# NOTE: should have a B variant for all bosses/NPCs for variety - different model/name...
 Character.NGPlus_EncounterNetrunnerBoss:
   $base: t"Character.maxtac_av_netrunner_ma"
   tags: ["Cyberpsycho", "ImmuneToTakedown", "NGPlusBoss"]
   baseAttitudeGroup: n"hostile"
-  affiliation: t"Factions.Arasaka"
+  affiliation: Factions.Arasaka
   rarity: NPCRarity.Boss
   quest: NPCQuestAffiliation.StreetStory
   reactionPreset: ReactionPresets.Ganger_Aggressive
 
-  entityTemplatePath: r"base\quest\tertiary_characters\ghost_nachtigall.ent"
+  entityTemplatePath: r"mod\quest\newgameplus\newNpc\burondo.ent"
   appearanceName: n"man_average_q111_nachtigall_ghost"
 
   displayName: l"Story-base-quest-tertiary_characters-burondo_displayName"
@@ -19,23 +20,29 @@ Character.NGPlus_EncounterNetrunnerBoss:
   savable: true
 
   primaryEquipment:
-    $type: NPCEquipmentGroup
     equipmentItems:
-      - "Character.ArasakaAssaultRiflePool"
-
+      - Character.ArasakaPrimaryHandgunPool
+  
   effectors:
-    - !append t"Character.AllowTechWeaponDodgeEffector"
-    - !append t"Character.AllowAnyDirectionDodgeEffector"
+    - !append Character.NGPlus_TechDodgeEffector
+    - !append Character.NGPlus_AnyDirDodgeEffector
   
   abilities:
-    - !append t"Ability.HasDodge"
-    - !append t"Ability.HasSandevistanTier3"
-    - !append t"Ability.CanUseOpticalCamo"
-    - !append t"Ability.CanUseFlashbangGrenades"
-    - !append t"Ability.CanCharge"
-    - !append t"Ability.HasSubdermalArmorMedium"
-    - !append t"Ability.CanPreciseShoot"
+    - !append Ability.HasDodge
+    - !append Ability.HasSandevistanTier3
+    - !append Ability.CanUseOpticalCamo
+    - !append Ability.CanUseFlashbangGrenades
+    - !append Ability.CanCharge
+    - !append Ability.CanPreciseShoot
+    - !append Ability.CanShareThreatsWithPlayer
+    - !append Ability.IsCautious
+    - !append Ability.CanCrouch
+    - !append Ability.CanSprint
+    - !append Ability.CanUseExtremeRing
+    - !append Ability.CanUseFarRing
+    - !append Ability.NGPlus_RandomEncounterBossMarker
 
+  actionMap: CorpoNetrunner.Map
   bountyDrawTable: t"BountyDrawTable.ProjectGhostMember"
   objectActions: ["QuickHack.BossBaseBlindHack", "QuickHack.BossSuicideHackBase", "QuickHack.BossBaseWeaponMalfunctionHack", "QuickHack.BossBaseLocomotionMalfunctionHack", "QuickHack.BossBaseOverheatHack", "QuickHack.BossOverloadBaseHack", "QuickHack.BossBrainMeltBaseHack", "QuickHack.BossBaseCyberwareMalfunctionHack", "QuickHack.BossSystemCollapseHackBase", "QuickHack.BossGrenadeHackBase", "QuickHack.BossMadnessHackBase", "QuickHack.BossMemoryWipeHackBase", "QuickHack.BossBaseBlackWallHack", "QuickHack.BaseCommsCallInHack", "QuickHack.BaseCommsNoiseHack", "QuickHack.BasePingHack", "QuickHack.BaseContagionHack", "QuickHack.BaseWhistleHack", "QuickHack.RemoteBreach", "Takedown.NewPerkFinisher", "Takedown.NewPerkFinisherBlunt"]
 
@@ -44,13 +51,13 @@ Character.NGPlus_EncounterNetrunnerBoss:
       $type: ConstantStatModifier
       statType: BaseStats.Health
       modifierType: Multiplier
-      value: 1.2
+      value: 0.9
     
     - !append
       $type: ConstantStatModifier
       statType: BaseStats.NPCDamage
       modifierType: Multiplier
-      value: 1.2
+      value: 1.5
 
     - !append
       $type: ConstantStatModifier
@@ -67,8 +74,26 @@ Character.NGPlus_EncounterNetrunnerBoss:
     - !append
       $type: ConstantStatModifier
       statType: BaseStats.Accuracy
-      modifierType: Additive
-      value: 2.0
+      modifierType: Multiplier
+      value: 9999.0
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanUseCloseRing
+      modifierType: Multiplier
+      value: 0
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanUseMediumRing
+      modifierType: Multiplier
+      value: 0
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanUseFarRing
+      modifierType: Multiplier
+      value: 0
     
     - !append
       $type: ConstantStatModifier
@@ -76,8 +101,17 @@ Character.NGPlus_EncounterNetrunnerBoss:
       modifierType: Additive
       value: 20 # So you can't just queue up several Synapse Burnouts
 
+Character.NGPlus_EncounterNetrunnerBoss_B:
+  $base: Character.NGPlus_EncounterNetrunnerBoss
+  entityTemplatePath: r"mod\quest\newgameplus\newNpc\brightman.ent"
+  appearanceName: n"max_tac_soldier_01"
+  # Yes, Brightman isn't much of anything - we'll call him a clone?
+  displayName: l"Story-base-quest-tertiary_characters-brightman_displayName"
+  fullDisplayName: l"Story-base-quest-tertiary_characters-brightman_displayName"
+  affiliation: Factions.Unknown
+
 Character.NGPlus_EncounterNetrunnerBoss_KatanaSidekick:
-  $base: t"Character.arasaka_ninja_fmelee3_katana_wa_elite"
+  $base: t"Character.arasaka_agent_fmelee2rare_katana_wa_rare"
   priority: SpawnableObjectPriority.Quest
   quest: NPCQuestAffiliation.StreetStory
   baseAttitudeGroup: "hostile"
@@ -120,3 +154,37 @@ DynamicSpawnSystem.NewGamePlus_NetrunnerBossSupport3:
       $type: WeightedCharacter
       character: t"Character.NGPlus_EncounterNetrunnerBoss_KatanaSidekick"
       weight: 1.0
+
+
+DynamicSpawnSystem.NewGamePlus_NetrunnerBossEncounter_Brightman:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.NGPlus_Encounter_Bike"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_B"
+      weight: 1.0
+
+Character.NGPlus_NetrunnerBossFocusClue1:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_NetrunnerBossFocusClue1"
+  localizedName: l"NewGamePlus_BossEncounter_BurondoClue1_Name" # Arasaka affiliated
+  localizedDescription: l"NewGamePlus_BossEncounter_BurondoClue1_Desc" # Identity unknown - Arasaka hitter? Latest Arasaka-branded netrunner cyberware, discreet, designed for combat support...
+
+Character.NGPlus_NetrunnerBossFocusClue2:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_NetrunnerBossFocusClue2"
+  localizedName: l"NewGamePlus_BossEncounter_BurondoClue2_Name" # Specialized netrunner
+  localizedDescription: l"NewGamePlus_BossEncounter_BurondoClue2_Desc" # Typically works in squad, likely less experience netrunning without support on the field, try to separate from team, less dangerous on his own
+
+Character.NGPlus_NetrunnerBossFocusClueConclusion:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_NetrunnerBossFocusClueConclusion"
+  localizedName: l"NewGamePlus_BossEncounter_BurondoClueFinal_Name" # Threat profile
+  localizedDescription: l"NewGamePlus_BossEncounter_BurondoClueFinal_Desc" # Body language suggests skittishness, will try to run away and hack you from a hiding place, no interest in fighting head-on, little experience in open combat alone, follow signal traces
+
+Character.NGPlus_NetrunnerBossBrightmanClue:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_NetrunnerBossBrightmanClue"
+  localizedName: l"NewGamePlus_BossEncounter_BrightmanClue_Name" # Cannot get data!
+  localizedDescription: l"NewGamePlus_BossEncounter_BrightmanClue_Desc" # MaxTac armor obfuscates scan results, likely obtained illegally

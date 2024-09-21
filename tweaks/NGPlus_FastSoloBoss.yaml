@@ -1,81 +1,115 @@
 $dlc: EP1
 
-Items.NGPlus_FastSoloMantisBlades_RPGData:
-  $base: Items.Base_Mantis_Blades_NPC_Data
-  statModifiers:
-    - !append
-      $type: CurveStatModifier
-      statType: BaseStats.RandomCurveInput
-      modifierType: Additive
-      id: "quality_curves"
-      column: "rci_to_cyberpsycho_boss_level"
-      refStat: BaseStats.NPCLootLevelHelper
-    
-    - !append
-      $type: ConstantStatModifier
-      statType: BaseStats.AttacksPerSecond
-      modifierType: Multiplier
-      value: 2
-
-    - !append
-      $type: ConstantStatModifier
-      statType: BaseStats.Range
-      modifierType: Multiplier
-      value: 2
-
 Items.NGPlus_FastSoloMantisBlades:
-  $base: t"Items.Troy_Mantis_Blades"
-  npcRPGData: t"Items.NGPlus_FastSoloMantisBlades_RPGData"
+  $base: Items.MaxTac_2nd_wave_Mantis_Blades
+  statModifiers:
+    - !append 
+      $type: ConstantStatModifier
+      statType: BaseStats.AttacksNumber
+      modifierType: Additive
+      value: 7
 
+    - !append 
+      $type: ConstantStatModifier
+      statType: BaseStats.MeleeAttackDuration
+      modifierType: Multiplier
+      value: 0.3
+
+    - !append 
+      $type: ConstantStatModifier
+      statType: BaseStats.MeleeAttackComboDuration
+      modifierType: Multiplier
+      value: 0.3
+
+Items.NGPlus_FastSoloKatana:
+  $base: Items.Preset_Katana_Arasaka_2020
+  statModifiers:
+    - !append Quality.BrokenItem
+    - !append AttackModifier.WeaponArmorPenetrationFull
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanBlock
+      modifierType: Multiplier
+      value: 0
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.StaminaCostToBlock
+      modifierType: Multiplier
+      value: 3
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.AttacksNumber
+      modifierType: Additive
+      value: 15
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.NPCDamage
+      modifierType: Multiplier
+      value: 1.5
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.MeleeAttackDuration
+      modifierType: Multiplier
+      value: 0.15
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.MeleeAttackComboDuration
+      modifierType: Multiplier
+      value: 0.15
+
+# Yes, I know Ayumi was Asian... But who gives a shit?
 Character.NGPlus_EncounterFastSoloBoss:
   $base: t"Character.afterlife_rare_fmelee3_katana_wa_elite"
   tags: ["Cyberpsycho", "ImmuneToTakedown", "NGPlusBoss"]
+
   baseAttitudeGroup: n"hostile"
   rarity: NPCRarity.Boss
   quest: NPCQuestAffiliation.StreetStory
 
-  entityTemplatePath: r"ep1\quest\primary_characters\alex.ent"
-  appearanceName: n"alex_default"
-  voiceTag: n"alex"
+  entityTemplatePath: r"mod\quest\newgameplus\newNpc\ayumi.ent"
+  appearanceName: woman_average_ayumi_default
 
   displayName: l"NewGamePlus_BossEncounter_FastSoloDisplayName"
   fullDisplayName: l"NewGamePlus_BossEncounter_FastSoloDisplayName"
 
   savable: true
   dropsWeaponOnDeath: false
-  # I think Mantis Blades actually work better for NPCs?
+  # I think Mantis Blades actually work better for NPCs? Whatever, let's try katana for once lol...
   primaryEquipment:
     $type: NPCEquipmentGroup
     equipmentItems:
       -
         $type: NPCEquipmentItem
-        #item: t"Items.Preset_Neurotoxin_Knife_Default"
-        item: t"Items.NGPlus_FastSoloMantisBlades"
-        equipSlot: "AttachmentSlots.WeaponRight"
+        item: Items.NGPlus_FastSoloMantisBlades
+        equipSlot: AttachmentSlots.WeaponRight
         equipCondition:
-          - t"WeaponConditions.BaseMeleePrimaryWeaponEquipCondition"
+          - WeaponConditions.BaseMeleePrimaryWeaponEquipCondition
         unequipCondition:
-          - t"WeaponConditions.BaseMeleePrimaryWeaponUnequipCondition"
+          - WeaponConditions.BaseMeleePrimaryWeaponUnequipCondition
 
   secondaryEquipment:
     $type: NPCEquipmentGroup
     equipmentItems:
-      - $type: NPCEquipmentItem
-        item: t"Items.Preset_Ticon_Reed"
-        equipSlot: "AttachmentSlots.WeaponRight"
+      - Character.MilitechSecondaryHandgunPool # She doesn't like Arasaka's guns?
   
-  affiliation: t"Factions.Classified"
-  priority: t"SpawnableObjectPriority.Quest"
-  bountyDrawTable: t"BountyDrawTable.ProjectGhostMember"
+  affiliation: Factions.Unknown
+  priority: SpawnableObjectPriority.Quest
+  bountyDrawTable: BountyDrawTable.ProjectGhostMember
 
   statModifierGroups:
-    - !append t"Character.Boss_Poise_Primary_Stat_ModGroup"
-    - !append t"Character.Cyberpsycho_ModGroup"
-    - !append t"Character.Cyberpsycho_HitReaction_Resistance"
+    - !append Character.Boss_Poise_Primary_Stat_ModGroup
+    - !append Character.Cyberpsycho_ModGroup
+    - !append Character.Cyberpsycho_HitReaction_Resistance
 
   effectors:
-    - !append t"Character.AllowTechWeaponDodgeEffector"
-    - !append t"Character.AllowAnyDirectionDodgeEffector"
+    - !append Character.NGPlus_TechDodgeEffector
+    - !append Character.NGPlus_AnyDirDodgeEffector
   
   abilities:
     - !append t"Ability.HasChargeJump"
@@ -98,12 +132,17 @@ Character.NGPlus_EncounterFastSoloBoss:
     - !append t"Ability.CanUseOpticalCamo"
     - !append t"Ability.CanDash"
     - !append t"Ability.CanCharge"
-    - !append t"Ability.HasSubdermalArmorMedium"
+    - !append t"Ability.HasSubdermalArmorLow"
     - !append t"Ability.HasPainEditor"
     - !append t"Ability.HasLoweredHitReactions"
-    - !append t"Ability.HasBerserk"
     - !append t"Ability.CanPreciseShoot"
     - !append t"Ability.CanChargedShoot"
+
+    - !append Ability.IsAggressive
+    - !append Ability.CanUseLegs
+    - !append Ability.CanBlock
+    - !append Ability.CanShareThreatsWithPlayer
+    - !append Ability.NGPlus_RandomEncounterBossMarker
 
   objectActions: ["QuickHack.BossBaseBlindHack", "QuickHack.BossSuicideHackBase", "QuickHack.BossBaseWeaponMalfunctionHack", "QuickHack.BossBaseLocomotionMalfunctionHack", "QuickHack.BossBaseOverheatHack", "QuickHack.BossOverloadBaseHack", "QuickHack.BossBrainMeltBaseHack", "QuickHack.BossBaseCyberwareMalfunctionHack", "QuickHack.BossSystemCollapseHackBase", "QuickHack.BossGrenadeHackBase", "QuickHack.BossMadnessHackBase", "QuickHack.BossMemoryWipeHackBase", "QuickHack.BossBaseBlackWallHack", "QuickHack.BaseCommsCallInHack", "QuickHack.BaseCommsNoiseHack", "QuickHack.BasePingHack", "QuickHack.BaseContagionHack", "QuickHack.BaseWhistleHack", "QuickHack.RemoteBreach", "Takedown.NewPerkFinisher", "Takedown.NewPerkFinisherBlunt"]
 
@@ -115,7 +154,7 @@ Character.NGPlus_EncounterFastSoloBoss:
       $type: ConstantStatModifier
       statType: BaseStats.Health
       modifierType: Multiplier
-      value: 0.95 # Given we have evasion and percentage defenses out the ass, we don't need much HP
+      value: 1.2 # With reduced evasion, she has too little HP to be threatening - increase it...
 
     - !append
       $type: ConstantStatModifier
@@ -125,29 +164,24 @@ Character.NGPlus_EncounterFastSoloBoss:
     
     - !append
       $type: ConstantStatModifier
-      statType: BaseStats.MaxSpeed
-      modifierType: Multiplier
-      value: 4.0
-    
-    - !append
-      $type: ConstantStatModifier
       statType: BaseStats.Accuracy
-      modifierType: Additive
-      value: 2.0
+      modifierType: Multiplier
+      value: 9999
     
     - !append
-      $type: CurveStatModifier
+      $type: CombinedStatModifier
       statType: BaseStats.NPCDamage
-      modifierType: Multiplier
-      id: "boss_power_level_to_dps_mult"
-      column: "kurt_level_to_dps_mult"
-      refStat: BaseStats.PowerLevel
+      modifierType: Additive
+      refStat: BaseStats.Health
+      refObject: "Player"
+      opSymbol: "*"
+      value: 0.25
     
     - !append
       $type: ConstantStatModifier
       statType: BaseStats.Evasion
       modifierType: Additive
-      value: 0.55
+      value: 0.1
     
     - !append
       $type: ConstantStatModifier
@@ -167,16 +201,30 @@ Character.NGPlus_EncounterFastSoloBoss:
       modifierType: Additive
       value: 1
 
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.WoundLArmDamageThreshold
+      modifierType: Multiplier
+      value: 0
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.WoundRArmDamageThreshold
+      modifierType: Multiplier
+      value: 0
+
 Character.NGPlus_EncounterFastSoloBoss_NetrunnerSidekick:
-  $base: Character.q306_black_ops_netrunner
+  $base: Character.arasaka_netrunner_netrunner2_yukimura_wa_rare
   baseAttitudeGroup: n"hostile"
   quest: NPCQuestAffiliation.StreetStory
   priority: t"SpawnableObjectPriority.Quest"
   reactionPreset: ReactionPresets.Ganger_Aggressive
   savable: true
+  abilities:
+    - !append Ability.CanUseOpticalCamo
 
-Character.NGPlus_EncounterFastSoloBoss_PistolSidekick:
-  $base: Character.q306_black_ops_fast_ranged
+Character.NGPlus_EncounterFastSoloBoss_KnifeSidekick:
+  $base: Character.arasaka_agent_fmelee2rare_knife_wa_rare
   baseAttitudeGroup: n"hostile"
   quest: NPCQuestAffiliation.StreetStory
   priority: t"SpawnableObjectPriority.Quest"
@@ -185,11 +233,23 @@ Character.NGPlus_EncounterFastSoloBoss_PistolSidekick:
 
 DynamicSpawnSystem.NewGamePlus_FastSoloBossEncounter:
   $type: DynamicVehicleData
-  vehicleRecord: t"Vehicle.NGPlus_Encounter_Bike"
+  vehicleRecord: t"Vehicle.NGPlus_Encounter_Outlaw"
   unitRecordsPool:
     -
       $type: WeightedCharacter
       character: t"Character.NGPlus_EncounterFastSoloBoss"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_NetrunnerSidekick"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_KnifeSidekick"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_KnifeSidekick"
       weight: 1.0
 
 DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport:
@@ -202,7 +262,15 @@ DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport:
       weight: 1.0
     -
       $type: WeightedCharacter
-      character: t"Character.NGPlus_EncounterFastSoloBoss_PistolSidekick"
+      character: t"Character.NGPlus_EncounterFastSoloBoss_KnifeSidekick"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_NetrunnerSidekick"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_NetrunnerSidekick"
       weight: 1.0
 
 DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport2:
@@ -211,9 +279,29 @@ DynamicSpawnSystem.NewGamePlus_FastSoloBossSupport2:
   unitRecordsPool:
     -
       $type: WeightedCharacter
-      character: t"Character.NGPlus_EncounterFastSoloBoss_PistolSidekick"
+      character: t"Character.NGPlus_EncounterFastSoloBoss_KnifeSidekick"
       weight: 1.0
     -
       $type: WeightedCharacter
       character: t"Character.NGPlus_EncounterFastSoloBoss_NetrunnerSidekick"
       weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_KnifeSidekick"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterFastSoloBoss_KnifeSidekick"
+      weight: 1.0
+
+Character.NGPlus_FastSoloBossFocusClue1:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_FastSoloBossFocusClue1"
+  localizedName: l"NewGamePlus_BossEncounter_AyumiClue_Name"
+  localizedDescription: l"NewGamePlus_BossEncounter_AyumiClue_Desc"
+
+Character.NGPlus_FastSoloBossConclusionClue:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_FastSoloBossConclusionClue"
+  localizedName: l"NewGamePlus_BossEncounter_AyumiConclusion_Name"
+  localizedDescription: l"NewGamePlus_BossEncounter_AyumiConclusion_Desc"

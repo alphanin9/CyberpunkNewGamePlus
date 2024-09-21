@@ -1,0 +1,198 @@
+$dlc: EP1
+
+Items.BlackhandRifle:
+  $base: Items.Preset_Psycho_sts_wat_nid_01
+  statModifiers:
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanWeaponIgnoreArmor
+      modifierType: Additive
+      value: 1
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.NPCDamage
+      modifierType: Multiplier
+      value: 2
+
+    - !append Quality.BrokenItem
+
+Character.NGPlus_SniperBoss:
+  $base: Character.prevention_maxtac_av_base
+  tags: ["Cyberpsycho", "ImmuneToTakedown", "Terminator", "NGPlusBoss", "Sniper"]
+
+  actionMap: Corpo.Map
+
+  displayName: l"NewGamePlus_BossEncounter_SniperBoss"
+  fullDisplayName: l"NewGamePlus_BossEncounter_SniperBoss"
+
+  primaryEquipment:
+    equipmentItems:
+      - $type: NPCEquipmentItem
+        item: Items.BlackhandRifle
+        equipSlot: AttachmentSlots.WeaponRight
+        onBodySlot: AttachmentSlots.ItemSlotGenericRanged
+        equipCondition:
+          - WeaponConditions.SniperPrimaryWeaponSniperEquipCondition
+        unequipCondition:
+          - WeaponConditions.SniperPrimaryWeaponSniperUnequipCondition
+
+  secondaryEquipment:
+    equipmentItems:
+      - Character.CommunityCorpoSecondaryHandgunPool
+
+  entityTemplatePath: r"mod\quest\newgameplus\newNpc\blackhand.ent"
+  appearanceName: q115_blackhand
+  archetypeData: ArchetypeData.FastSniperT3
+
+  sensePreset: Senses.SniperCombat100m
+  relaxedSensesPreset: Senses.SniperCombat100m
+  alertedSensesPreset: Senses.SniperCombat100m
+  combatSensesPreset: Senses.SniperCombat100m
+
+  savable: true
+  quest: NPCQuestAffiliation.StreetStory
+  rarity: NPCRarity.Boss
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  baseAttitudeGroup: n"hostile"
+  affiliation: Factions.Unknown
+
+  statModifiers:
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.Health
+      modifierType: Multiplier
+      value: 1.1
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.Accuracy
+      modifierType: Multiplier
+      value: 9999
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.IsTier4Archetype
+      modifierType: Additive
+      value: 1
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.MaxPercentDamageTakenPerHit
+      modifierType: Additive
+      value: 20 # So you can't just queue up several Synapse Burnouts
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.StunImmunity
+      modifierType: Additive
+      value: 1
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.BlindImmunity
+      modifierType: Additive
+      value: 1
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.HitReactionFactor
+      modifierType: Additive
+      value: 1
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanUseGrenades
+      modifierType: Additive
+      value: 1
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanUseSmokeGrenades
+      modifierType: Additive
+      value: 1
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanSeeThroughSmoke
+      modifierType: Additive
+      value: 1
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanCallDrones
+      modifierType: Additive
+      value: 1
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanUseCloseRing
+      modifierType: Multiplier
+      value: 0
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanUseMediumRing
+      modifierType: Multiplier
+      value: 0
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanUseFarRing
+      modifierType: Additive
+      value: 1
+
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.CanUseExtremeRing
+      modifierType: Additive
+      value: 1
+
+  bountyDrawTable: BountyDrawTable.ProjectGhostMember
+
+  statModifierGroups:
+    - !append Character.Boss_Poise_Primary_Stat_ModGroup
+    - !append Character.Cyberpsycho_ModGroup
+    - !append Character.Cyberpsycho_HitReaction_Resistance
+
+  effectors:
+    - !append Character.NGPlus_TechDodgeEffector
+    - !append Character.NGPlus_AnyDirDodgeEffector
+
+  abilities:
+    - !append Ability.HasSandevistanTier3
+    - !append Ability.CanUseExtremeRing
+    - !append Ability.CanUseFarRing
+    - !append Ability.CanShootWhileMoving
+    - !append Ability.CanSeeThroughOpticalCamos
+    - !append Ability.CanSeeThroughWalls
+    - !append Ability.PrefersCovers
+    - !append Ability.CanChargedShoot
+    - !append Ability.CanPreciseShoot
+    - !append Ability.CanPushBack
+    - !append Ability.CanShareThreatsWithPlayer
+    - !append Ability.HasMajorQuickhackResistance
+    - !append Ability.CanCauseElectrocution
+    - !append Ability.DealsElectricDamage
+    - !append Ability.HasElectricExplosion
+    - !append Ability.HasChargeJump
+    - !append Ability.HasDodge
+    - !append Ability.HasKerenzikov
+    - !append Ability.IsCautious
+    - !append Ability.CanCrouch
+    - !append Ability.CanSprint
+    - !append Ability.CanDash
+    - !append Ability.CanUseOpticalCamo
+    - !append Ability.NGPlus_RandomEncounterBossMarker
+
+Character.NGPlus_SniperBossGameplayClue:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_SniperBossGameplayClue"
+  localizedName: l"NewGamePlus_BossEncounter_BlackhandClue2_Name"
+  localizedDescription: l"NewGamePlus_BossEncounter_BlackhandClue2_Desc"
+
+Character.NGPlus_SniperBossIdentityClue:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_SniperBossFocusClueConclusion"
+  localizedName: l"NewGamePlus_BossEncounter_BlackhandClueFinal_Name"
+  localizedDescription: l"NewGamePlus_BossEncounter_BlackhandClueFinal_Desc"
+

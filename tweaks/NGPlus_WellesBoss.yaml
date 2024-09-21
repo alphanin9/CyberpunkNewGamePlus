@@ -1,0 +1,153 @@
+# Backups - what if I wanna add new stat modifiers?
+Items.NGPlus_JackieLeftGun:
+  $base: Items.Preset_Nue_Jackie_Left_Hand
+
+Items.NGPlus_JackieRightGun:
+  $base: Items.Preset_Nue_Jackie
+
+# He's kinda, sorta a variant of strong solo - but not really...
+# Real E3 vibes here
+
+Character.NGPlus_EncounterJackieBoss:
+  $base: Character.NGPlus_EncounterStrongSoloBoss
+  displayName: l"Story-base-gameplay-static_data-database-characters-npcs-records-quest-main_characters-secondarycharacters-Jackie_displayName"
+  fullDisplayName: l"Story-base-gameplay-static_data-database-characters-npcs-records-quest-main_characters-secondarycharacters-Jackie_fullDisplayName"
+
+  entityTemplatePath: r"mod\quest\newgameplus\newNpc\evilJackie.ent"
+  appearanceName: jackie_evil
+
+  voiceTag: "" # He ain't talking to us...
+
+  dropsWeaponOnDeath: false
+  lootDrop: LootTables.Empty
+
+  archetypeData: ArchetypeData.FastRangedT3
+
+  primaryEquipment:
+    $type: NPCEquipmentGroup
+    equipmentItems:
+      -
+        $type: NPCEquipmentItem
+        item: Items.NGPlus_JackieLeftGun
+        equipSlot: AttachmentSlots.WeaponLeft
+        onBodySlot: AttachmentSlots.ItemSlotHandgunRightJackie
+      -
+        $type: NPCEquipmentItem
+        item: Items.NGPlus_JackieRightGun
+        equipSlot: AttachmentSlots.WeaponRight
+        onBodySlot: AttachmentSlots.ItemSlotHandgunLeftJackie
+
+# Clues are meant to be more like "WTF is Jackie doing here???"
+
+Character.NGPlus_JackieBossClue1:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_JackieBossClue1"
+  localizedName: l"NewGamePlus_BossEncounter_AyumiConclusion_Name" # Jackie Welles?
+  localizedDescription: l"NewGamePlus_BossEncounter_AyumiConclusion_Desc" # This can't be right...
+
+Character.NGPlus_JackieBossClueConclusion:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_JackieBossClueConclusion"
+  localizedName: l"NewGamePlus_BossEncounter_AyumiConclusion_Name" # Unknown marking
+  localizedDescription: l"NewGamePlus_BossEncounter_AyumiConclusion_Desc" # What the hell is a Q111, anyway? Why are they attacking me with someone looking like Jackie?
+
+# Pulls up with his Valentino homies
+
+Character.NGPlus_WellesMook_Knife:
+  $base: Character.valentinos_grunt1_melee1_knife_wa
+  priority: SpawnableObjectPriority.Quest
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: valentinos_ow
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NGPlus_WellesMook_BaseballBat:
+  $base: Character.valentinos_grunt1_melee1_baseball_ma
+  priority: SpawnableObjectPriority.Quest
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: valentinos_ow
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NGPlus_WellesMook_Gun:
+  $base: Character.valentinos_grunt1_ranged1_nue_ma
+  priority: SpawnableObjectPriority.Quest
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: valentinos_ow
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NGPlus_WellesMook_Leader:
+  $base: Character.valentinos_elite2_ranged3_dual_ma_rare
+  priority: SpawnableObjectPriority.Quest
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: valentinos_ow
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+
+  statModifierGroups:
+    - !append-once NPCStatPreset.LowerHealth
+
+  savable: true
+
+DynamicSpawnSystem.NewGamePlus_WellesBossEncounter:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.cs_savable_chevalier_thrax_valentino"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_Gun
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_EncounterJackieBoss
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_Knife
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_BaseballBat
+      weight: 1.0
+
+DynamicSpawnSystem.NewGamePlus_WellesBossEncounter_Car2:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.cs_savable_chevalier_thrax_valentino"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_Gun
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_Leader
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_BaseballBat
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_BaseballBat
+      weight: 1.0
+
+DynamicSpawnSystem.NewGamePlus_WellesBossEncounter_Car3:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.cs_savable_chevalier_thrax_valentino"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_BaseballBat
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_BaseballBat
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_BaseballBat
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: Character.NGPlus_WellesMook_BaseballBat
+      weight: 1.0

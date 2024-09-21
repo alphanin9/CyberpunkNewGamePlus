@@ -140,7 +140,7 @@ protected cb func OnInitialize() -> Bool {
     let currentAllocatedCapacity: Float;
     let freedCapacity: Float;
     let i: Int32;
-    let names: array<String>;
+    let names: [String];
     let requiredCapacity: Float;
     let tutorialItemQuality: gamedataQuality;
     let vendorData: VendorData;

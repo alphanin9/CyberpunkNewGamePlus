@@ -22,13 +22,19 @@ public func GetNetrunnerUpgradeChance() -> Float = UserConfig.GetNetrunnerUpgrad
 @if(ModuleExists("NGPlus.CustomConfig"))
 public func GetShouldFastForwardQ101Start() -> Bool = UserConfig.GetShouldFastForwardQ101Start();
 
-// NOTE: currently unused, will be used in the future to upgrade enemy dodge abilities
 @if(ModuleExists("NGPlus.CustomConfig"))
 public func GetDodgeUpgradeChance() -> Float = UserConfig.GetDodgeUpgradeChance();
 
-// NOTE: used to enable/disable random boss encounters people were unhappy with...
 @if(ModuleExists("NGPlus.CustomConfig"))
 public func GetShouldEnableRandomEncounters() -> Bool = UserConfig.GetShouldEnableRandomEncounters();
+
+@if(ModuleExists("NGPlus.CustomConfig"))
+public func GetMaxDynamicSpawnSystemEntities() -> Int32 = UserConfig.GetMaxDynamicSpawnSystemEntities();
+
+@if(ModuleExists("NGPlus.CustomConfig"))
+public func GetMaxDynamicSpawnSystemCorpses() -> Int32 = UserConfig.GetMaxDynamicSpawnSystemCorpses();
+
+// DEFAULT CONFIG...
 
 @if(!ModuleExists("NGPlus.CustomConfig"))
 public func GetFastUpgradeChance() -> Float = DefaultDifficultyConfig.GetFastUpgradeChance();
@@ -55,6 +61,12 @@ public func GetShouldFastForwardQ101Start() -> Bool = DefaultDifficultyConfig.Ge
 @if(!ModuleExists("NGPlus.CustomConfig"))
 public func GetShouldEnableRandomEncounters() -> Bool = DefaultDifficultyConfig.GetShouldEnableRandomEncounters();
 
+@if(!ModuleExists("NGPlus.CustomConfig"))
+public func GetMaxDynamicSpawnSystemEntities() -> Bool = DefaultDifficultyConfig.GetMaxDynamicSpawnSystemEntities();
+
+@if(!ModuleExists("NGPlus.CustomConfig"))
+public func GetMaxDynamicSpawnSystemCorpses() -> Bool = DefaultDifficultyConfig.GetMaxDynamicSpawnSystemCorpses();
+
 // Inherit your UserConfig from this to get default values
 public abstract class DefaultDifficultyConfig {
     public static func GetFastUpgradeChance() -> Float = 77.0;
@@ -65,4 +77,15 @@ public abstract class DefaultDifficultyConfig {
     public static func GetDodgeUpgradeChance() -> Float = 33.0;
     public static func GetShouldFastForwardQ101Start() -> Bool = false;
     public static func GetShouldEnableRandomEncounters() -> Bool = true;
+
+    // Used for configuring dynamic spawn system limits for weaker PCs...
+    public static func GetMaxDynamicSpawnSystemEntities() -> Int32 = 100;
+    public static func GetMaxDynamicSpawnSystemCorpses() -> Int32 = 100;
+}
+
+public class DynamicSpawnSystemCustomizer extends ScriptableTweak {
+    protected cb func OnApply() {
+        TweakDBManager.SetFlat(t"DynamicSpawnSystem.setup.totalEntitiesLimit", GetMaxDynamicSpawnSystemEntities());
+        TweakDBManager.SetFlat(t"DynamicSpawnSystem.setup.numberOfDeadBodiesToTriggerImmediateDespawn", GetMaxDynamicSpawnSystemCorpses());
+    }
 }

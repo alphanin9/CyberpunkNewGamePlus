@@ -155,7 +155,33 @@ class NGPlusDifficultySystem extends ScriptableSystem {
             .AddTarget(EntityTarget.Type(n"NPCPuppet"));
     }
 
+    /*private func FixAyumiAppearance(puppet: ref<NPCPuppet>) {
+        // Hack, hack, hack...
+
+        if NotEquals(puppet.GetRecordID(), t"Character.NGPlus_EncounterFastSoloBoss") {
+            return;
+        }
+        let dynamicSpawnSystem = GameInstance.GetDynamicSpawnSystem(this.GetGameInstance());
+
+        let isFromEncounter = dynamicSpawnSystem.IsEntityRegistered(puppet.GetEntityID());
+
+        ModLog(n"NG+", s"Is from encounter: \(isFromEncounter)");
+
+        if !isFromEncounter {
+            return;
+        }
+
+        puppet.PrefetchAppearanceChange(n"default");
+        puppet.ScheduleAppearanceChange(n"default");
+    }*/
+
     private cb func OnNPCSpawned(event: ref<EntityLifecycleEvent>) {
+        let puppet = event.GetEntity() as NPCPuppet;
+
+        if !IsDefined(puppet) {
+            return;
+        }
+
         if !this.m_hasDetectedNgPlus {
             this.m_ngPlusActive = this.m_questsSystem.GetFactStr("ngplus_active") == 1;
             this.m_hasDetectedNgPlus = true;
@@ -169,12 +195,6 @@ class NGPlusDifficultySystem extends ScriptableSystem {
 
         // Not for VR Tutorial (though we'll be disabling it...), Johnny, Kurtz or Aguilar
         if this.m_player.IsReplacer() {
-            return;
-        }
-
-        let puppet = event.GetEntity() as NPCPuppet;
-
-        if !IsDefined(puppet) {
             return;
         }
 

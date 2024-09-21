@@ -49,6 +49,7 @@ class PlayerProgressionLoader {
         this.LoadPlayerEquippedCyberware();
         this.LoadPlayerGarage();
         this.LoadPlayerCraftbook();
+        this.LoadPlayerWardrobe();
         this.LoadFacts();
 
         let playerDevelopmentData = PlayerDevelopmentSystem.GetInstance(player).GetDevelopmentData(player);
@@ -395,6 +396,14 @@ class PlayerProgressionLoader {
         }
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerCraftbook done!");
+    }
+
+    private final func LoadPlayerWardrobe() {
+        let wardrobeSystem = GameInstance.GetWardrobeSystem(this.m_player.GetGame());
+
+        for entry in this.m_ngPlusPlayerSaveData.wardrobeEntries {
+            wardrobeSystem.StoreUniqueItemID(entry.itemId);
+        }
     }
 }
 

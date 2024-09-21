@@ -28,7 +28,6 @@ Character.NewGamePlus_MilitechMook_Rifle:
       localizedName: "LocKey#22655"
   savable: true
 
-
 DynamicSpawnSystem.NewGamePlus_MilitechShootyMooks:
   $type: DynamicVehicleData
   vehicleRecord: Vehicle.v_standard3_chevalier_emperor_militech

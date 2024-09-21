@@ -1,52 +1,54 @@
-Character.NewGamePlus_MaelstromMook_Wrench:
-  $base: Character.maelstrom_grunt1_melee1_wrench_wa
+# If they also try to frag each other, it'll be hilarious
+
+Character.NGPlus_NetrunnerMook_Nue:
+  $base: Character.tygerclaw_gangster3_netrunner_nue_wa_rare
   baseAttitudeGroup: n"hostile"
   quest: NPCQuestAffiliation.StreetStory
   priority: t"SpawnableObjectPriority.Quest"
   reactionPreset: ReactionPresets.Ganger_Aggressive
   savable: true
 
-Character.NewGamePlus_MaelstromMook_Wrench_B:
-  $base: Character.maelstrom_grunt1_melee1_wrench_ma
+Character.NGPlus_NetrunnerMook_Lexington:
+  $base: Character.maelstrom_netrunner_netrunner2_lexington_ma
   baseAttitudeGroup: n"hostile"
   quest: NPCQuestAffiliation.StreetStory
   priority: t"SpawnableObjectPriority.Quest"
   reactionPreset: ReactionPresets.Ganger_Aggressive
   savable: true
 
-Character.NewGamePlus_MaelstromMook_Knife:
-  $base: Character.maelstrom_grunt1_melee1_knife_ma
+Character.NGPlus_NetrunnerMook_Nova:
+  $base: Character.scavenger_netrunner2_netrunner2_nova_wa_rare
   baseAttitudeGroup: n"hostile"
   quest: NPCQuestAffiliation.StreetStory
   priority: t"SpawnableObjectPriority.Quest"
   reactionPreset: ReactionPresets.Ganger_Aggressive
   savable: true
 
-Character.NewGamePlus_MaelstromMook_Sword:
-  $base: Character.maelstrom_grunt2_melee2_hammer_wa
+Character.NGPlus_NetrunnerMook_Yukimura:
+  $base: Character.afterlife_netrunner_netrunner2_yukimura_wa_rare
   baseAttitudeGroup: n"hostile"
   quest: NPCQuestAffiliation.StreetStory
   priority: t"SpawnableObjectPriority.Quest"
   reactionPreset: ReactionPresets.Ganger_Aggressive
   savable: true
 
-DynamicSpawnSystem.NewGamePlus_MaelstromPunchyMooks:
+DynamicSpawnSystem.NewGamePlus_NetrunnerClownCarMooks:
   $type: DynamicVehicleData
-  vehicleRecord: Vehicle.cs_savable_chevalier_thrax_maelstrom
+  vehicleRecord: Vehicle.v_standard25_thorton_merrimac
   unitRecordsPool:
     -
       $type: WeightedCharacter
-      character: t"Character.NewGamePlus_MaelstromMook_Wrench"
-      weight: 0.5
+      character: t"Character.NGPlus_NetrunnerMook_Nue"
+      weight: 1
     -
       $type: WeightedCharacter
-      character: t"Character.NewGamePlus_MaelstromMook_Wrench_B"
-      weight: 0.5
+      character: t"Character.NGPlus_NetrunnerMook_Lexington"
+      weight: 1
     -
       $type: WeightedCharacter
-      character: t"Character.NewGamePlus_MaelstromMook_Knife"
-      weight: 1.0
+      character: t"Character.NGPlus_NetrunnerMook_Nova"
+      weight: 1
     -
       $type: WeightedCharacter
-      character: t"Character.NewGamePlus_MaelstromMook_Sword"
-      weight: 1.0
+      character: t"Character.NGPlus_NetrunnerMook_Yukimura"
+      weight: 1

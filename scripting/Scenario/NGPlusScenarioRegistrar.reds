@@ -2,17 +2,24 @@ module NGPlus.ScenarioRegistrar
 
 class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
     private cb func OnLoad() {
-        GameInstance.GetCallbackSystem().RegisterCallback(n"Resource/Ready", this, n"OnMenuResourceReady")
-            .AddTarget(ResourceTarget.Path(r"base\\gameplay\\gui\\fullscreen\\main_menu\\pregame_menu.inkmenu"));
+        GameInstance
+            .GetCallbackSystem()
+            .RegisterCallback(n"Resource/Ready", this, n"OnMenuResourceReady")
+            .AddTarget(
+                ResourceTarget
+                    .Path(
+                        r"base\\gameplay\\gui\\fullscreen\\main_menu\\pregame_menu.inkmenu"
+                    )
+            );
     }
 
-    private final func GetNewGamePlusMenuEntry() -> inkMenuEntry {
+    private final func GetWidgetEntry(widgetName: CName, widgetPath: String) -> inkMenuEntry {
         let widget = new ResourceRef();
-        ResourceRef.LoadPath(widget, ResRef.FromString("base\\gameplay\\gui\\fullscreen\\new_game_plus\\newgameplus_select_savegame.inkwidget"));
+        ResourceRef.LoadPath(widget, ResRef.FromString(widgetPath));
 
         let menuEntry: inkMenuEntry;
 
-        menuEntry.name = n"new_game_plus";
+        menuEntry.name = widgetName;
         menuEntry.menuWidget = widget;
         menuEntry.depth = 100u;
         menuEntry.spawnMode = inkSpawnMode.SingleAndMultiplayer;
@@ -22,46 +29,8 @@ class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
         return menuEntry;
     }
 
-    private final func GetNewGamePlusSelectStartMenuEntry() -> inkMenuEntry {
-        let widget = new ResourceRef();
-        ResourceRef.LoadPath(widget, ResRef.FromString("base\\gameplay\\gui\\fullscreen\\new_game_plus\\newgameplus_select_starting_point.inkwidget"));
-
-        let menuEntry: inkMenuEntry;
-
-        menuEntry.name = n"new_game_plus_starting_point";
-        menuEntry.menuWidget = widget;
-        menuEntry.depth = 100u;
-        menuEntry.spawnMode = inkSpawnMode.SingleAndMultiplayer;
-        menuEntry.isAffectedByFadeout = true;
-        menuEntry.inputContext = n"";
-
-        return menuEntry;
-    }
-
-    private final func GetNewGamePlusStandaloneNoEP1Entry() -> inkMenuEntry {
-        let widget = new ResourceRef();
-        ResourceRef.LoadPath(widget, ResRef.FromString("base\\gameplay\\gui\\fullscreen\\new_game_plus\\newgameplus_select_starting_point_standalone.inkwidget"));
-
-        let menuEntry: inkMenuEntry;
-
-        menuEntry.name = n"new_game_plus_standalone_no_ep1";
-        menuEntry.menuWidget = widget;
-        menuEntry.depth = 100u;
-        menuEntry.spawnMode = inkSpawnMode.SingleAndMultiplayer;
-        menuEntry.isAffectedByFadeout = true;
-        menuEntry.inputContext = n"";
-
-        return menuEntry;
-    }
-
-    private final func GetStandaloneMenuEntry() -> inkMenuEntry {
-        let menuEntry: inkMenuEntry;
-
-        return menuEntry;
-    }
-
-    private final func GetNewGamePlusRegisteredScenarios() -> array<CName> {
-        let ret: array<CName>;
+    private final func GetNewGamePlusRegisteredScenarios() -> [CName] {
+        let ret: [CName];
 
         ArrayPush(ret, n"MenuScenario_NewGamePlus");
         ArrayPush(ret, n"MenuScenario_SelectNewGamePlusStart");
@@ -89,8 +58,29 @@ class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
             ArrayPush(resource.scenariosNames, scenario);
         }
 
-        ArrayPush(resource.menusEntries, this.GetNewGamePlusMenuEntry());
-        ArrayPush(resource.menusEntries, this.GetNewGamePlusSelectStartMenuEntry());
-        ArrayPush(resource.menusEntries, this.GetNewGamePlusStandaloneNoEP1Entry());
+        ArrayPush(
+            resource.menusEntries,
+            this
+                .GetWidgetEntry(
+                    n"new_game_plus",
+                    "base\\gameplay\\gui\\fullscreen\\new_game_plus\\newgameplus_select_savegame.inkwidget"
+                )
+        );
+        ArrayPush(
+            resource.menusEntries,
+            this
+                .GetWidgetEntry(
+                    n"new_game_plus_starting_point",
+                    "base\\gameplay\\gui\\fullscreen\\new_game_plus\\newgameplus_select_starting_point.inkwidget"
+                )
+        );
+        ArrayPush(
+            resource.menusEntries,
+            this
+                .GetWidgetEntry(
+                    n"new_game_plus_standalone_no_ep1",
+                    "base\\gameplay\\gui\\fullscreen\\new_game_plus\\newgameplus_select_starting_point_standalone.inkwidget"
+                )
+        );
     }
 }

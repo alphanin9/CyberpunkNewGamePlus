@@ -9,12 +9,12 @@ $dlc: EP1
 Character.NGPlus_EncounterStrongSoloBoss:
   $base: t"Character.militech_enforcer3_gunner3_HMG_mb_elite"
 
-  entityTemplatePath: r"ep1\\characters\\entities\\corpo\\corpo__black_ops_mb.ent"
-  appearanceName: n"black_ops_mb_heavy__lvl2_02"
+  entityTemplatePath: r"mod\quest\newgameplus\newNpc\cross.ent"
+  appearanceName: man_big_q111_cross
 
   tags: ["Cyberpsycho", "ImmuneToTakedown", "NGPlusBoss"]
   baseAttitudeGroup: n"hostile"
-  affiliation: t"Factions.Classified"
+  affiliation: Factions.Unknown
   rarity: NPCRarity.Boss
   savable: true
 
@@ -26,7 +26,7 @@ Character.NGPlus_EncounterStrongSoloBoss:
 
   bountyDrawTable: t"BountyDrawTable.ProjectGhostMember"
   reactionPreset: ReactionPresets.Ganger_Aggressive
-
+  
   statModifierGroups:
     - !append t"Character.Boss_Poise_Primary_Stat_ModGroup"
     - !append t"Character.Cyberpsycho_ModGroup"
@@ -45,8 +45,10 @@ Character.NGPlus_EncounterStrongSoloBoss:
           - t"WeaponConditions.BaseRangedPrimaryWeaponUnequipCondition"
 
   effectors:
-    - !append t"Character.AllowTechWeaponDodgeEffector"
-    - !append t"Character.AllowAnyDirectionDodgeEffector"
+    - !append Character.NGPlus_TechDodgeEffector
+    - !append Character.NGPlus_AnyDirDodgeEffector
+
+  archetypeData: ArchetypeData.HeavyRangedT3
   
   abilities:
     - !append t"Ability.HasDodge"
@@ -71,6 +73,8 @@ Character.NGPlus_EncounterStrongSoloBoss:
     - !append t"Ability.IsStrongMeleeArchetype"
     - !append t"Ability.CanCatchUpDistance"
     - !append t"Ability.CanCatchUp"
+    - !append Ability.CanShareThreatsWithPlayer
+    - !append Ability.NGPlus_RandomEncounterBossMarker
   
   objectActions: ["QuickHack.BossBaseBlindHack", "QuickHack.BossSuicideHackBase", "QuickHack.BossBaseWeaponMalfunctionHack", "QuickHack.BossBaseLocomotionMalfunctionHack", "QuickHack.BossBaseOverheatHack", "QuickHack.BossOverloadBaseHack", "QuickHack.BossBrainMeltBaseHack", "QuickHack.BossBaseCyberwareMalfunctionHack", "QuickHack.BossSystemCollapseHackBase", "QuickHack.BossGrenadeHackBase", "QuickHack.BossMadnessHackBase", "QuickHack.BossMemoryWipeHackBase", "QuickHack.BossBaseBlackWallHack", "QuickHack.BaseCommsCallInHack", "QuickHack.BaseCommsNoiseHack", "QuickHack.BasePingHack", "QuickHack.BaseContagionHack", "QuickHack.BaseWhistleHack", "QuickHack.RemoteBreach", "Takedown.NewPerkFinisher", "Takedown.NewPerkFinisherBlunt"]
 
@@ -82,7 +86,7 @@ Character.NGPlus_EncounterStrongSoloBoss:
       $type: ConstantStatModifier
       statType: BaseStats.Health
       modifierType: Multiplier
-      value: 1.2
+      value: 0.8
 
     - !append
       $type: ConstantStatModifier
@@ -96,19 +100,35 @@ Character.NGPlus_EncounterStrongSoloBoss:
       modifierType: Additive
       value: 18
 
-Character.NGPlus_EncounterStrongSoloBoss_SideKick_Gunner:
-  $base: t"Character.q306_black_ops_HMG"
+Character.NGPlus_StrongSoloBoss_GameplayClue:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_StrongSoloBoss_GameplayClue"
+  localizedName: l"NewGamePlus_BossEncounter_CrossClue_Name"
+  localizedDescription: l"NewGamePlus_BossEncounter_CrossClue_Desc"
+
+Character.NGPlus_StrongSoloBoss_ThreatClue:
+  $type: npc_scanning_data
+  friendlyName: "NGPlus_StrongSoloBoss_GameplayClue"
+  localizedName: l"NewGamePlus_BossEncounter_CrossConclusion_Name"
+  localizedDescription: l"NewGamePlus_BossEncounter_CrossConclusion_Desc"
+
+Character.NGPlus_EncounterStrongSoloBoss_SideKick_Fist:
+  $base: t"Character.militech_strongarms_hmelee3_fists_mb_elite"
   quest: NPCQuestAffiliation.StreetStory
   baseAttitudeGroup: "hostile"
   reactionPreset: ReactionPresets.Ganger_Aggressive
   savable: true
+  statModifierGroups:
+    - !append-once NPCStatPreset.LowerHealth
 
 Character.NGPlus_EncounterStrongSoloBoss_SideKick_Sniper:
-  $base: t"Character.q306_black_ops_sniper"
+  $base: t"Character.militech_recon_sniper2_achilles_ma_rare"
   quest: NPCQuestAffiliation.StreetStory
   baseAttitudeGroup: "hostile"
   reactionPreset: ReactionPresets.Ganger_Aggressive
   savable: true
+  statModifierGroups:
+    - !append-once NPCStatPreset.LowerHealth
 
 DynamicSpawnSystem.NewGamePlus_StrongSoloBossEncounter:
   $type: DynamicVehicleData
@@ -120,7 +140,7 @@ DynamicSpawnSystem.NewGamePlus_StrongSoloBossEncounter:
       weight: 1.0
     -
       $type: WeightedCharacter
-      character: t"Character.NGPlus_EncounterStrongSoloBoss_SideKick_Gunner"
+      character: t"Character.NGPlus_EncounterStrongSoloBoss_SideKick_Fist"
       weight: 1.0
 
 DynamicSpawnSystem.NewGamePlus_StrongSoloBossSupport:
@@ -142,10 +162,10 @@ DynamicSpawnSystem.NewGamePlus_StrongSoloBossSupport1:
   unitRecordsPool:
     -
       $type: WeightedCharacter
-      character: t"Character.NGPlus_EncounterStrongSoloBoss_SideKick_Gunner"
+      character: t"Character.NGPlus_EncounterStrongSoloBoss_SideKick_Fist"
       weight: 1.0
     -
       $type: WeightedCharacter
-      character: t"Character.NGPlus_EncounterStrongSoloBoss_SideKick_Gunner"
+      character: t"Character.NGPlus_EncounterStrongSoloBoss_SideKick_Fist"
       weight: 1.0
 

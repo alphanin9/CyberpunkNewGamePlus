@@ -4,7 +4,7 @@ module NGPlus.Recipes
 // I think it should be so it gets hidden if we craft the mod/gun in question, but shouldn't be hidden if it's the other mods
 
 @addMethod(CraftBook)
-private final func GetForceUnhiddenChimeraModRecipes() -> array<TweakDBID> = [t"Items.ChimeraPowerMod_Recipe", t"Items.ChimeraTechMod_Recipe", t"Items.ChimeraSmartMod_Recipe", t"Items.ChimeraMeleeMod_Recipe"];
+private final func GetForceUnhiddenChimeraModRecipes() -> [TweakDBID] = [t"Items.ChimeraPowerMod_Recipe", t"Items.ChimeraTechMod_Recipe", t"Items.ChimeraSmartMod_Recipe", t"Items.ChimeraMeleeMod_Recipe"];
 
 @addMethod(CraftBook)
 private final func GetNotIgnoredChimeraPowerModRecipe() -> TweakDBID = t"Items.ChimeraPowerMod";
@@ -13,7 +13,7 @@ private final func GetNotIgnoredChimeraPowerModRecipe() -> TweakDBID = t"Items.C
 private final func GetNotIgnoredChimeraTechModRecipe() -> TweakDBID = t"Items.ChimeraTechMod";
 
 @addMethod(CraftBook)
-private final func GetForceUnhiddenHauntedRecipes() -> array<TweakDBID> = [t"Items.Recipe_HauntedCyberdeck", t"Items.Recipe_Rare_HauntedCyberdeck", t"Items.Recipe_Epic_HauntedCyberdeck", t"Items.Recipe_Legendary_HauntedCyberdeck", t"Items.Recipe_Common_Borg4a_HauntedGun", t"Items.Recipe_Uncommon_Borg4a_HauntedGun", t"Items.Recipe_Rare_Borg4a_HauntedGun", t"Items.Recipe_Epic_Borg4a_HauntedGun", t"Items.Recipe_Legendary_Borg4a_HauntedGun"];
+private final func GetForceUnhiddenHauntedRecipes() -> [TweakDBID] = [t"Items.Recipe_HauntedCyberdeck", t"Items.Recipe_Rare_HauntedCyberdeck", t"Items.Recipe_Epic_HauntedCyberdeck", t"Items.Recipe_Legendary_HauntedCyberdeck", t"Items.Recipe_Common_Borg4a_HauntedGun", t"Items.Recipe_Uncommon_Borg4a_HauntedGun", t"Items.Recipe_Rare_Borg4a_HauntedGun", t"Items.Recipe_Epic_Borg4a_HauntedGun", t"Items.Recipe_Legendary_Borg4a_HauntedGun"];
 
 // Slow code, but meh
 @addMethod(CraftBook)

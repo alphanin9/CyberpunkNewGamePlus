@@ -18,8 +18,8 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
     private let m_saveToLoadIndex: Int32;
     private let m_saveToLoadID: Uint64;
     private let m_isInputDisabled: Bool;
-    private let m_saves: array<String>;
-    private let m_ngPlusSaveIndices: array<Int32>;
+    private let m_saves: [String];
+    private let m_ngPlusSaveIndices: [Int32];
     private let m_saveFilesReady: Bool;
     private let m_systemHandler: wref<inkISystemRequestsHandler>;
     private let m_pendingRegistration: Bool;
@@ -160,7 +160,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
         this.m_eventDispatcher.SpawnEvent(n"OnAccept");
     }
 
-    protected cb func OnSavesForLoadReady(saves: array<String>) -> Bool {
+    protected cb func OnSavesForLoadReady(saves: [String]) -> Bool {
         this.m_saves = saves;
         this.m_ngPlusSaveIndices = this.m_ngPlusSystem.ResolveNewGamePlusSaves(saves);
         this.m_saveFilesReady = true;

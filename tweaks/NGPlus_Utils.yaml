@@ -13,12 +13,14 @@ Vehicle.NGPlus_Encounter_Bike:
 Vehicle.NGPlus_Encounter_Outlaw:
   $base: t"Vehicle.v_sport1_herrera_outlaw"
   savable: true
-  appearanceName: "herrera_outlaw__basic_player_01"
+  appearanceName: "herrera_outlaw__basic_mafia_01"
 
 Vehicle.NGPlus_Encounter_Hellhound:
   $base: t"Vehicle.v_standard3_militech_hellhound"
   savable: true
   appearanceName: "militech_hellhound__basic_player_01"
+
+# Abilities
 
 # Because HasPassiveHealthRegeneration is fucking busted
 Ability.HasWeakHealthRegeneration:
@@ -78,6 +80,22 @@ Ability.HasStrongHealthRegeneration:
         statPoolType: "Health"
         modificationType: "Regeneration"
 
+# Used as a marker in replaced scanner method to keep abilities from getting too crowded on screen :P
+Ability.NGPlus_RandomEncounterBossMarker:
+  $base: Ability.CanUseGrenades
+
+Character.NGPlus_TechDodgeEffector:
+  $type: gamedataApplyStatusEffectEffector_Record
+  statusEffect: BaseStatusEffect.ForceAllowTechWeaponDodge
+
+Character.NGPlus_AnyDirDodgeEffector:
+  $type: gamedataApplyStatusEffectEffector_Record
+  statusEffect: BaseStatusEffect.ForceAllowAnyDirectionDodge
+
+# End of abilities
+
+# Bounty rewards
+
 # Yes, I know Burondo wasn't one of the Ghosts
 # I also know Ghosts were Arasaka and Q115 Blackhand sure as fuck ain't Saka
 # It's a cool easter egg for those in the know
@@ -86,7 +104,29 @@ Ability.HasStrongHealthRegeneration:
 # Unsure if EP1 matters on this?
 BountyReward.ProjectGhostMember:
   $dlc: EP1
-  $base: t"BountyReward.bounty_rogue"
+  $type: RewardBase
+  experience:
+    -
+      $type: XPPoints
+      type: Proficiencies.StreetCred
+      quantityModifiers:
+        - 
+          $type: ConstantStatModifier
+          statType: BaseStats.Quantity
+          modifierType: Additive
+          value: 1000
+
+  currencyPackage:
+    -
+      $type: CurrencyReward
+      quantityModifiers:
+        -
+          $type: ConstantStatModifier
+          statType: BaseStats.Quantity
+          modifierType: Additive
+          value: 10000
+          
+
   name: "Bounty for NG+ bosses"
 
 Transgression.ProjectGhostMember:
@@ -109,3 +149,15 @@ BountyDrawTable.ProjectGhostMember:
         - t"Transgression.Classified"
       reward: t"BountyReward.ProjectGhostMember"
       wantedStars: 5
+
+# End of bounty rewards
+
+# Focus clues
+
+Character.NGPlus_RandomEncounterBossClue:
+  $type: npc_scanning_data
+  friendlyName: "Random encounter boss clue, general"
+  localizedName: l"NewGamePlus_BossEncounter_GeneralFocusClueName"
+  localizedDescription: l"NewGamePlus_BossEncounter_GeneralFocusClueDesc"
+
+# End of focus clues

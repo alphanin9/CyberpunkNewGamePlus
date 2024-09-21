@@ -6,8 +6,8 @@ let m_isInNgPlus: Bool;
 @replaceMethod(PlayerDevelopmentData)
 private const final func ModifyProficiencyLevel(proficiencyIndex: Int32, isDebug: Bool, opt levelIncrease: Int32) -> Void {
     let Blackboard: ref<IBlackboard>;
-    let effectTags: array<CName>;
-    let effects: array<ref<StatusEffect>>;
+    let effectTags: [CName];
+    let effects: [ref<StatusEffect>];
     let i: Int32;
     let level: LevelUpData;
     let statusEffectSys: ref<StatusEffectSystem>;
