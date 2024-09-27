@@ -179,6 +179,11 @@ public:
         s_type = Red::GetClass<PlayerDevelopmentData>();
     }
 
+    inline operator bool() const
+    {
+        return m_instance != nullptr;
+    }
+
     inline Red::DynArray<SAttribute> GetAttributes()
     {
         const auto attributeProp = s_type->GetProperty("attributes");

@@ -172,12 +172,15 @@ void Package::ReadEnum(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBase
 bool Package::TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
 {
     const auto chunkId = aCursor.readInt();
+    const auto cursorOffset = aCursor.offset;
 
     auto handlePtr = reinterpret_cast<Red::Handle<Red::ISerializable>*>(aOut);
 
     auto chunkHandle = ReadChunkById(chunkId, false);
 
-    handlePtr->Swap(chunkHandle);
+    aCursor.seekTo(cursorOffset);
+
+    *handlePtr = chunkHandle;
 
     return true;
 }
@@ -320,6 +323,11 @@ Red::Handle<Red::ISerializable> Package::ReadChunkById(std::size_t aId, bool aRo
 
     m_cursor.seekTo(m_baseOffset + header.offset);
 
+    if (!m_useRootClassOptimization && m_objects.contains(aId))
+    {
+        return m_objects[aId];
+    }
+
     auto handle = Red::MakeScriptedHandle(m_names[header.typeID]);
     auto ret = false;
 
@@ -336,6 +344,8 @@ Red::Handle<Red::ISerializable> Package::ReadChunkById(std::size_t aId, bool aRo
     {
         PluginContext::Error(std::format("Package::ReadChunkById failed reading chunk {}!", aId));
     }
+
+    m_objects.insert_or_assign(aId, handle);
 
     return handle;
 }

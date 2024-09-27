@@ -69,6 +69,11 @@ struct CraftBook
         }
     }
 
+    inline operator bool() const
+    {
+        return m_instance != nullptr;
+    }
+
     template<Red::CName aPropertyName, typename Fn, typename NativeType>
     inline void IterateOver(Fn fn)
     {

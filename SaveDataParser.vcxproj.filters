@@ -72,6 +72,24 @@
     <ClCompile Include="src\redscript_api\redscriptBindings.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\parsing\definitions\nodeParsers\scriptable\scriptableContainerNodeV2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\dataReaders\playerDevelopmentSystem\playerDevelopmentSystemReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\dataReaders\equipmentSystem\equipmentSystemReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\dataReaders\craftingSystem\craftingSystemReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\dataReaders\inventory\inventoryReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\dataReaders\equipmentExOutfitSystem\outfitSystemReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\filesystem\fs_util.hpp">
@@ -159,6 +177,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\util\offsetPtr.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\scriptableContainerNodeV2.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\dataReaders\playerDevelopmentSystem\playerDevelopmentSystemReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\dataReaders\equipmentSystem\equipmentSystemReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\dataReaders\resultContext.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\dataReaders\craftingSystem\craftingSystemReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\dataReaders\inventory\inventoryReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\dataReaders\equipmentExOutfitSystem\outfitSystemReader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

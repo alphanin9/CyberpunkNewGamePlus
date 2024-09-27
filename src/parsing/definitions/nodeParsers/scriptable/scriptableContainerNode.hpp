@@ -8,13 +8,18 @@
 #include <unordered_set>
 #include <vector>
 
-#include <RED4ext/Package.hpp>
 #include <RED4ext/RED4ext.hpp>
+#include <RED4ext/Package.hpp>
 #include <RedLib.hpp>
 
 #include "../defaultNodeData.hpp"
 #include "helpers/classDefinitions/playerDevelopmentData.hpp"
 #include "helpers/nativeScriptableReader.hpp"
+
+#include "../../package/packageReader.hpp"
+
+#include "../../../redscript_api/dataReaders/playerDevelopmentSystem/playerDevelopmentSystemReader.hpp"
+#include "../../../redscript_api/dataReaders/equipmentExOutfitSystem/outfitSystemReader.hpp"
 
 namespace save
 {
@@ -233,6 +238,54 @@ private:
 public:
     virtual void ReadData(FileCursor& cursor, NodeEntry& node)
     {
+        constexpr auto testNewScriptableLoader = true;
+
+        if constexpr (testNewScriptableLoader)
+        {
+            const auto oldOffset = cursor.offset;
+
+            const auto dataSize = cursor.readInt();
+
+            package::Package package(cursor.CreateSubCursor(dataSize));
+
+            package.m_readCruids = true;
+            package.m_useRootClassOptimization = false;
+
+            package.ReadPackage();
+
+            auto playerDevelopmentSystem = package.GetChunkByTypeName("PlayerDevelopmentSystem");
+            if (playerDevelopmentSystem)
+            {
+                auto result = PlayerDevelopmentSystemReader::GetData(playerDevelopmentSystem);
+
+                PluginContext::Spew("Level: {} SC: {} Perks: {} Relic: {}", result.m_playerLevel,
+                                    result.m_playerStreetCred, result.m_playerPerkPoints, result.m_playerRelicPoints);
+            }
+            else
+            {
+                PluginContext::Spew("Failed to find PlayerDevelopmentSystem!");
+            }
+
+            auto outfitSystem = package.GetChunkByTypeName("EquipmentEx.OutfitSystem");
+            if (outfitSystem)
+            {
+                auto result = OutfitSystemReader::GetData(outfitSystem);
+
+                for (auto& outfitSet : result.m_data)
+                {
+                    PluginContext::Spew("Outfit name: {}, item count: {}", outfitSet->m_name.ToString(),
+                                        outfitSet->m_outfitParts.size);
+                }
+            }
+            else
+            {
+                PluginContext::Spew("Failed to find EqEx system!");
+            }
+
+
+            cursor.seekTo(oldOffset);
+        }
+
         const auto dataSize = cursor.readInt();
         if (dataSize == 0)
         {

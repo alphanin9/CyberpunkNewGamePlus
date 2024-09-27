@@ -21,7 +21,12 @@ struct EquipmentSystemPlayerData
         }
     }
 
-    Red::SLoadout* GetLoadout()
+    inline operator bool() const
+    {
+        return m_instance != nullptr;
+    }
+
+    inline Red::SLoadout* GetLoadout()
     {
         return s_type->GetProperty("equipment")->GetValuePtr<Red::SLoadout>(m_instance);
     }

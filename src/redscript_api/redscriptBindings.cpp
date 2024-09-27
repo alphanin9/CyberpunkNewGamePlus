@@ -36,6 +36,8 @@
 // Redesign things: move loaders for different data into their own namespaces, pass handle to progression data around?
 // Maybe figure out how to add things to save metadata and add ngplusActive field to it...
 
+// Small refactor: move complex reader stuff (player development system, equipment system, inventory...) into their own files
+
 using namespace Red;
 
 using scriptable::native::CraftBook::CraftBook;
@@ -265,9 +267,8 @@ enum class ENewGamePlusStartType
     Invalid
 };
 
-// NOTE: THIS IS ACTUALLY BAD
-// EITHER SOMEONE FIGURES OUT A WAY TO MAKE OVER 160 GAME SYSTEMS WORK (PROBABLY PSIBERX) - OR NG+ WON'T BE COMPATIBLE
-// WITH MULTIPLAYER!!! Seems to be fine with new RED4ext...
+// Sidenote: this does not need IGameSystem inheritance...
+// Whatever
 class NewGamePlusSystem : public IGameSystem
 {
 public:
@@ -1013,22 +1014,6 @@ private:
             }
         }
 
-        constexpr auto shouldLogInvalidItems = false;
-
-        if constexpr (shouldLogInvalidItems)
-        {
-            if (ret.m_itemType == ItemType::Invalid)
-            {
-                std::unique_lock lock{m_itemDataLoggerMutex};
-
-                CString str;
-                CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, ret.m_tdbId);
-
-                PluginContext::Spew(
-                    std::format("Failed to add item {} (TDBID {:#X})", str.c_str(), std::uint64_t{ret.m_tdbId}));
-            }
-        }
-
         return ret;
     }
 
@@ -1044,22 +1029,6 @@ private:
             aSlotPart.m_attachmentSlotTdbId == iconicMeleeWeaponMod1)
         {
             return;
-        }
-
-        constexpr auto shouldLogCWStatsShards = false;
-
-        if constexpr (shouldLogCWStatsShards)
-        {
-            if (aSlotPart.m_attachmentSlotTdbId == "AttachmentSlots.StatsShardSlot")
-            {
-                const auto rngSeed = aSlotPart.m_itemId.rngSeed; // RNG seed seems to determine CW stat mods...
-                const auto tdbId = aSlotPart.m_itemId.tdbid;
-
-                CString str;
-                CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, tdbId);
-
-                PluginContext::Spew(std::format("Shard ID: {}, RNG seed: {}", str.c_str(), rngSeed));
-            }
         }
 
         // FIX: CW stats shards not being transferred
@@ -1148,37 +1117,6 @@ private:
             aAddedIconics.insert(aExtendedData.m_tdbId);
         }
 
-        constexpr auto testStatsOnWeapons = false;
-
-        if constexpr (testStatsOnWeapons)
-        {
-            if (aExtendedData.HasTag("Weapon"))
-            {
-                CString str;
-                CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aExtendedData.m_tdbId);
-
-                PluginContext::Spew(std::format("Gun {}", str.c_str()));
-
-                auto statsObjectId = m_statsSystemPtr->GetEntityHashFromItemId(aExtendedData.m_itemId);
-                auto statModifiers = m_statsSystemPtr->GetStatModifiers(statsObjectId);
-
-                if (!statModifiers.size)
-                {
-                    PluginContext::Spew("No stat modifiers on weapon!");
-                }
-
-                m_statsSystemPtr->DumpStatModifiersToConsole(statModifiers);
-
-                static const auto statTypes = GetEnum<game::data::StatType>();
-
-                for (auto i : m_statsSystemPtr->GetDisabledModifiers(statsObjectId))
-                {
-                    PluginContext::Spew(std::format(
-                        "\tDisabled: {}", package::Package::GetEnumString(statTypes, static_cast<std::int64_t>(i))));
-                }
-            }
-        }
-
         RedItemData itemData{};
 
         itemData.m_itemId = aExtendedData.m_itemId;
@@ -1191,18 +1129,6 @@ private:
         if (aItem.HasExtendedData())
         {
             ProcessAttachments(aItem.m_itemSlotPart, aTargetList, itemData);
-        }
-
-        constexpr auto shouldLogAddedItems = false;
-        if constexpr (shouldLogAddedItems)
-        {
-            if (aTargetList.entries == m_saveData.m_playerItems.entries)
-            {
-                CString str{};
-                CallStatic("gamedataTDBIDHelper", "ToStringDEBUG", str, aExtendedData.m_tdbId);
-
-                PluginContext::Spew(std::format("Adding item {} to inventory!", str.c_str()));
-            }
         }
 
         aTargetList.PushBack(std::move(itemData));
