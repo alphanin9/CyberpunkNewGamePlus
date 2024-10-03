@@ -7,10 +7,10 @@
 #include "Windows.h"
 #include "shlobj_core.h"
 
-#include <simdjson.h>
-
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
+
+#include <RED4ext/Scripting/Natives/Generated/save/MetadataContainer.hpp>
 
 #include "fs_util.hpp"
 
@@ -20,49 +20,140 @@ using namespace Red;
 
 namespace files
 {
+uintptr_t GetFileHandler()
+{
+    constexpr auto c_fileHandler = 3788966949u;
+
+    // Oops, forgot to deref...
+    static auto s_fileHandler = *UniversalRelocPtr<uintptr_t>(c_fileHandler).GetAddr();
+
+    return s_fileHandler;
+}
+
+CString& GetCpSaveFolder_Raw()
+{
+    constexpr auto c_GetSavedGamesFolderPath = 4293661415u;
+
+    // Returns a static
+    static const auto s_fnGetSavedGamesFolderPath =
+        UniversalRelocFunc<CString&(__fastcall*)()>(c_GetSavedGamesFolderPath);
+
+    static auto& s_savedGamesFolder = s_fnGetSavedGamesFolderPath();
+
+    return s_savedGamesFolder;
+}
+
 std::filesystem::path GetCpSaveFolder()
 {
-    PWSTR userProfilePath{};
+    static const auto& s_savedGamesFolder = GetCpSaveFolder_Raw();
+    static const std::filesystem::path s_path = s_savedGamesFolder.c_str();
 
-    // NOTE: CP2077 doesn't actually seem to use FOLDERID_SavedGames - does current method play nice with other language
-    // versions of Windows?
-    SHGetKnownFolderPath(FOLDERID_Profile, KF_FLAG_CREATE, nullptr, &userProfilePath);
-    if (!userProfilePath)
+    return s_path;
+}
+
+// A lot of funcs for file system use some weird stringview-like thing
+struct StringView
+{
+    const char* m_ptr;
+    int m_len;
+
+    StringView(std::string_view aStr)
+        : m_ptr(aStr.data())
+        , m_len(aStr.size())
     {
-        PluginContext::Error("FOLDERID_Profile could not be found!");
-        return std::filesystem::path{};
+    }
+};
+
+struct FileStreamPtr
+{
+    BaseStream* m_stream;
+
+    FileStreamPtr(BaseStream* aStream)
+        : m_stream(aStream)
+    {
+    
     }
 
-    static const std::filesystem::path basePath = userProfilePath;
-    static const std::filesystem::path finalPath = basePath / L"Saved Games" / L"CD Projekt Red" / L"Cyberpunk 2077";
+    FileStreamPtr() = default;
+    FileStreamPtr(const FileStreamPtr&) = delete;
+    FileStreamPtr& operator=(const FileStreamPtr&) = delete;
+    FileStreamPtr(FileStreamPtr&&) = default;
+    ~FileStreamPtr()
+    {
+        constexpr auto c_fileStream_dtor = 1924865980u;
 
-    return finalPath;
+        static const auto s_fileStream_dtor =
+            UniversalRelocFunc<void(__fastcall*)(FileStreamPtr * aThis)>(c_fileStream_dtor);
+
+        s_fileStream_dtor(this);
+    }
+
+    operator bool() const
+    {
+        return m_stream != nullptr;
+    }
+};
+
+FileStreamPtr OpenFileWithRedReader(const CString& aPath)
+{
+    constexpr auto c_fileHandler_OpenFileStream = 1917464012u;
+
+    static const auto s_fileHandler_OpenFileStream = UniversalRelocFunc<int64_t(__fastcall*)(
+        uintptr_t aThis, FileStreamPtr & aStream, const CString& aName, char aFlags)>(c_fileHandler_OpenFileStream);
+
+    FileStreamPtr ret{};
+
+    s_fileHandler_OpenFileStream(GetFileHandler(), ret, aPath, 0);
+
+    return ret;
+}
+
+DynArray<CString> LookupSavePaths() noexcept
+{
+    constexpr auto c_fileHandler_FindFiles = 4051576167u;
+
+    static auto s_fnFileHandler_FindFiles = UniversalRelocFunc<int64_t(__fastcall*)(
+        uintptr_t aThis, const CString& aRoot, const StringView& aFileToSearchFor, DynArray<CString>& aRet,
+        bool aRecurse)>(c_fileHandler_FindFiles);
+
+    DynArray<CString> filePaths{};
+
+    static const StringView s_metadataName{"metadata.9.json"};
+
+    s_fnFileHandler_FindFiles(GetFileHandler(), GetCpSaveFolder_Raw(), s_metadataName, filePaths, true);
+
+    return filePaths;
+}
+
+CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexcept
+{
+    static const auto& rootPath = GetCpSaveFolder_Raw();
+
+    constexpr auto c_mergeDirPath = 836113218u; // Does a few more checks for stuff
+    static const auto s_mergeDirPath = 
+        UniversalRelocFunc<CString*(__fastcall*)(const CString&, CString*, const StringView&)>(c_mergeDirPath);
+
+    constexpr auto c_mergeFilePaths = 1194333091u;
+    static const auto s_mergeFilePaths =
+        UniversalRelocFunc<CString*(__fastcall*)(const CString&, CString*, const StringView&)>(c_mergeFilePaths);
+
+    CString saveFolder{};
+
+    s_mergeDirPath(rootPath, &saveFolder, StringView{aSaveName});
+
+    CString filePath{};
+
+    s_mergeFilePaths(saveFolder, &filePath, StringView{aFileName});
+
+    return filePath;
 }
 
 // No longer checks for PONR, needs a name change
 bool HasValidPointOfNoReturnSave()
 {
-    static const auto basePath = GetCpSaveFolder();
-
-    std::error_code ec;
-
-    std::filesystem::directory_iterator directoryIterator{basePath, ec};
-
-    if (ec.value() != 0)
+    for (auto& i : LookupSavePaths())
     {
-        PluginContext::Error("files::HasValidPointOfNoReturnSave, directory iterator creation error {}", ec.message());
-    }   
-
-    for (auto& i : directoryIterator)
-    {
-        if (!i.is_directory())
-        {
-            continue;
-        }
-
-        const auto saveName = i.path().stem().string();
-
-        if (IsValidForNewGamePlus(saveName))
+        if (IsValidForNewGamePlus(i))
         {
             PluginContext::Spew("Has valid point of no return savegame file!");
             return true;
@@ -554,152 +645,88 @@ constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
     FNV1a64("quests/meta/09_solo/404/04_jack_in")
 };
 
-// Do we have the ~~Songbird chip~~ ahem, *neural matrix* waiting for us?
-constexpr auto c_q307ActiveFact = "q307_blueprint_acquired=1";
-
-// Debug thing, allows us to unlock NG+ on any save...
-constexpr auto c_ngplusDebugUnlocker = "debug_unlock_ngplus=1";
-
-bool IsValidForNewGamePlus(std::string_view aSaveName, uint64_t& aPlaythroughHash) noexcept
+bool IsValidForNewGamePlus(const CString& aSaveName, uint64_t& aPlaythroughHash) noexcept
 {
-    static const auto basePath = GetCpSaveFolder();
+    auto engineStream = OpenFileWithRedReader(aSaveName);
 
-    if (aSaveName.starts_with("EndGameSave"))
-    {
-        // Hack, not sure if necessary...
-        return false;
-    }
-
-    const auto metadataPath = basePath / aSaveName / "metadata.9.json";
-
-    std::error_code ec{};
-
-    if (!std::filesystem::is_regular_file(metadataPath, ec))
+    if (!engineStream)
     {
         return false;
     }
 
-    auto padded = simdjson::padded_string::load(metadataPath.string());
+    constexpr auto c_loadSaveMetadataFromFile = 1649938065u;
+    static const auto s_loadSaveMetadataFromFile = UniversalRelocFunc <bool(__fastcall*)(BaseStream* aPtr, save::Metadata & aMetadata)>(c_loadSaveMetadataFromFile);
 
-    if (padded.error() != simdjson::SUCCESS)
+    save::Metadata metadata{};
+
+    if (!s_loadSaveMetadataFromFile(engineStream.m_stream, metadata))
+    {
+        return false;
+    }
+    
+    constexpr CName c_pcPlatformName = "pc";
+    constexpr CName c_steamDeckPlatformName = "steamdeck";
+
+    const CName platform = metadata.platform.c_str();
+
+    if (platform != c_pcPlatformName && platform != c_steamDeckPlatformName)
     {
         return false;
     }
 
-    static simdjson::dom::parser parser{};
-    simdjson::dom::element document{};
-
-    // NOTE: some users have this fail... Due to arch check, should setting arch to default fix it?
-    if (const auto errorCode = parser.parse(padded.value()).get(document); errorCode != simdjson::SUCCESS)
+    if (c_minSupportedGameVersion > metadata.gameVersion)
     {
         return false;
     }
 
-    if (!document.is_object())
+    if (metadata.isEndGameSave)
     {
         return false;
     }
 
-    if (!document.at_key("RootType").is_string())
-    {
-        return false;
-    }
+    aPlaythroughHash = FNV1a64(metadata.playthroughID.c_str());
 
-    simdjson::dom::element saveMetadata{};
-
-    if (document.at_key("Data").at_key("metadata").get(saveMetadata) != simdjson::SUCCESS)
-    {
-        return false;
-    }
-
-    // ISSUE: old saves (might not be from PC?) don't have save metadata correct
-    // Switch to noexcept versions
-
-    int64_t gameVersion{};
-
-    if (saveMetadata.at_key("gameVersion").get_int64().get(gameVersion) != simdjson::SUCCESS)
-    {
-        return false;
-    }
-
-    if (c_minSupportedGameVersion > gameVersion)
-    {
-        return false;
-    }
-
-    const auto isPointOfNoReturn = aSaveName.starts_with("PointOfNoReturn");
-
-    std::string_view playthroughId{};
-
-    if (saveMetadata.at_key("playthroughID").get_string().get(playthroughId) != simdjson::SUCCESS)
-    {
-        return false;
-    }
-
-    std::string_view activeTrackedQuest{};
-    if (saveMetadata.at_key("trackedQuestEntry").get_string().get(activeTrackedQuest) != simdjson::SUCCESS)
-    {
-        return false;
-    }
-
-    // HACK: ignore saves that were made after point of no return's been passed
     if (std::find(c_generatedPostPointOfNoReturnObjectives.begin(), c_generatedPostPointOfNoReturnObjectives.end(),
-                  FNV1a64(activeTrackedQuest.data())) != c_generatedPostPointOfNoReturnObjectives.end())
-    {
-        return false;
-    }
-
-
-    std::string_view questsDone{};
-
-    if (saveMetadata.at_key("finishedQuests").get_string().get(questsDone) != simdjson::SUCCESS)
+                  FNV1a64(metadata.trackedQuestEntry.c_str())) != c_generatedPostPointOfNoReturnObjectives.end())
     {
         return false;
     }
 
     using std::operator""sv;
-    auto questsSplitRange = std::views::split(questsDone, " "sv);
+    auto questsSplitRange = std::views::split(std::string_view{metadata.finishedQuests.c_str()}, " "sv);
 
     std::unordered_set<std::string_view> questsSet(questsSplitRange.begin(), questsSplitRange.end());
-
-    aPlaythroughHash = FNV1a64(playthroughId.data());
 
     if (questsSet.contains("q104") && questsSet.contains("q110") && questsSet.contains("q112"))
     {
         return true;
     }
 
-    if (isPointOfNoReturn)
+    if (metadata.isPointOfNoReturn)
     {
         return true;
     }
 
-    simdjson::dom::array importantFacts{};
+    // Do we have the ~~Songbird chip~~ ahem, *neural matrix* waiting for us?
+    constexpr CName c_q307ActiveFact = "q307_blueprint_acquired=1";
 
-    // Oops, forgot to remove a ! here...
-    if (saveMetadata.at_key("facts").get_array().get(importantFacts) != simdjson::SUCCESS)
+    // Debug thing, allows us to unlock NG+ on any save...
+    constexpr CName c_ngplusDebugUnlocker = "debug_unlock_ngplus=1";
+
+    for (auto& i : metadata.facts)
     {
-        return false;
-    }
+        const CName hashed = i.c_str();
 
-    for (const auto& fact : importantFacts)
-    {
-        std::string_view factValueString{};
-
-        if (fact.get_string().get(factValueString) != simdjson::SUCCESS)
-        {
-            continue;
-        }
-
-        if (factValueString == c_q307ActiveFact || factValueString == c_ngplusDebugUnlocker)
+        if (hashed == c_q307ActiveFact || hashed == c_ngplusDebugUnlocker)
         {
             return true;
         }
     }
+
     return false;
 }
 
-bool IsValidForNewGamePlus(std::string_view aSaveName) noexcept
+bool IsValidForNewGamePlus(const CString& aSaveName) noexcept
 {
     uint64_t dummy{};
     return IsValidForNewGamePlus(aSaveName, dummy);

@@ -402,8 +402,6 @@ public:
             return {};
         }
 
-        static const auto basePath = files::GetCpSaveFolder();
-
         // We don't need sorting, the game already sorts the saves before passing them to Redscript
         std::unordered_set<std::uint64_t> playthroughIds{};
 
@@ -415,9 +413,11 @@ public:
             // We need the save index for this...
             auto& saveName = aSaves->entries[i];
 
+            auto savePath = files::GetRedPathToSaveFile(saveName.c_str(), files::c_metadataFileName);
+
             std::uint64_t hash{};
 
-            if (!files::IsValidForNewGamePlus(saveName.c_str(), hash))
+            if (!files::IsValidForNewGamePlus(savePath, hash))
             {
                 continue;
             }
@@ -446,7 +446,8 @@ public:
         m_saveData = PlayerSaveData{};
 
         static const auto basePath = files::GetCpSaveFolder();
-        const auto fullPath = basePath / aSaveName->c_str();
+
+        const auto fullRedPath = files::GetRedPathToSaveFile(aSaveName->c_str(), files::c_saveFileName);
 
         auto start = std::chrono::high_resolution_clock{}.now();
 
@@ -454,7 +455,7 @@ public:
         {
             parser::Parser parser{};
 
-            if (!parser.ParseSavegame(fullPath / "sav.dat"))
+            if (!parser.ParseSavegame(fullRedPath.c_str()))
             {
                 return false;
             }
