@@ -97,7 +97,7 @@ public exec static func RunNetrunnerHordeEncounter() {
 }
 
 public exec static func MakeAllWeaponsInInventoryGood() {
-    // Kind of a cheat...
+    // Kind of a cheat...6
     // Convenient for testing, though!
     let me = GameInstance.GetPlayerSystem(GetGameInstance()).GetLocalPlayerControlledGameObject();
     let items: [wref<gameItemData>];

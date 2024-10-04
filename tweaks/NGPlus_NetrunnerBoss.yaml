@@ -118,6 +118,31 @@ Character.NGPlus_EncounterNetrunnerBoss_KatanaSidekick:
   reactionPreset: ReactionPresets.Ganger_Aggressive
   savable: true
 
+Character.NGPlus_EncounterNetrunnerBoss_Brightman_CQCMook:
+  $base: t"Character.arasaka_security1_melee1_baton_ma"
+  priority: SpawnableObjectPriority.Quest
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: "hostile"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NGPlus_EncounterNetrunnerBoss_Brightman_RangedMook:
+  $base: t"Character.arasaka_ranger1_ranged2_masamune_ma"
+  priority: SpawnableObjectPriority.Quest
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: "hostile"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  rarity: NPCRarity.Weak
+  savable: true
+
+Character.NGPlus_EncounterNetrunnerBoss_Brightman_JobberMook:
+  $base: t"Character.q114_arasaka_manufacturing_android_smg"
+  priority: SpawnableObjectPriority.Quest
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: "hostile"
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
 DynamicSpawnSystem.NewGamePlus_NetrunnerBossEncounter:
   $type: DynamicVehicleData
   vehicleRecord: t"Vehicle.NGPlus_Encounter_Bike"
@@ -163,6 +188,60 @@ DynamicSpawnSystem.NewGamePlus_NetrunnerBossEncounter_Brightman:
     -
       $type: WeightedCharacter
       character: t"Character.NGPlus_EncounterNetrunnerBoss_B"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_RangedMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_RangedMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_CQCMook"
+      weight: 1.0
+
+DynamicSpawnSystem.NewGamePlus_NetrunnerBossEncounter_Brightman_Support:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.cs_savable_chevalier_thrax_valentino"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_CQCMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_CQCMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_CQCMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_CQCMook"
+      weight: 1.0
+
+DynamicSpawnSystem.NewGamePlus_NetrunnerBossEncounter_Brightman_Support2:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.cs_savable_chevalier_thrax_valentino"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_JobberMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_JobberMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_JobberMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_EncounterNetrunnerBoss_Brightman_JobberMook"
       weight: 1.0
 
 Character.NGPlus_NetrunnerBossFocusClue1:

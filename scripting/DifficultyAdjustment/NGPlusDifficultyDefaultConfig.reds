@@ -62,10 +62,10 @@ public func GetShouldFastForwardQ101Start() -> Bool = DefaultDifficultyConfig.Ge
 public func GetShouldEnableRandomEncounters() -> Bool = DefaultDifficultyConfig.GetShouldEnableRandomEncounters();
 
 @if(!ModuleExists("NGPlus.CustomConfig"))
-public func GetMaxDynamicSpawnSystemEntities() -> Bool = DefaultDifficultyConfig.GetMaxDynamicSpawnSystemEntities();
+public func GetMaxDynamicSpawnSystemEntities() -> Int32 = DefaultDifficultyConfig.GetMaxDynamicSpawnSystemEntities();
 
 @if(!ModuleExists("NGPlus.CustomConfig"))
-public func GetMaxDynamicSpawnSystemCorpses() -> Bool = DefaultDifficultyConfig.GetMaxDynamicSpawnSystemCorpses();
+public func GetMaxDynamicSpawnSystemCorpses() -> Int32 = DefaultDifficultyConfig.GetMaxDynamicSpawnSystemCorpses();
 
 // Inherit your UserConfig from this to get default values
 public abstract class DefaultDifficultyConfig {

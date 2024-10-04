@@ -198,6 +198,40 @@ Character.NGPlus_SniperBossIdentityClue:
 
 # Pulls up with the guys from SQ006... I guess?
 
+Character.NGPlus_SniperBoss_MeleeMook:
+  $base: Character.security_blackmasked3_fmelee3_katana_mb_elite
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: "hostile"
+  affiliation: Factions.Unknown
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+  statModifierGroups:
+    - !append-once NPCStatPreset.LowerHealth
+
+Character.NGPlus_SniperBoss_SniperMook:
+  $base: Character.security_blackmasked_sniper3_grad_ma_elite
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: "hostile"
+  affiliation: Factions.Unknown
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NGPlus_SniperBoss_RunnerMook:
+  $base: Character.security_netrunner_netrunner2_lexington_ma_rare
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: "hostile"
+  affiliation: Factions.Unknown
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
+Character.NGPlus_SniperBoss_RobotMook:
+  $base: Character.security_android_android2_ajax_ma
+  quest: NPCQuestAffiliation.StreetStory
+  baseAttitudeGroup: "hostile"
+  affiliation: Factions.Unknown
+  reactionPreset: ReactionPresets.Ganger_Aggressive
+  savable: true
+
 DynamicSpawnSystem.NewGamePlus_SniperBossEncounter:
   $type: DynamicVehicleData
   vehicleRecord: t"Vehicle.mws_cct_dtn_02_arasaka_car"
@@ -205,4 +239,37 @@ DynamicSpawnSystem.NewGamePlus_SniperBossEncounter:
     -
       $type: WeightedCharacter
       character: t"Character.NGPlus_SniperBoss"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_SniperBoss_SniperMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_SniperBoss_RunnerMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_SniperBoss_MeleeMook"
+      weight: 1.0
+
+DynamicSpawnSystem.NewGamePlus_SniperBossMooks:
+  $type: DynamicVehicleData
+  vehicleRecord: t"Vehicle.mws_cct_dtn_02_arasaka_car"
+  unitRecordsPool:
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_SniperBoss_RobotMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_SniperBoss_RobotMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_SniperBoss_RobotMook"
+      weight: 1.0
+    -
+      $type: WeightedCharacter
+      character: t"Character.NGPlus_SniperBoss_RobotMook"
       weight: 1.0

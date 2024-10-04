@@ -42,14 +42,14 @@ Character.NGPlus_EncounterJackieBoss:
 Character.NGPlus_JackieBossClue1:
   $type: npc_scanning_data
   friendlyName: "NGPlus_JackieBossClue1"
-  localizedName: l"NewGamePlus_BossEncounter_AyumiConclusion_Name" # Jackie Welles?
-  localizedDescription: l"NewGamePlus_BossEncounter_AyumiConclusion_Desc" # This can't be right...
+  localizedName: l"NewGamePlus_BossEncounter_JackieClue_Name" # Jackie Welles?
+  localizedDescription: l"NewGamePlus_BossEncounter_JackieClue_Description" # This can't be right...
 
 Character.NGPlus_JackieBossClueConclusion:
   $type: npc_scanning_data
   friendlyName: "NGPlus_JackieBossClueConclusion"
-  localizedName: l"NewGamePlus_BossEncounter_AyumiConclusion_Name" # Unknown marking
-  localizedDescription: l"NewGamePlus_BossEncounter_AyumiConclusion_Desc" # What the hell is a Q111, anyway? Why are they attacking me with someone looking like Jackie?
+  localizedName: l"NewGamePlus_BossEncounter_JackieConclusion_Name" # Unknown marking
+  localizedDescription: l"NewGamePlus_BossEncounter_JackieConclusion_Description" # What the hell is a Q111, anyway? Why are they attacking me with someone looking like Jackie?
 
 # Pulls up with his Valentino homies
 

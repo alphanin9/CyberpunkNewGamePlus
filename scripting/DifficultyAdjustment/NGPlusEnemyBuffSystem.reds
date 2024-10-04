@@ -139,8 +139,6 @@ class NGPlusDifficultySystem extends ScriptableSystem {
     private let m_ngPlusSystem: ref<NewGamePlusSystem>;
     private let m_player: ref<PlayerPuppet>;
 
-    private let m_hasDetectedNgPlus: Bool;
-    private let m_ngPlusActive: Bool;
     private let m_playerMaxLevel: Float;
 
     private func OnAttach() {
@@ -155,26 +153,6 @@ class NGPlusDifficultySystem extends ScriptableSystem {
             .AddTarget(EntityTarget.Type(n"NPCPuppet"));
     }
 
-    /*private func FixAyumiAppearance(puppet: ref<NPCPuppet>) {
-        // Hack, hack, hack...
-
-        if NotEquals(puppet.GetRecordID(), t"Character.NGPlus_EncounterFastSoloBoss") {
-            return;
-        }
-        let dynamicSpawnSystem = GameInstance.GetDynamicSpawnSystem(this.GetGameInstance());
-
-        let isFromEncounter = dynamicSpawnSystem.IsEntityRegistered(puppet.GetEntityID());
-
-        ModLog(n"NG+", s"Is from encounter: \(isFromEncounter)");
-
-        if !isFromEncounter {
-            return;
-        }
-
-        puppet.PrefetchAppearanceChange(n"default");
-        puppet.ScheduleAppearanceChange(n"default");
-    }*/
-
     private cb func OnNPCSpawned(event: ref<EntityLifecycleEvent>) {
         let puppet = event.GetEntity() as NPCPuppet;
 
@@ -182,12 +160,7 @@ class NGPlusDifficultySystem extends ScriptableSystem {
             return;
         }
 
-        if !this.m_hasDetectedNgPlus {
-            this.m_ngPlusActive = this.m_questsSystem.GetFactStr("ngplus_active") == 1;
-            this.m_hasDetectedNgPlus = true;
-        }
-
-        if !this.m_ngPlusActive {
+        if this.m_questsSystem.GetFactStr("ngplus_active") == 0 {
             return;
         }
 

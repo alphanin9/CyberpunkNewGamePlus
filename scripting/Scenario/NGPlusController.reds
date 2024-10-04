@@ -187,11 +187,8 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
             let button: wref<inkWidget> = inkCompoundRef.GetWidgetByIndex(this.m_list, i);
             let controller: wref<LoadListItem> = button.GetController() as LoadListItem;
             if controller.Index() == info.saveIndex {
-                // TODO: figure out how PC and next-gen console saves differ...
-                // NOTE: Steam Deck is its own platform, but has the same saves as PC for obvious reason... Allow it for compatibility
-                let allowedPlatforms = ["pc", "steamdeck"];
-
-                if info.isValid && ArrayContains(allowedPlatforms, info.platform) {
+                // Platform check is moved into native code now
+                if info.isValid {
                     controller.SetMetadataForNGPlus(info, this.m_isEp1Enabled);
                     controller.CheckThumbnailCensorship(!characterCustomizationSystem.IsNudityAllowed());
                 } else {
