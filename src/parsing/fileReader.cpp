@@ -20,18 +20,20 @@
 
 #include <context.hpp>
 
+#include "../filesystem/fs_util.hpp"
+
 // Copypasted from WolvenKit :(
 // TODO: Make this noexcept
+
+using namespace Red;
+
 namespace parser
 {
-bool Parser::ParseSavegame(std::filesystem::path aSavePath)
+bool Parser::ParseSavegame(const CString& aSaveName)
 {
-    const auto bufferSize = std::filesystem::file_size(aSavePath);
-
-    m_fileStream = std::vector<std::byte>{bufferSize};
+    if (!files::ReadSaveFileToBuffer(aSaveName, m_fileStream))
     {
-        auto file = std::ifstream{aSavePath, std::ios_base::binary};
-        file.read(reinterpret_cast<char*>(m_fileStream.data()), bufferSize);
+        return false;
     }
 
     {
@@ -98,13 +100,13 @@ void Parser::DecompressFile()
     auto endIterator = m_decompressedDataRaw.get();
 
     // No two decompressed regions should be touching each other...
-    Red::JobQueue waiterJob{};
+    JobQueue waiterJob{};
 
     for (auto& chunkInfo : compressionHeader.dataChunkInfo)
     {
         if (fileCursor.readUInt() == compression::COMPRESSION_BLOCK_MAGIC)
         {
-            Red::JobQueue decompressionJob{};
+            JobQueue decompressionJob{};
 
             fileCursor.readInt();
 
@@ -151,7 +153,7 @@ void Parser::DecompressFile()
     }
 
     // Timeout value is arbitrary
-    Red::WaitForQueue(waiterJob, std::chrono::seconds(15));
+    WaitForQueue(waiterJob, std::chrono::seconds(15));
 }
 
 void Parser::FindChildren(save::NodeEntry& node, int maxNextId)
@@ -302,6 +304,7 @@ bool Parser::LoadNodes()
 
     // NOTE: why are we going through m_flatNodes instead of m_nodeList? Makes no real sense?
     // Maybe MT this? Add a m_isReading mutex to node or something...
+
     for (auto& node : m_flatNodes)
     {
         if (!node.isReadByParent)
@@ -328,7 +331,7 @@ bool Parser::LoadNodes()
     return true;
 }
 
-save::NodeEntry* Parser::LookupNode(Red::CName aNodeName) noexcept
+save::NodeEntry* Parser::LookupNode(CName aNodeName) noexcept
 {
     auto node = std::find_if(m_nodeList.begin(), m_nodeList.end(),
                              [aNodeName](const save::NodeEntry* aNode) { return aNode->m_hash == aNodeName; });

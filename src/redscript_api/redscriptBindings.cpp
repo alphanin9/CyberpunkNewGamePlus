@@ -445,17 +445,13 @@ public:
         // Invalidate and reset
         m_saveData = PlayerSaveData{};
 
-        static const auto basePath = files::GetCpSaveFolder();
-
-        const auto fullRedPath = files::GetRedPathToSaveFile(aSaveName->c_str(), files::c_saveFileName);
-
         auto start = std::chrono::high_resolution_clock{}.now();
 
         try
         {
             parser::Parser parser{};
 
-            if (!parser.ParseSavegame(fullRedPath.c_str()))
+            if (!parser.ParseSavegame(*aSaveName))
             {
                 return false;
             }

@@ -22,7 +22,7 @@ namespace parser {
 		void DecompressFile();
 		bool LoadNodes();
 	public:
-		bool ParseSavegame(std::filesystem::path aSavePath);
+		bool ParseSavegame(const Red::CString& aSavePath);
 
 		save::NodeEntry* LookupNode(Red::CName aNodeName) noexcept;
 

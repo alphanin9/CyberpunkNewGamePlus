@@ -238,7 +238,7 @@ private:
 public:
     virtual void ReadData(FileCursor& cursor, NodeEntry& node)
     {
-        constexpr auto testNewScriptableLoader = true;
+        constexpr auto testNewScriptableLoader = false;
 
         if constexpr (testNewScriptableLoader)
         {

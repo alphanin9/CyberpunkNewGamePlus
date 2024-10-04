@@ -80,12 +80,25 @@ struct FileStreamPtr
     FileStreamPtr(FileStreamPtr&&) = default;
     ~FileStreamPtr()
     {
-        constexpr auto c_fileStream_dtor = 1924865980u;
+        if (m_stream)
+        {
+            constexpr auto c_fileStream_dtor = 1924865980u;
 
-        static const auto s_fileStream_dtor =
-            UniversalRelocFunc<void(__fastcall*)(FileStreamPtr * aThis)>(c_fileStream_dtor);
+            static const auto s_fileStream_dtor =
+                UniversalRelocFunc<void(__fastcall*)(FileStreamPtr * aThis)>(c_fileStream_dtor);
 
-        s_fileStream_dtor(this);
+            s_fileStream_dtor(this);
+        }
+    }
+
+    BaseStream* operator->()
+    {
+        return m_stream;
+    }
+
+    BaseStream* const operator->() const
+    {
+        return m_stream;
     }
 
     operator bool() const
@@ -94,7 +107,7 @@ struct FileStreamPtr
     }
 };
 
-FileStreamPtr OpenFileWithRedReader(const CString& aPath)
+FileStreamPtr OpenFileWithRedReader(const CString& aPath, char aFlags = 0)
 {
     constexpr auto c_fileHandler_OpenFileStream = 1917464012u;
 
@@ -103,7 +116,7 @@ FileStreamPtr OpenFileWithRedReader(const CString& aPath)
 
     FileStreamPtr ret{};
 
-    s_fileHandler_OpenFileStream(GetFileHandler(), ret, aPath, 0);
+    s_fileHandler_OpenFileStream(GetFileHandler(), ret, aPath, aFlags);
 
     return ret;
 }
@@ -730,5 +743,25 @@ bool IsValidForNewGamePlus(const CString& aSaveName) noexcept
 {
     uint64_t dummy{};
     return IsValidForNewGamePlus(aSaveName, dummy);
+}
+
+bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>& aBuffer) noexcept
+{
+    // Use engine reader to read file to buffer, since fstream seems to be failing...
+    auto filePath = GetRedPathToSaveFile(aSaveName.c_str(), c_saveFileName);
+    auto stream = OpenFileWithRedReader(filePath, 0);
+
+    if (!stream)
+    {
+        return false;
+    }
+
+    const auto fileSize = stream->GetLength();
+
+    aBuffer = std::vector<std::byte>(fileSize);
+
+    stream->ReadWrite(&aBuffer[0], fileSize);
+
+    return true;
 }
 } // namespace files

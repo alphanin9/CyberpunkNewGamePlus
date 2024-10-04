@@ -17,4 +17,6 @@ Red::CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) 
 
 bool IsValidForNewGamePlus(const Red::CString& aSaveName) noexcept;
 bool IsValidForNewGamePlus(const Red::CString& aSaveName, uint64_t& aPlaythroughHash) noexcept;
+
+bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>& aBuffer) noexcept;
 } // namespace files
