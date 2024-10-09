@@ -4,7 +4,7 @@
 
 namespace OutfitSystemReader
 {
-class NGPlusOutfitPart : public Red::ISerializable
+class NGPlusOutfitPart : public Red::IScriptable
 {
 public:
     Red::TweakDBID m_slotID;
@@ -14,7 +14,7 @@ public:
     RTTI_IMPL_ALLOCATOR();
 };
 
-class NGPlusOutfitSet : public Red::ISerializable
+class NGPlusOutfitSet : public Red::IScriptable
 {
 public:
     // No point keeping timestamp, I feel
@@ -25,12 +25,17 @@ public:
     RTTI_IMPL_ALLOCATOR();
 };
 
-struct OutfitSystemResults
+class OutfitSystemResults : public Red::IScriptable
 {
+public:
     Red::DynArray<Red::Handle<NGPlusOutfitSet>> m_data;
-};
+    
+    OutfitSystemResults() = default;
+    OutfitSystemResults(Red::Handle<Red::ISerializable>* aOutfitSystem) noexcept;
 
-OutfitSystemResults GetData(Red::Handle<Red::ISerializable>* aOutfitSystem) noexcept;
+    RTTI_IMPL_TYPEINFO(OutfitSystemResults);
+    RTTI_IMPL_ALLOCATOR();
+};
 } // namespace OutfitSystemReader
 
 RTTI_DEFINE_CLASS(OutfitSystemReader::NGPlusOutfitPart, {
@@ -42,3 +47,5 @@ RTTI_DEFINE_CLASS(OutfitSystemReader::NGPlusOutfitSet, {
     RTTI_GETTER(m_outfitParts);
     RTTI_GETTER(m_name);
 });
+
+RTTI_DEFINE_CLASS(OutfitSystemReader::OutfitSystemResults, { RTTI_GETTER(m_data); });

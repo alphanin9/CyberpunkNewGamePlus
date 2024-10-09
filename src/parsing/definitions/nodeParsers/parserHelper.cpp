@@ -8,7 +8,7 @@
 #include "inventory/inventoryNode.hpp"
 #include "persistency/persistencySystemNode.hpp"
 #include "quest/factsDBNode.hpp"
-#include "scriptable/scriptableContainerNode.hpp"
+#include "scriptable/scriptableContainerNodeV2.hpp"
 #include "stats/statsSystemNode.hpp"
 #include "wardrobe/wardrobeSystemNode.hpp"
 
@@ -39,7 +39,7 @@ ParseNodeFn FindParser(Red::CName aNodeName)
 
     GET_UNIQUE_NODE_PARSER(InventoryNode);
     GET_UNIQUE_NODE_PARSER(ItemDataNode);
-    GET_UNIQUE_NODE_PARSER(ScriptableSystemsContainerNode);
+    GET_UNIQUE_NODE_PARSER(ScriptableSystemsContainerNodeV2);
     GET_UNIQUE_NODE_PARSER(PersistencySystemNode);
     GET_UNIQUE_NODE_PARSER(FactsDBNode);
     GET_UNIQUE_NODE_PARSER(FactsTableNode);

@@ -23,7 +23,7 @@ namespace PluginContext {
         auto str = std::vformat(aStr, std::make_format_args(aArgs...));
         if (m_rttiReady)
         {
-            Red::Log::Debug("{}", str);
+            Red::Log::Channel("New Game+", str);
         }
         m_redSdk->logger->Info(m_redPlugin, str.c_str());
 	}
@@ -34,8 +34,15 @@ namespace PluginContext {
         auto str = std::vformat(aStr, std::make_format_args(aArgs...));
         if (m_rttiReady)
         {
-            Red::Log::Debug("Error: {}", str);
+            Red::Log::Channel("New Game+ | Error", str);
         }
         m_redSdk->logger->Error(m_redPlugin, str.c_str());
 	}
+
+    inline void RegisterPluginChannelNames()
+    {
+        // Won't pick up in CET game log without this
+        Red::CNamePool::Add("New Game+");
+        Red::CNamePool::Add("New Game+ | Error");
+    }
     }

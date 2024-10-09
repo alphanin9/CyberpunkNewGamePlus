@@ -238,7 +238,7 @@ private:
 public:
     virtual void ReadData(FileCursor& cursor, NodeEntry& node)
     {
-        constexpr auto testNewScriptableLoader = false;
+        /*constexpr auto testNewScriptableLoader = false;
 
         if constexpr (testNewScriptableLoader)
         {
@@ -284,7 +284,7 @@ public:
 
 
             cursor.seekTo(oldOffset);
-        }
+        }*/
 
         const auto dataSize = cursor.readInt();
         if (dataSize == 0)

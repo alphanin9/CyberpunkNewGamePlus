@@ -2,9 +2,14 @@ module NGPlus.PlayerProgression
 
 import NGPlus.SpawnTags.NewGamePlusSpawnTagController
 import NGPlus.EP1Listener.NGPlusEP1StatusListener
+import NGPlus.Ripperdoc.NGPlusTutorialCyberwareProvider
+
+@if(ModuleExists("EquipmentEx"))
+import EquipmentEx.EquipmentExTransfer
 
 class PlayerProgressionLoader {
     private let m_ngPlusPlayerSaveData: PlayerSaveData;
+    private let m_ngPlusProgression: ref<NGPlusProgressionData>;
     private let m_ngPlusSystem: ref<NewGamePlusSystem>;
     private let m_player: ref<PlayerPuppet>;
     private let m_equipmentSystem: ref<ScriptableSystem>;
@@ -17,10 +22,14 @@ class PlayerProgressionLoader {
         // Has some bugs during the Q001 start, iron them out later!
         this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
         this.m_ngPlusPlayerSaveData = this.m_ngPlusSystem.GetSaveData();
-        if !this.m_ngPlusPlayerSaveData.isValid {
+
+        this.m_ngPlusProgression = this.m_ngPlusSystem.GetProgressionData();
+
+        if !IsDefined(this.m_ngPlusProgression) {
             this.m_ngPlusSystem.Error("PlayerProgressionLoader::LoadPlayerProgression, save data invalid!");
             return;
         }
+        
         this.m_player = player;
         this.m_isEp1 = IsEP1();
 
@@ -46,10 +55,12 @@ class PlayerProgressionLoader {
 
         this.LoadPlayerDevelopment();
         this.LoadPlayerInventory();
+        this.LoadPlayerStash();
         this.LoadPlayerEquippedCyberware();
         this.LoadPlayerGarage();
         this.LoadPlayerCraftbook();
         this.LoadPlayerWardrobe();
+        this.LoadEquipmentEx();
         this.LoadFacts();
 
         let playerDevelopmentData = PlayerDevelopmentSystem.GetInstance(player).GetDevelopmentData(player);
@@ -76,73 +87,73 @@ class PlayerProgressionLoader {
         let playerDevelopmentData: ref<PlayerDevelopmentData> = PlayerDevelopmentSystem.GetInstance(this.m_player).GetDevelopmentData(this.m_player);
         playerDevelopmentData.m_isInNgPlus = true;
 
+        let statsSystemResults = this.m_ngPlusProgression.GetStatsSystemResults();
+
         // FIX: unnecessary perk points getting added despite explicitly being set?
         let levelGainReason: telemetryLevelGainReason = telemetryLevelGainReason.Ignore;
         playerDevelopmentData
             .SetLevel(
                 gamedataProficiencyType.StrengthSkill,
-                this.m_ngPlusPlayerSaveData.playerBodySkillLevel,
+                Cast<Int32>(statsSystemResults.GetBodySkill()),
                 levelGainReason,
                 true
             );
         playerDevelopmentData
             .SetLevel(
                 gamedataProficiencyType.ReflexesSkill,
-                this.m_ngPlusPlayerSaveData.playerReflexSkillLevel,
+                Cast<Int32>(statsSystemResults.GetReflexesSkill()),
                 levelGainReason,
                 true
             );
         playerDevelopmentData
             .SetLevel(
                 gamedataProficiencyType.TechnicalAbilitySkill,
-                this.m_ngPlusPlayerSaveData.playerTechSkillLevel,
+                Cast<Int32>(statsSystemResults.GetTechnicalAbilitySkill()),
                 levelGainReason,
                 true
             );
         playerDevelopmentData
             .SetLevel(
                 gamedataProficiencyType.IntelligenceSkill,
-                this.m_ngPlusPlayerSaveData.playerIntelligenceSkillLevel,
+                Cast<Int32>(statsSystemResults.GetIntelligenceSkill()),
                 levelGainReason,
                 true
             );
         playerDevelopmentData
             .SetLevel(
                 gamedataProficiencyType.CoolSkill,
-                this.m_ngPlusPlayerSaveData.playerCoolSkillLevel,
+                Cast<Int32>(statsSystemResults.GetCoolSkill()),
                 levelGainReason,
                 true
             );
         playerDevelopmentData
             .SetLevel(
                 gamedataProficiencyType.StreetCred,
-                this.m_ngPlusPlayerSaveData.playerStreetCred,
+                Cast<Int32>(statsSystemResults.GetStreetCred()),
                 levelGainReason,
                 true
             );
 
-        let targetLevel = this.m_ngPlusPlayerSaveData.playerLevel;
-
-        if !IsEP1() {
-            targetLevel = Min(targetLevel, 40); // FIX: broken progression on non-EP1 (This really should be in native, but I don't care...)
-        }
         playerDevelopmentData
             .SetLevel(
                 gamedataProficiencyType.Level,
-                this.m_ngPlusPlayerSaveData.playerLevel,
+                Cast<Int32>(statsSystemResults.GetLevel()),
                 levelGainReason,
                 true
             );
-        playerDevelopmentData.SetDevelopmentsPoint(gamedataDevelopmentPointType.Attribute, this.m_ngPlusPlayerSaveData.playerAttributePoints);
+
+        let playerDevelopmentResults = this.m_ngPlusProgression.GetPlayerDevelopmentSystemResults();
+        
+        playerDevelopmentData.SetDevelopmentsPoint(gamedataDevelopmentPointType.Attribute, playerDevelopmentResults.GetAttributePoints());
         playerDevelopmentData
             .SetDevelopmentsPoint(
                 gamedataDevelopmentPointType.Primary,
-                this.m_ngPlusPlayerSaveData.playerPerkPoints
+                playerDevelopmentResults.GetPerkPoints()
             );
                 
         // Non-EP1 makes this look really wonky
         if this.m_isEp1 {
-            playerDevelopmentData.SetDevelopmentsPoint(gamedataDevelopmentPointType.Espionage, this.m_ngPlusPlayerSaveData.playerRelicPoints);
+            playerDevelopmentData.SetDevelopmentsPoint(gamedataDevelopmentPointType.Espionage, playerDevelopmentResults.GetRelicPoints());
             GameInstance.GetQuestsSystem(this.m_player.GetGame()).SetFact(n"ep1_tree_unlocked", 1);
         }
         
@@ -154,12 +165,14 @@ class PlayerProgressionLoader {
         return 1000;
     }
     
-    public final static func ApplyStatModifiers(statsSystem: ref<StatsSystem>, item: RedItemData, objId: StatsObjectID) {
+    public final func ApplyStatModifiers(item: ref<NGPlusItemData>, objId: StatsObjectID) {
         let itemQuality = 0.0;
         let itemUpgradeCount = 0.0;
 
+        let statModifiers = item.GetStatModifiers();
+
         // Maybe do this on the native side? ...
-        for modifier in item.statModifiers {
+        for modifier in statModifiers {
             if Equals(modifier.statType, gamedataStatType.Quality) {
                 let asConstant = modifier as gameConstantStatModifierData;
                 if IsDefined(asConstant) {
@@ -183,71 +196,89 @@ class PlayerProgressionLoader {
         let qualityModifier = RPGManager.CreateStatModifier(gamedataStatType.Quality, gameStatModifierType.Additive, itemQuality);
         let upgradeModifier = RPGManager.CreateStatModifier(gamedataStatType.WasItemUpgraded, gameStatModifierType.Additive, itemUpgradeCount);
 
-        statsSystem.AddSavedModifier(objId, qualityModifier);
-        statsSystem.AddSavedModifier(objId, upgradeModifier);
-        statsSystem.AddSavedModifier(objId, scalingBlocked);
+        this.m_statsSystem.AddSavedModifier(objId, qualityModifier);
+        this.m_statsSystem.AddSavedModifier(objId, upgradeModifier);
+        this.m_statsSystem.AddSavedModifier(objId, scalingBlocked);
 
-        for modifier in item.statModifiers {
+        for modifier in statModifiers {
             // NOTE: this feels very hacky - and it is hacky as shit...
             // The item quality/upgrade system is completely fucked, and I dislike it
             if NotEquals(modifier.statType, gamedataStatType.WasItemUpgraded) && NotEquals(modifier.statType, gamedataStatType.Quality) && NotEquals(modifier.statType, gamedataStatType.Invalid) {
                 let asConstant = modifier as gameConstantStatModifierData;
                 if IsDefined(asConstant) {
                     let newModifier = RPGManager.CreateStatModifier(asConstant.statType, asConstant.modifierType, asConstant.value);
-                    statsSystem.AddSavedModifier(objId, newModifier);
+                    this.m_statsSystem.AddSavedModifier(objId, newModifier);
                 }
 
                 let asCombined = modifier as gameCombinedStatModifierData;
 
                 if IsDefined(asCombined) {
                     let newModifier = RPGManager.CreateCombinedStatModifier(asCombined.statType, asCombined.modifierType, asCombined.refStatType, asCombined.operation, asCombined.value, asCombined.refObject);
-                    statsSystem.AddSavedModifier(objId, newModifier);
+                    this.m_statsSystem.AddSavedModifier(objId, newModifier);
                 }
 
                 let asCurve = modifier as gameCurveStatModifierData;
 
                 if IsDefined(asCurve) {
                     let newModifier = RPGManager.CreateStatModifierUsingCurve(asCurve.statType, asCurve.modifierType, asCurve.curveStat, asCurve.curveName, asCurve.columnName);
-                    statsSystem.AddSavedModifier(objId, newModifier);
+                    this.m_statsSystem.AddSavedModifier(objId, newModifier);
                 }
             }
         }
     }
 
-    public final static func AddItemToInventory(transactionSystem: ref<TransactionSystem>, delaySystem: ref<DelaySystem>, item: RedItemData, target: ref<GameObject>, statsSystem: ref<StatsSystem>, addStats: Bool) -> Bool {
-        addStats = addStats && Equals(item.itemId.GetStructure(), gamedataItemStructure.Unique);
+    public final func AddItemToInventory(item: ref<NGPlusItemData>, target: ref<GameObject>, addStats: Bool) -> Bool {
+        addStats = addStats && Equals(item.GetItemId().GetStructure(), gamedataItemStructure.Unique);
 
-        item.itemQuantity = Max(1, item.itemQuantity);
+        let itemQuantity = Max(1, item.GetItemQuantity());
+        let itemAttachments = item.GetAttachments();
 
-        if ArraySize(item.attachments) > 0 {
+        if ArraySize(itemAttachments) > 0 {
             let modParams: ItemModParams;
 
-            modParams.itemID = item.itemId;
-            modParams.quantity = item.itemQuantity;
-            modParams.customPartsToInstall = item.attachments;
+            modParams.itemID = item.GetItemId();
+            modParams.quantity = itemQuantity;
+            modParams.customPartsToInstall = itemAttachments;
 
             let itemData = Inventory.CreateItemData(modParams, target);
 
-            if !transactionSystem.GiveItemByItemData(target, itemData) {
+            if !this.m_transactionSystem.GiveItemByItemData(target, itemData) {
                 return false;
             }
 
             if addStats {
-                PlayerProgressionLoader.ApplyStatModifiers(statsSystem, item, itemData.GetStatsObjectID());
+                this.ApplyStatModifiers(item, itemData.GetStatsObjectID());
             }
             
             return true;
         }
 
-        if !transactionSystem.GiveItem(target, item.itemId, item.itemQuantity) {
+        if !this.m_transactionSystem.GiveItem(target, item.GetItemId(), itemQuantity) {
             return false;
         }
 
         if addStats {
-            PlayerProgressionLoader.ApplyStatModifiers(statsSystem, item, Cast<StatsObjectID>(item.itemId));
+            this.ApplyStatModifiers(item, Cast<StatsObjectID>(item.GetItemId()));
         }
 
         return true;
+    }
+
+    private final func LoadPlayerStash() {
+        // Stash should always be loaded in by the first scene now
+        let stashId = Cast<EntityID>(ResolveNodeRef(CreateNodeRef("#v_room_stash"), Cast<GlobalNodeRef>(GlobalNodeID.GetRoot())));
+        let stashEntity = GameInstance.FindEntityByID(GetGameInstance(), stashId) as GameObject;
+
+        if !IsDefined(stashEntity) {
+            this.m_ngPlusSystem.Error("Stash entity was not loaded after all!");
+            return;
+        }
+
+        for stashItem in this.m_ngPlusProgression.GetPlayerInventory().GetStash() {
+            this.AddItemToInventory(stashItem, stashEntity, true);
+        }
+
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerStash done!");
     }
 
     private final func LoadPlayerInventory() {
@@ -257,13 +288,13 @@ class PlayerProgressionLoader {
         GameInstance
             .GetStatsSystem(this.m_player.GetGame())
             .AddSavedModifier(Cast<StatsObjectID>(this.m_player.GetEntityID()), permaMod);
-        // Results in an annoying notification, I will not have that in MY Cyberpunk
-        //  transactionSystem.GiveMoney(this.m_player, this.m_ngPlusPlayerSaveData.playerMoney, n"money");
 
-        this.m_transactionSystem.GiveItem(this.m_player, ItemID.FromTDBID(t"Items.money"), this.m_ngPlusPlayerSaveData.playerMoney);
+        let inventory = this.m_ngPlusProgression.GetPlayerInventory();
 
-        for inventoryItem in this.m_ngPlusPlayerSaveData.playerItems {
-            PlayerProgressionLoader.AddItemToInventory(this.m_transactionSystem, this.m_delaySystem, inventoryItem, this.m_player, this.m_statsSystem, true);
+        this.m_transactionSystem.GiveItem(this.m_player, ItemID.FromTDBID(t"Items.money"), inventory.GetMoney());
+
+        for inventoryItem in inventory.GetInventory() {
+            this.AddItemToInventory(inventoryItem, this.m_player, true);
         }
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerInventory done!");
@@ -283,27 +314,19 @@ class PlayerProgressionLoader {
     }
 
     private final func LoadPlayerEquippedCyberware() {
-        // TODO: calculate the needed value for equipped CW... Later, it's a bit wonky and I can't be arsed
-        //let permaMod = RPGManager
-        //    .CreateStatModifier(gamedataStatType.Humanity, gameStatModifierType.Additive, PlayerProgressionLoader.GetBigStatValue());
-        //GameInstance
-        //    .GetStatsSystem(this.m_player.GetGame())
-        //    .AddSavedModifier(Cast<StatsObjectID>(this.m_player.GetEntityID()), permaMod);
-
-        for cyberwareAddedModifier in this.m_ngPlusPlayerSaveData.playerCyberwareCapacity {
+        let statsSystemResults = this.m_ngPlusProgression.GetStatsSystemResults();
+        
+        for cyberwareAddedModifier in statsSystemResults.GetCyberwareCapacity() {
             let permaMod = RPGManager.CreateStatModifier(gamedataStatType.Humanity, gameStatModifierType.Additive, cyberwareAddedModifier);
             this.m_statsSystem.AddSavedModifier(Cast<StatsObjectID>(this.m_player.GetEntityID()), permaMod);
         }
 
-        // In theory, we could just eat all the cyberware a player has - but I think that's kind of boring and gives more hassle with rebuilding
-        // Also, cyberware capacity would fuck me over
-        // Maybe a new character creation screen where the player can equip their own cyberware selection? Nah, pain in the ass
+        let equipmentSystemResults = this.m_ngPlusProgression.GetEquipmentSystemResults();
 
-        // Might not get wanted CW (with proper stat modifiers) on start I think :(
-        let osItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(this.m_ngPlusPlayerSaveData.playerEquippedOperatingSystem));
-        let kiroshiItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(this.m_ngPlusPlayerSaveData.playerEquippedKiroshis));
-        let armItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(this.m_ngPlusPlayerSaveData.playerEquippedArmCyberware));
-        let legItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(this.m_ngPlusPlayerSaveData.playerEquippedLegCyberware));
+        let osItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(equipmentSystemResults.GetPlayerEquippedOperatingSystem()));
+        let kiroshiItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(equipmentSystemResults.GetPlayerEquippedKiroshis()));
+        let armItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(equipmentSystemResults.GetPlayerEquippedArmCyberware()));
+        let legItemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(equipmentSystemResults.GetPlayerEquippedLegCyberware()));
 
         if IsDefined(osItemData) {
             this.EquipCyberware(osItemData.GetID(), false, -1);
@@ -323,7 +346,7 @@ class PlayerProgressionLoader {
 
         let i = 0;
         // This may fail with Cyberware-EX and other mods that fuck with equip slots?
-        for cardiovascularCw in this.m_ngPlusPlayerSaveData.playerEquippedCardiacSystemCW {
+        for cardiovascularCw in equipmentSystemResults.GetPlayerEquippedCardiacSystemCW() {
             let itemData = this.m_transactionSystem.GetItemDataByTDBID(this.m_player, ItemID.GetTDBID(cardiovascularCw));
 
             if IsDefined(itemData) {
@@ -334,14 +357,10 @@ class PlayerProgressionLoader {
 
         // After testing the Q001 start I've come to the conclusion Q001 is too much of a pain in the ass to do at Level 50 without armor
         // So we add a little bit
-        let subdermalArmorId: ItemID;
+        
 
-        // Fix: Non-EP1 is wonky...
-        if this.m_isEp1 {
-            subdermalArmorId = ItemID.FromTDBID(t"Items.AdvancedBoringPlatingLegendaryPlusPlus");
-        } else {
-            subdermalArmorId = ItemID.FromTDBID(t"Items.AdvancedBoringPlatingLegendaryPlus");
-        }
+        let tutorialItemQuality = RPGManager.ConvertPlayerLevelToCyberwareQuality(GameInstance.GetStatsSystem(this.m_player.GetGame()).GetStatValue(Cast<StatsObjectID>(this.m_player.GetEntityID()), gamedataStatType.Level), false);
+        let subdermalArmorId = ItemID.FromTDBID(NGPlusTutorialCyberwareProvider.GetArmorCyberware(tutorialItemQuality));
 
         this.EquipCyberware(subdermalArmorId, true, -1); // Might as well add it to inventory as well, free NG+ gift LMAO
 
@@ -350,7 +369,7 @@ class PlayerProgressionLoader {
 
     private final func LoadPlayerGarage() {
         let vehicleSystem = GameInstance.GetVehicleSystem(this.m_player.GetGame());
-        let vehicleList = this.m_ngPlusPlayerSaveData.playerVehicleGarage;
+        let vehicleList = this.m_ngPlusProgression.GetVehicleGarageResults().GetGarage();
 
         let addedQuadra = false;
         let quadraTdbid = t"Vehicle.v_sport1_quadra_turbo_r_player";
@@ -390,8 +409,8 @@ class PlayerProgressionLoader {
         }
 
         let craftBook = craftingSystem.GetPlayerCraftBook();
-
-        for targetItem in this.m_ngPlusPlayerSaveData.knownRecipeTargetItems {
+        let craftInfo = this.m_ngPlusProgression.GetCraftingSystemResults().GetData();
+        for targetItem in craftInfo {
             craftBook.AddRecipeFromInfo(targetItem);
         }
 
@@ -401,57 +420,19 @@ class PlayerProgressionLoader {
     private final func LoadPlayerWardrobe() {
         let wardrobeSystem = GameInstance.GetWardrobeSystem(this.m_player.GetGame());
 
-        for entry in this.m_ngPlusPlayerSaveData.wardrobeEntries {
-            wardrobeSystem.StoreUniqueItemID(entry.itemId);
+        for entry in this.m_ngPlusProgression.GetWardrobeResults().GetWardrobe() {
+            wardrobeSystem.StoreUniqueItemID(entry);
         }
     }
-}
 
-class StashReadyDelayCallback extends DelayCallback {
-    private let m_stashEntity: ref<GameObject>;
-
-    public static final func Create(stashObj: ref<GameObject>) -> ref<StashReadyDelayCallback> {
-        let instance = new StashReadyDelayCallback();
-
-        instance.m_stashEntity = stashObj;
-
-        return instance;
+    @if(ModuleExists("EquipmentEx"))
+    private final func LoadEquipmentEx() {
+        EquipmentExTransfer.Make().TransferEquipmentEx();
     }
 
-    public cb func Call() {
-        let ngPlusSystem = GameInstance.GetNewGamePlusSystem();
-        let transactionSystem = GameInstance.GetTransactionSystem(GetGameInstance());
-        let delaySystem = GameInstance.GetDelaySystem(GetGameInstance());
-        let questsSystem = GameInstance.GetQuestsSystem(GetGameInstance());
-        let statsSystem = GameInstance.GetStatsSystem(GetGameInstance());
-
-        if questsSystem.GetFactStr("ngplus_stash_loaded") == 1 {
-            return;
-        }
-
-        questsSystem.SetFactStr("ngplus_stash_loaded", 1);
-
-        let saveData = ngPlusSystem.GetSaveData();
-
-        if !saveData.isValid {
-            ngPlusSystem.Spew("NewGamePlusProgressionLoader::OnStashEntityReady, progression data is invalid!");
-            questsSystem.SetFactStr("ngplus_apply_progression", 0);
-            return;
-        }
-
-        for stashItem in saveData.playerStashItems {
-            //let itemId = stashItem.itemId;
-            //let record = TweakDBInterface.GetItemRecord(ItemID.GetTDBID(itemId));
-
-            PlayerProgressionLoader.AddItemToInventory(transactionSystem, delaySystem, stashItem, this.m_stashEntity, statsSystem, true);
-        }
-
-        ngPlusSystem.Spew("NewGamePlusProgressionLoader::OnStashEntityReady, stash loading done!");
-        // Finalize process...
-        questsSystem.SetFactStr("ngplus_apply_progression", 0);
-
-        // NOTE: SOME ICONICS GET FKD BY STAT MODIFIER TRANSFER IN STASH, NEED TO MAKE SURE IT'S NOT ALL ICONICS!
-        // NEVERMIND, IT'S ALMOST ALL ICONICS THAT GET FUCKED
+    @if(!ModuleExists("EquipmentEx"))
+    private final func LoadEquipmentEx() {
+        // N/A
     }
 }
 
@@ -468,31 +449,6 @@ class NewGamePlusProgressionLoader extends ScriptableSystem {
         this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
         
         this.m_progressionLoaderListenerId = this.m_questsSystem.RegisterListener(n"ngplus_apply_progression", this, n"OnProgressionTransferCalled");
-
-        GameInstance.GetCallbackSystem().RegisterCallback(n"Entity/Initialize", this, n"OnStashEntityReady")
-            .AddTarget(EntityTarget.Type(n"Stash"));
-    }
-
-    private cb func OnStashEntityReady(event: ref<EntityLifecycleEvent>) {
-        let isInProgression = this.m_questsSystem.GetFactStr("ngplus_apply_progression") == 1;
-        let playerStash = event.GetEntity() as GameObject;
-
-        if !IsDefined(playerStash) {
-            this.m_ngPlusSystem.Spew("NewGamePlusProgressionLoader::OnStashEntityReady, stash is invalid!");            
-            return;
-        }
-
-        this.m_stashEntity = playerStash;
-
-        if !isInProgression {
-            return;
-        }
-
-        // This thing actually breaks everything LOL
-        // Funny thing is, it triggers on new playthroughs for whatever reason
-        this.m_questsSystem.SetFactStr("IconicReworkCompletedInStash", 1);
-
-        GameInstance.GetDelaySystem(this.GetGameInstance()).DelayCallback(StashReadyDelayCallback.Create(this.m_stashEntity), 1, false);
     }
 
     public final func OnProgressionTransferCalled(factValue: Int32) -> Void {
@@ -512,13 +468,6 @@ class NewGamePlusProgressionLoader extends ScriptableSystem {
         let loader = new PlayerProgressionLoader();
 
         loader.LoadPlayerProgression(player);
-
-        if IsDefined(this.m_stashEntity) {
-            this.m_ngPlusSystem.Spew("NewGamePlusProgressionLoader::OnProgressionTransferCalled, stash was present at call time!");
-
-            let stashCallback = StashReadyDelayCallback.Create(this.m_stashEntity);
-            stashCallback.Call();
-        }
     }
 
     private final func OnDetach() -> Void {

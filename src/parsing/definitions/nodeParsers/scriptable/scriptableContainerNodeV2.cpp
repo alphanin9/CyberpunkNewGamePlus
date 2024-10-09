@@ -1,5 +1,7 @@
 #include "scriptableContainerNodeV2.hpp"
 
+using namespace Red;
+
 void save::ScriptableSystemsContainerNodeV2::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 {
     const auto dataSize = static_cast<std::uint32_t>(aCursor.readInt());
@@ -12,7 +14,7 @@ void save::ScriptableSystemsContainerNodeV2::ReadData(FileCursor& aCursor, NodeE
     m_package.ReadPackage();
 }
 
-Red::Handle<Red::ISerializable>* save::ScriptableSystemsContainerNodeV2::GetScriptableSystem(Red::CName aName) noexcept
+Handle<ISerializable>* save::ScriptableSystemsContainerNodeV2::GetScriptableSystem(CName aName) noexcept
 {
     return m_package.GetChunkByTypeName(aName);
 }

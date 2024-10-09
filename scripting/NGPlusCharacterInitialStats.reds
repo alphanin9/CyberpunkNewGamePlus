@@ -1,42 +1,45 @@
 module NGPlus.InitialStatsFix
 
 @addField(CharacterCreationGenderSelectionMenu)
-let m_ngPlusSaveData: PlayerSaveData;
+let m_ngPlusSaveData: ref<NGPlusProgressionData>;
 
 @addMethod(CharacterCreationGenderSelectionMenu)
 private final func SetNGPlusAttributePreset() -> Void {
+    let playerDevelopmentResults = this.m_ngPlusSaveData.GetPlayerDevelopmentSystemResults();
+    let statsSystemResults = this.m_ngPlusSaveData.GetStatsSystemResults();
+
     this
         .m_characterCustomizationState
-        .SetAttributePointsAvailable(Cast<Uint32>(this.m_ngPlusSaveData.playerAttributePoints));
+        .SetAttributePointsAvailable(Cast<Uint32>(playerDevelopmentResults.GetAttributePoints()));
     this
         .m_characterCustomizationState
         .SetAttribute(
             gamedataStatType.Strength,
-            Cast<Uint32>(this.m_ngPlusSaveData.playerBodyAttribute)
+            Cast<Uint32>(statsSystemResults.GetBody())
         );
     this
         .m_characterCustomizationState
         .SetAttribute(
             gamedataStatType.Reflexes,
-            Cast<Uint32>(this.m_ngPlusSaveData.playerReflexAttribute)
+            Cast<Uint32>(statsSystemResults.GetReflexes())
         );
     this
         .m_characterCustomizationState
         .SetAttribute(
             gamedataStatType.TechnicalAbility,
-            Cast<Uint32>(this.m_ngPlusSaveData.playerTechAttribute)
+            Cast<Uint32>(statsSystemResults.GetTechnicalAbility())
         );
     this
         .m_characterCustomizationState
         .SetAttribute(
             gamedataStatType.Intelligence,
-            Cast<Uint32>(this.m_ngPlusSaveData.playerIntelligenceAttribute)
+            Cast<Uint32>(statsSystemResults.GetIntelligence())
         );
     this
         .m_characterCustomizationState
         .SetAttribute(
             gamedataStatType.Cool,
-            Cast<Uint32>(this.m_ngPlusSaveData.playerCoolAttribute)
+            Cast<Uint32>(statsSystemResults.GetCool())
         );
 }
 
@@ -68,7 +71,7 @@ protected cb func OnInitialize() -> Bool {
         this.SetEP1AttributePreset();
     } else {
         if isNgPlusActive {
-            this.m_ngPlusSaveData = GameInstance.GetNewGamePlusSystem().GetSaveData();
+            this.m_ngPlusSaveData = ngPlusSystem.GetProgressionData();
             this.SetNGPlusAttributePreset();
         } else {
             this.SetAttributePreset(this.m_characterCustomizationState.GetLifePath());
@@ -84,12 +87,12 @@ protected cb func OnInitialize() -> Bool {
 let m_isNgPlusActive: Bool;
 
 @addField(CharacterCreationStatsMenu)
-let m_ngPlusSaveData: PlayerSaveData;
+let m_ngPlusSaveData: ref<NGPlusProgressionData>;
 
 @wrapMethod(CharacterCreationStatsMenu)
 protected cb func OnInitialize() -> Bool {
     this.m_isNgPlusActive = GameInstance.GetNewGamePlusSystem().GetNewGamePlusState();
-    this.m_ngPlusSaveData = GameInstance.GetNewGamePlusSystem().GetSaveData();
+    this.m_ngPlusSaveData = GameInstance.GetNewGamePlusSystem().GetProgressionData();
 
     return wrappedMethod();
 }
@@ -124,12 +127,14 @@ private final func ResetAllBtnBackToBaseline() -> Void {
         i += 1;
     }
     if this.m_isNgPlusActive {
-        let minAttributeValue = 3;
-        let bodyAttributeAdded: Int32 = this.m_ngPlusSaveData.playerBodyAttribute - minAttributeValue;
-        let reflexAttributeAdded: Int32 = this.m_ngPlusSaveData.playerReflexAttribute - minAttributeValue;
-        let techAttributeAdded: Int32 = this.m_ngPlusSaveData.playerTechAttribute - minAttributeValue;
-        let intAttributeAdded: Int32 = this.m_ngPlusSaveData.playerIntelligenceAttribute - minAttributeValue;
-        let coolAttributeAdded: Int32 = this.m_ngPlusSaveData.playerCoolAttribute - minAttributeValue;
+        let minAttributeValue = 3.0;
+        let statsSystemResults = this.m_ngPlusSaveData.GetStatsSystemResults();
+
+        let bodyAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetBody() - minAttributeValue);
+        let reflexAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetReflexes() - minAttributeValue);
+        let techAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetTechnicalAbility() - minAttributeValue);
+        let intAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetIntelligence() - minAttributeValue);
+        let coolAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetCool() - minAttributeValue);
 
         this.m_startingAttributePoints = bodyAttributeAdded
             + reflexAttributeAdded

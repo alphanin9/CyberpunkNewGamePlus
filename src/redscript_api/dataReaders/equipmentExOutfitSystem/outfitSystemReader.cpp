@@ -4,9 +4,8 @@
 #include "outfitSystemReader.hpp"
 
 using namespace Red;
-namespace OutfitSystemReader
-{
-OutfitSystemResults GetData(Handle<ISerializable>* aOutfitSystem) noexcept
+
+OutfitSystemReader::OutfitSystemResults::OutfitSystemResults(Handle<ISerializable>* aOutfitSystem) noexcept
 {
     auto& instance = *aOutfitSystem;
     auto& outfitState =
@@ -14,8 +13,6 @@ OutfitSystemResults GetData(Handle<ISerializable>* aOutfitSystem) noexcept
 
     auto& outfitSets =
         *outfitState->GetType()->GetProperty("outfits")->GetValuePtr<DynArray<Handle<IScriptable>>>(outfitState);
-
-    OutfitSystemResults result{};
 
     for (auto& handle : outfitSets)
     {
@@ -36,9 +33,6 @@ OutfitSystemResults GetData(Handle<ISerializable>* aOutfitSystem) noexcept
             outfitSet->m_outfitParts.PushBack(std::move(outfitPart));
         }
 
-        result.m_data.PushBack(std::move(outfitSet));
+        this->m_data.PushBack(std::move(outfitSet));
     }
-
-    return result;
 }
-} // namespace OutfitSystemReader

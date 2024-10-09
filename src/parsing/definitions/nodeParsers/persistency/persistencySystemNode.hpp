@@ -14,6 +14,8 @@ struct RedPersistentObject
 {
     // Every persistent object should be ISerializable, I think?
     //... Could we just use a handle instead of rolling our own dtor?
+    // Very silly, just use handles lol
+
     Red::ISerializable* m_ptr;
 
     RedPersistentObject(Red::ScriptInstance aInstance)
@@ -54,20 +56,13 @@ struct RedPersistentObject
     }
 };
 
-struct PersistentBuffer
-{
-    std::uint64_t m_id;
-    RED4ext::CName m_className;
-    RedPersistentObject m_classInstance;
-};
-
 class PersistencySystemNode : public NodeDataInterface
 {
 private:
     static constexpr auto m_onlyDoVehicleGarage = true;
 
     std::uint32_t m_unk1;
-    std::vector<PersistentBuffer> m_redClasses;
+    std::vector<Red::Handle<Red::game::PersistentState>> m_instances;
 
 public:
     static constexpr Red::CName m_nodeName = "PersistencySystem2";
@@ -113,23 +108,18 @@ public:
                 // NEVERMIND, IT'S UNSTABLE
                 if (type)
                 {
-                    auto instance = static_cast<Red::CClass*>(type)->CreateInstance();
-                    auto subCursor = aCursor.CreateSubCursor(classSize);
-
-                    if (reader.TryReadClass(subCursor, instance, type))
+                    if constexpr (m_onlyDoVehicleGarage)
                     {
-                        // Small optimization: instead of resizing the vector for all the persistent nodes (that we only
-                        // use one of anyway), we only instantiate the needed one(s)
-                        m_redClasses.emplace_back();
+                        auto handle = Red::MakeHandle<Red::GarageComponentPS>();
 
-                        auto& entry = m_redClasses.back();
+                        auto subCursor = aCursor.CreateSubCursor(classSize);
 
-                        entry.m_classInstance.SetInstance(instance);
-                        entry.m_className = classHash;
-                        entry.m_id = classId;
-
-                        if constexpr (m_onlyDoVehicleGarage)
+                        if (reader.TryReadClass(subCursor, handle.instance, type))
                         {
+                            // Small optimization: instead of resizing the vector for all the persistent nodes (that we
+                            // only use one of anyway), we only instantiate the needed one(s)
+                            m_instances.emplace_back(std::move(handle));
+
                             // We're done here LOL
                             // Seek to the end of the node so LoadNodes doesn't whine
 
@@ -146,41 +136,30 @@ public:
     }
 
     // Use std::string_view instead of CName to report missing chunks better
-    PersistentBuffer* LookupChunk(std::string_view aChunkName) noexcept
+    Red::Handle<Red::game::PersistentState>* LookupChunk(std::string_view aChunkName) noexcept
     {
-        auto chunkIt = std::find_if(m_redClasses.begin(), m_redClasses.end(),
-                                    [aChunkName](const PersistentBuffer& aBuffer)
-                                    { return aBuffer.m_className == aChunkName.data(); });
+        auto chunkIt = std::find_if(m_instances.begin(), m_instances.end(),
+                                    [aChunkName](const Red::Handle<Red::game::PersistentState>& aBuffer)
+                                    { return aBuffer->GetType()->GetName() == aChunkName.data(); });
 
-        if (chunkIt == m_redClasses.end())
+        if (chunkIt == m_instances.end())
         {
             PluginContext::Error(std::format("Failed to find class {} in PersistencySystem2", aChunkName));
             return nullptr;
         }
 
-        return &*chunkIt;
+        auto& iter = *chunkIt;
+
+        return &iter;
     }
 
-    template<typename RedClass>
-    RedClass* LookupInstanceAs(std::string_view aChunkName)
+    bool HasChunk(Red::CName aChunkName) const
     {
-        auto chunkPtr = LookupChunk(aChunkName);
+        auto chunkIt = std::find_if(m_instances.begin(), m_instances.end(),
+                                    [aChunkName](const Red::Handle<Red::game::PersistentState>& aBuffer)
+                                    { return aBuffer->GetType()->GetName() == aChunkName; });
 
-        if (!chunkPtr)
-        {
-            return nullptr;
-        }
-
-        return chunkPtr->m_classInstance.As<RedClass>();
-    }
-
-    bool HasChunk(std::string_view aChunkName) const
-    {
-        auto chunkIt = std::find_if(m_redClasses.begin(), m_redClasses.end(),
-                                    [aChunkName](const PersistentBuffer& aBuffer)
-                                    { return aBuffer.m_className == aChunkName.data(); });
-
-        return chunkIt != m_redClasses.end();
+        return chunkIt != m_instances.end();
     }
 };
 }

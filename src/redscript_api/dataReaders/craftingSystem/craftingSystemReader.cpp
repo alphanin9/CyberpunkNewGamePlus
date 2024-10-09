@@ -7,23 +7,19 @@ using namespace Red;
 using scriptable::native::CraftBook::CraftBook;
 using scriptable::native::CraftBook::ItemRecipe;
 
-namespace CraftingSystemReader
+CraftingSystemReader::CraftingSystemResults::CraftingSystemResults(Handle<ISerializable>* aCraftingSystem) noexcept
 {
-CraftingSystemResults GetData(Handle<ISerializable>* aCraftingSystem) noexcept
-{
-    CraftingSystemResults result{};
-
     auto& instance = *aCraftingSystem;
 
-    CraftBook craftBook = instance->GetType()->GetProperty("playerCraftBook")->GetValuePtr<void>(instance);
+    CraftBook craftBook = instance->GetType()->GetProperty("playerCraftBook")->GetValuePtr<Handle<IScriptable>>(instance)->GetPtr();
 
     if (!craftBook)
     {
-        return result;
+        return;
     }
 
     craftBook.IterateOverRecipes(
-        [&result](ItemRecipe recipe)
+        [this](ItemRecipe recipe)
         {
             auto craftingInfo = MakeHandle<NGPlusCraftingInfo>();
 
@@ -31,9 +27,6 @@ CraftingSystemResults GetData(Handle<ISerializable>* aCraftingSystem) noexcept
             craftingInfo->m_targetItem = recipe.GetTargetItem();
             craftingInfo->m_hideOnItemsAdded = recipe.GetHideOnAdded();
 
-            result.m_data.PushBack(std::move(craftingInfo));
+            this->m_data.PushBack(std::move(craftingInfo));
         });
-
-    return result;
 }
-}   

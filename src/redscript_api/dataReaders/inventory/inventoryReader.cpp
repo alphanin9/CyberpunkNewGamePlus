@@ -170,7 +170,7 @@ struct ExtendedItemData
     }
 };
 
-void ProcessStatModifiers(Handle<NGPlusItemData>& aItemData, ResultContext& aContext)
+void ProcessStatModifiers(Handle<NGPlusItemData>& aItemData, ResultContext& aContext) noexcept
 {
     const auto statsObjectId = aContext.m_statsSystem->GetEntityHashFromItemId(aItemData->m_itemId);
     auto modifiers = aContext.m_statsSystem->GetStatModifiers(statsObjectId);
@@ -279,37 +279,35 @@ void ProcessItem(const save::ItemData& aItem, DynArray<Handle<NGPlusItemData>>& 
     aTargetList.PushBack(std::move(itemData));
 }
 
-InventoryReaderResults GetData(save::InventoryNode& aInventory, ResultContext& aContext) noexcept
-{
-    InventoryReaderResults result{};
+} // namespace InventoryReader
 
+InventoryReader::InventoryReaderResults::InventoryReaderResults(save::InventoryNode& aInventory,
+                                                                ResultContext& aContext) noexcept
+{
     auto& localInventory = aInventory.LookupInventory(save::SubInventory::inventoryIdLocal);
     auto& stashInventory = aInventory.LookupInventory(save::SubInventory::inventoryIdCarStash);
 
-    result.m_itemDataInventory.Reserve(static_cast<std::uint32_t>(localInventory.m_inventoryItems.size()));
-    result.m_itemDataStash.Reserve(static_cast<std::uint32_t>(stashInventory.m_inventoryItems.size()));
+    m_inventory.Reserve(static_cast<std::uint32_t>(localInventory.m_inventoryItems.size()));
+    m_stash.Reserve(static_cast<std::uint32_t>(stashInventory.m_inventoryItems.size()));
 
     std::unordered_set<TweakDBID> addedIconics{};
 
     for (const auto& item : localInventory.m_inventoryItems)
     {
         // Money can't be in stash I think
-        constexpr TweakDBID money = "Items.money";
+        constexpr TweakDBID c_money = "Items.money";
 
-        if (item.GetRecordID() == money)
+        if (item.GetRecordID() == c_money)
         {
-            result.m_playerMoney += item.GetQuantity();
+            m_money += item.GetQuantity();
             continue;
         }
 
-        ProcessItem(item, result.m_itemDataInventory, addedIconics, aContext);
+        ProcessItem(item, m_inventory, addedIconics, aContext);
     }
 
     for (const auto& item : stashInventory.m_inventoryItems)
     {
-        ProcessItem(item, result.m_itemDataStash, addedIconics, aContext);
+        ProcessItem(item, m_stash, addedIconics, aContext);
     }
-
-    return result;
 }
-} // namespace InventoryReader

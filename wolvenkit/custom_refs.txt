@@ -27,6 +27,7 @@ mod\new_ep1_requirements\journal\new_ep1_requirements.journal
 mod\new_ep1_requirements\onscreens\new_ep1_requirements_onscreens.json
 mod\quest\changedQuests\NewGamePlus_act_1.questphase
 mod\quest\changedQuests\NewGamePlus_additional_game_elements.questphase
+mod\quest\changedquests\newgameplus_cyberpunk2077.questphase
 mod\quest\changedQuests\NewGamePlus_cyberpunk2077.questphase
 mod\quest\changedQuests\NewGamePlus_persistent_content.questphase
 mod\quest\changedQuests\open_world\NewGamePlus_open_world_content.questphase
@@ -45,8 +46,10 @@ mod\quest\newgameplus\bossEncounterTest\bossEncounterStressTest.quest
 mod\quest\newgameplus\bossEncounterTest\bossEncounterTest.gamedef
 mod\quest\newgameplus\bossEncounterTest\bossEncounterTest.quest
 mod\quest\newgameplus\bugfixing\ngplusBugfixing.questphase
+mod\quest\newgameplus\fasttracktoq001.questphase
 mod\quest\newgameplus\FastTrackToQ001.questphase
 mod\quest\newgameplus\FastTrackToQ101New.questphase
+mod\quest\newgameplus\fixhauntedweaponspreep1.questphase
 mod\quest\newgameplus\FixHauntedWeaponsPreEP1.questphase
 mod\quest\newgameplus\InitStreetStoriesAndFastTravel.questphase
 mod\quest\newgameplus\journal\NGPlusJournal.journal
@@ -62,12 +65,17 @@ mod\quest\newgameplus\newNpc\brightman.ent
 mod\quest\newgameplus\newNpc\burondo.ent
 mod\quest\newgameplus\newNpc\cross.ent
 mod\quest\newgameplus\newNpc\evilJackie.ent
+mod\quest\newgameplus\ngplusadditionalcontent.questphase
 mod\quest\newgameplus\NGPlusAdditionalContent.questphase
 mod\quest\newgameplus\NGPlusBossEncounterLoop.questphase
 mod\quest\newgameplus\NGPlusBossEncounterRetrofix.questphase
 mod\quest\newgameplus\progressionBuildApply\SetupProgressionBuildsForStandalone.questphase
+mod\quest\newgameplus\restorehud.questphase
 mod\quest\newgameplus\RestoreHUD.questphase
 mod\quest\newgameplus\SetBandageOutfit.questphase
+mod\quest\newgameplus\setplayerprogression.questphase
 mod\quest\newgameplus\SetPlayerProgression.questphase
+mod\quest\newgameplus\vrtutorialhack\q000vrtutorial.questphase
 mod\quest\newgameplus\vrTutorialHack\Q000VRTutorial.questphase
+mod\quest\newgameplus\vrtutorialhack\vrtutorialforq001start.questphase
 mod\quest\newgameplus\vrTutorialHack\VRTutorialForQ001Start.questphase

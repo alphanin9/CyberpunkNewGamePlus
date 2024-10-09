@@ -9,7 +9,8 @@
 
 namespace save
 {
-	class ScriptableSystemsContainerNodeV2 : NodeDataInterface {
+    // Improved version of scriptable reader, based on common package loader
+	class ScriptableSystemsContainerNodeV2 : public NodeDataInterface {
     private:
         package::Package m_package;
     public:

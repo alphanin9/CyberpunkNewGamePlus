@@ -4,12 +4,12 @@
 
 #include <RED4ext/Scripting/Natives/Generated/game/ConstantStatModifierData_Deprecated.hpp>
 
-#include <inventory/inventoryNode.hpp>
 #include "../resultContext.hpp"
+#include <inventory/inventoryNode.hpp>
 
 namespace InventoryReader
 {
-class NGPlusItemData : public Red::ISerializable
+class NGPlusItemData : public Red::IScriptable
 {
 public:
     Red::ItemID m_itemId{};
@@ -22,20 +22,31 @@ public:
     RTTI_IMPL_ALLOCATOR();
 };
 
-struct InventoryReaderResults
+class InventoryReaderResults : public Red::IScriptable
 {
-    Red::DynArray<Red::Handle<NGPlusItemData>> m_itemDataInventory;
-    Red::DynArray<Red::Handle<NGPlusItemData>> m_itemDataStash;
+public:
+    Red::DynArray<Red::Handle<NGPlusItemData>> m_inventory;
+    Red::DynArray<Red::Handle<NGPlusItemData>> m_stash;
 
-    int m_playerMoney{};
+    int m_money{};
+
+    InventoryReaderResults() = default;
+    InventoryReaderResults(save::InventoryNode& aInventory, ResultContext& aContext) noexcept;
+
+    RTTI_IMPL_TYPEINFO(InventoryReaderResults);
+    RTTI_IMPL_ALLOCATOR();
 };
-
-InventoryReaderResults GetData(save::InventoryNode& aInventory, ResultContext& aContext) noexcept;
-}
+} // namespace InventoryReader
 
 RTTI_DEFINE_CLASS(InventoryReader::NGPlusItemData, {
     RTTI_GETTER(m_itemId);
     RTTI_GETTER(m_itemQuantity);
     RTTI_GETTER(m_attachments);
     RTTI_GETTER(m_statModifiers);
+});
+
+RTTI_DEFINE_CLASS(InventoryReader::InventoryReaderResults, {
+    RTTI_GETTER(m_inventory);
+    RTTI_GETTER(m_stash);
+    RTTI_GETTER(m_money);
 });

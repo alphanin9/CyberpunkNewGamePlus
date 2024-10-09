@@ -11,6 +11,7 @@ save::WardrobeEntry::WardrobeEntry(FileCursor& aCursor)
     m_itemId = item::ReadItemId(aCursor);
 }
 
+// Note: wardrobe items still seem to carry quality with them from stats
 void save::WardrobeSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 {
     const auto itemCount = aCursor.readInt();

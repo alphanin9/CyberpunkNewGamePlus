@@ -90,6 +90,21 @@
     <ClCompile Include="src\redscript_api\dataReaders\equipmentExOutfitSystem\outfitSystemReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\redscript_api\dataReaders\statsSystem\statsSystemReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\dataReaders\vehicleGarage\vehicleGarageReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\dataReaders\wardrobeSystem\wardrobeReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\definitions\playerSaveData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\redscript_api\dataReaders\equipmentExViewManager\viewManagerReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\filesystem\fs_util.hpp">
@@ -198,6 +213,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\redscript_api\dataReaders\equipmentExOutfitSystem\outfitSystemReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\definitions\playerSaveData.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\dataReaders\statsSystem\statsSystemReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\dataReaders\vehicleGarage\vehicleGarageReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\dataReaders\wardrobeSystem\wardrobeReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\redscript_api\dataReaders\equipmentExViewManager\viewManagerReader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

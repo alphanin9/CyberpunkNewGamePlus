@@ -199,9 +199,14 @@
     <ClCompile Include="src\parsing\fileReader.cpp" />
     <ClCompile Include="src\redscript_api\dataReaders\craftingSystem\craftingSystemReader.cpp" />
     <ClCompile Include="src\redscript_api\dataReaders\equipmentExOutfitSystem\outfitSystemReader.cpp" />
+    <ClCompile Include="src\redscript_api\dataReaders\equipmentExViewManager\viewManagerReader.cpp" />
     <ClCompile Include="src\redscript_api\dataReaders\equipmentSystem\equipmentSystemReader.cpp" />
     <ClCompile Include="src\redscript_api\dataReaders\inventory\inventoryReader.cpp" />
     <ClCompile Include="src\redscript_api\dataReaders\playerDevelopmentSystem\playerDevelopmentSystemReader.cpp" />
+    <ClCompile Include="src\redscript_api\dataReaders\statsSystem\statsSystemReader.cpp" />
+    <ClCompile Include="src\redscript_api\dataReaders\vehicleGarage\vehicleGarageReader.cpp" />
+    <ClCompile Include="src\redscript_api\dataReaders\wardrobeSystem\wardrobeReader.cpp" />
+    <ClCompile Include="src\redscript_api\definitions\playerSaveData.cpp" />
     <ClCompile Include="src\redscript_api\testingDefs.cpp" />
     <ClCompile Include="src\util\migration\migration.cpp" />
   </ItemGroup>
@@ -238,10 +243,15 @@
     </ClCompile>
     <ClInclude Include="src\redscript_api\dataReaders\craftingSystem\craftingSystemReader.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\equipmentExOutfitSystem\outfitSystemReader.hpp" />
+    <ClInclude Include="src\redscript_api\dataReaders\equipmentExViewManager\viewManagerReader.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\equipmentSystem\equipmentSystemReader.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\inventory\inventoryReader.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\playerDevelopmentSystem\playerDevelopmentSystemReader.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\resultContext.hpp" />
+    <ClInclude Include="src\redscript_api\dataReaders\statsSystem\statsSystemReader.hpp" />
+    <ClInclude Include="src\redscript_api\dataReaders\vehicleGarage\vehicleGarageReader.hpp" />
+    <ClInclude Include="src\redscript_api\dataReaders\wardrobeSystem\wardrobeReader.hpp" />
+    <ClInclude Include="src\redscript_api\definitions\playerSaveData.hpp" />
     <ClInclude Include="src\util\migration\migration.hpp" />
     <ClInclude Include="src\util\offsetPtr.hpp" />
     <ClInclude Include="src\util\threads.hpp" />

@@ -1,9 +1,9 @@
 module NGPlus.CraftBook
 
 @addMethod(CraftBook)
-public final func AddRecipeFromInfo(craftInfo: RedCraftInfo) {
-    let targetTdbid = craftInfo.targetItem;
-    let amount = craftInfo.amount;
+public final func AddRecipeFromInfo(craftInfo: ref<NGPlusCraftingInfo>) {
+    let targetTdbid = craftInfo.GetTargetItem();
+    let amount = craftInfo.GetAmount();
 
     if this.KnowsRecipe(targetTdbid) || !TDBID.IsValid(targetTdbid) {
         return;
@@ -19,10 +19,12 @@ public final func AddRecipeFromInfo(craftInfo: RedCraftInfo) {
         recipe.amount = 1;
     };
     
-    if ArraySize(craftInfo.hideOnItemsAdded) > 0 {
+    let hideOnItemsAdded = craftInfo.GetHideOnItemsAdded();
+
+    if ArraySize(hideOnItemsAdded) > 0 {
         let transactionSystem = GameInstance.GetTransactionSystem(this.m_owner.GetGame());
 
-        for item in craftInfo.hideOnItemsAdded {
+        for item in hideOnItemsAdded {
             ArrayPush(recipe.hideOnItemsAdded, item);
 
             if transactionSystem.HasItem(this.m_owner, item) {

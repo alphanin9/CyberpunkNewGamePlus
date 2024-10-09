@@ -22,6 +22,9 @@ public:
     Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetStatModifiers(
         std::uint64_t aEntityHash) noexcept;
 
+    Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetForcedModifiers(
+        std::uint64_t aEntityHash) noexcept;
+
     Red::DynArray<Red::game::data::StatType> GetDisabledModifiers(std::uint64_t aEntityHash) noexcept;
 
     static void DumpStatModifiersToConsole(

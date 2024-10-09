@@ -4,7 +4,7 @@
 
 namespace CraftingSystemReader
 {
-class NGPlusCraftingInfo : public Red::ISerializable
+class NGPlusCraftingInfo : public Red::IScriptable
 {
 public:
     Red::TweakDBID m_targetItem;
@@ -30,16 +30,22 @@ public:
     RTTI_IMPL_ALLOCATOR();
 };
 
-struct CraftingSystemResults
+class CraftingSystemResults : public Red::IScriptable
 {
+public:
     Red::DynArray<Red::Handle<NGPlusCraftingInfo>> m_data;
-};
+    CraftingSystemResults() = default;
+    CraftingSystemResults(Red::Handle<Red::ISerializable>* aCraftingSystem) noexcept;
 
-CraftingSystemResults GetData(Red::Handle<Red::ISerializable>* aCraftingSystem) noexcept;
-}
+    RTTI_IMPL_TYPEINFO(CraftingSystemResults);
+    RTTI_IMPL_ALLOCATOR();
+};
+} // namespace CraftingSystemReader
 
 RTTI_DEFINE_CLASS(CraftingSystemReader::NGPlusCraftingInfo, {
     RTTI_GETTER(m_targetItem);
     RTTI_GETTER(m_amount);
     RTTI_GETTER(m_hideOnItemsAdded);
-                                                            });
+});
+
+RTTI_DEFINE_CLASS(CraftingSystemReader::CraftingSystemResults, { RTTI_GETTER(m_data); });

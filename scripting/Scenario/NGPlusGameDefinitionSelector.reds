@@ -72,7 +72,7 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
     protected cb func OnPressQ001(evt: ref<inkPointerEvent>) -> Bool {
         if evt.IsAction(n"click") && !this.m_isInputLocked {
             this.PlaySound(n"Button", n"OnPress");
-            NewGamePlusSpawnTagController.SetSpawnTags(n"#q000_spwn_vr_tutorial_test");
+            NewGamePlusSpawnTagController.SetSpawnTags(n"#q000_hym_theater_start");
 
             if this.m_ep1Enabled {
                 this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ001);

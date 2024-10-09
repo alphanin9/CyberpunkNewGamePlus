@@ -4,27 +4,24 @@
 
 namespace PlayerDevelopmentSystemReader
 {
-struct PlayerDevelopmentSystemResults
+class PlayerDevelopmentSystemResults : public Red::IScriptable
 {
-    int m_playerPerkPoints{};
-    int m_playerRelicPoints{};
-    int m_playerAttributePoints{};
+public:
+    // Some of those are better off being read from stats, I think?
+    int m_perkPoints{};
+    int m_relicPoints{};
+    int m_attributePoints{};
 
-    int m_playerBodyAttribute{};
-    int m_playerReflexAttribute{};
-    int m_playerTechAttribute{};
-    int m_playerIntelligenceAttribute{};
-    int m_playerCoolAttribute{};
+    PlayerDevelopmentSystemResults() = default;
+    PlayerDevelopmentSystemResults(Red::Handle<Red::ISerializable>* aPlayerDevelopmentSystem) noexcept;
 
-    int m_playerBodySkillLevel{};
-    int m_playerReflexSkillLevel{};
-    int m_playerTechSkillLevel{};
-    int m_playerIntelligenceSkillLevel{};
-    int m_playerCoolSkillLevel{};
-
-    int m_playerLevel{};
-    int m_playerStreetCred{};
+    RTTI_IMPL_TYPEINFO(PlayerDevelopmentSystemResults);
+    RTTI_IMPL_ALLOCATOR();
 };
-
-PlayerDevelopmentSystemResults GetData(Red::Handle<Red::ISerializable>* aPlayerDevelopmentSystem) noexcept;
 }
+
+RTTI_DEFINE_CLASS(PlayerDevelopmentSystemReader::PlayerDevelopmentSystemResults, {
+    RTTI_GETTER(m_perkPoints);
+    RTTI_GETTER(m_relicPoints);
+    RTTI_GETTER(m_attributePoints);
+});

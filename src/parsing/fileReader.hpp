@@ -16,13 +16,13 @@ namespace parser {
 		std::unique_ptr<std::byte[]> m_decompressedDataRaw;
         std::size_t m_decompressedDataSize{};
 
-		void CalculateTrueSizes(std::vector<save::NodeEntry*>& nodes, int maxLength);
-		void FindChildren(save::NodeEntry& node, int maxNextId);
+		void CalculateTrueSizes(std::vector<save::NodeEntry*>& nodes, int maxLength) noexcept;
+		void FindChildren(save::NodeEntry& node, int maxNextId) noexcept;
 
-		void DecompressFile();
-		bool LoadNodes();
+		void DecompressFile() noexcept;
+		bool LoadNodes() noexcept;
 	public:
-		bool ParseSavegame(const Red::CString& aSavePath);
+		bool ParseSavegame(const Red::CString& aSavePath) noexcept;
 
 		save::NodeEntry* LookupNode(Red::CName aNodeName) noexcept;
 

@@ -6,29 +6,16 @@ using namespace Red;
 
 using scriptable::native::EquipmentSystem::EquipmentSystemPlayerData;
 
-namespace EquipmentSystemReader
-{
-EquipmentSystemPlayerData GetEquipmentSystemPlayerData(Red::Handle<Red::ISerializable>* aEquipmentSystem)
+EquipmentSystemReader::EquipmentSystemResults::EquipmentSystemResults(Handle<ISerializable>* aEquipmentSystem,
+                                                                      ResultContext& aContext) noexcept
 {
     auto& instance = *aEquipmentSystem;
 
     auto prop = instance->GetType()->GetProperty("ownerData");
 
-    auto arrayInstance = prop->GetValuePtr<void>(instance);
+    auto& arrayInstance = *prop->GetValuePtr<DynArray<Handle<IScriptable>>>(instance);
 
-    return reinterpret_cast<CRTTIBaseArrayType*>(prop->type)->GetElement(arrayInstance, 0u);
-}
-
-EquipmentSystemResults GetData(Red::Handle<Red::ISerializable>* aEquipmentSystem, ResultContext& aContext) noexcept
-{
-    EquipmentSystemResults result{};
-
-    auto data = GetEquipmentSystemPlayerData(aEquipmentSystem);
-
-    if (!data)
-    {
-        return result;
-    }
+    EquipmentSystemPlayerData data = arrayInstance[0].instance;
 
     auto loadout = data.GetLoadout();
 
@@ -40,7 +27,7 @@ EquipmentSystemResults GetData(Red::Handle<Red::ISerializable>* aEquipmentSystem
         {
         case EquipmentArea::EyesCW:
         {
-            if (result.m_playerEquippedKiroshis.IsValid())
+            if (m_playerEquippedKiroshis)
             {
                 break;
             }
@@ -48,25 +35,23 @@ EquipmentSystemResults GetData(Red::Handle<Red::ISerializable>* aEquipmentSystem
             for (auto& equippedItemData : area.equipSlots)
             {
                 auto& itemId = equippedItemData.itemID;
-                if (!itemId.IsValid())
+                if (itemId)
                 {
-                    continue;
-                }
+                    TweakDBID tagsFlat(itemId.tdbid, ".tags");
+                    auto flat = aContext.m_tweakDB->GetFlatValue(tagsFlat);
 
-                TweakDBID tagsFlat(itemId.tdbid, ".tags");
-                auto flat = aContext.m_tweakDB->GetFlatValue(tagsFlat);
+                    if (!flat)
+                    {
+                        continue;
+                    }
 
-                if (!flat)
-                {
-                    continue;
-                }
+                    auto tagList = flat->GetValue<DynArray<CName>>();
 
-                auto tagList = flat->GetValue<DynArray<CName>>();
-
-                if (!tagList->Contains("MaskCW"))
-                {
-                    result.m_playerEquippedKiroshis = itemId;
-                    break;
+                    if (!tagList->Contains("MaskCW"))
+                    {
+                        m_playerEquippedKiroshis = itemId;
+                        break;
+                    }
                 }
             }
 
@@ -74,7 +59,7 @@ EquipmentSystemResults GetData(Red::Handle<Red::ISerializable>* aEquipmentSystem
         }
         case EquipmentArea::SystemReplacementCW:
         {
-            if (result.m_playerEquippedOperatingSystem.IsValid())
+            if (m_playerEquippedOperatingSystem)
             {
                 break;
             }
@@ -83,17 +68,15 @@ EquipmentSystemResults GetData(Red::Handle<Red::ISerializable>* aEquipmentSystem
             {
                 auto& itemId = equippedItemData.itemID;
 
-                if (!itemId.IsValid())
+                if (itemId)
                 {
-                    continue;
+                    m_playerEquippedOperatingSystem = itemId;
+                    break;
                 }
-
-                result.m_playerEquippedOperatingSystem = itemId;
-                break;
             }
             break;
         case EquipmentArea::CardiovascularSystemCW:
-            if (result.m_playerEquippedCardiacSystemCW.size > 0)
+            if (m_playerEquippedCardiacSystemCW.size > 0)
             {
                 break;
             }
@@ -101,16 +84,14 @@ EquipmentSystemResults GetData(Red::Handle<Red::ISerializable>* aEquipmentSystem
             {
                 auto& itemId = equippedItemData.itemID;
 
-                if (!itemId.IsValid())
+                if (itemId)
                 {
-                    continue;
+                    m_playerEquippedCardiacSystemCW.PushBack(itemId);
                 }
-
-                result.m_playerEquippedCardiacSystemCW.PushBack(itemId);
             }
             break;
         case EquipmentArea::ArmsCW:
-            if (result.m_playerEquippedArmCyberware.IsValid())
+            if (m_playerEquippedArmCyberware)
             {
                 break;
             }
@@ -118,17 +99,15 @@ EquipmentSystemResults GetData(Red::Handle<Red::ISerializable>* aEquipmentSystem
             {
                 auto& itemId = equippedItemData.itemID;
 
-                if (!itemId.IsValid())
+                if (itemId)
                 {
-                    continue;
+                    m_playerEquippedArmCyberware = itemId;
+                    break;
                 }
-
-                result.m_playerEquippedArmCyberware = itemId;
-                break;
             }
             break;
         case EquipmentArea::LegsCW:
-            if (result.m_playerEquippedLegCyberware.IsValid())
+            if (m_playerEquippedLegCyberware)
             {
                 break;
             }
@@ -136,19 +115,14 @@ EquipmentSystemResults GetData(Red::Handle<Red::ISerializable>* aEquipmentSystem
             {
                 auto& itemId = equippedItemData.itemID;
 
-                if (!itemId.IsValid())
+                if (itemId)
                 {
-                    continue;
+                    m_playerEquippedLegCyberware = itemId;
+                    break;
                 }
-
-                result.m_playerEquippedLegCyberware = itemId;
-                break;
             }
             break;
         }
         }
     }
-
-    return result;
-}
 }

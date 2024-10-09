@@ -11,12 +11,12 @@
 #include "statsSystemNode.hpp"
 #include "../../package/packageReader.hpp"
 
+using namespace Red;
+
 namespace save
 {
 Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetStatModifiersInternal(Red::DataBuffer* aBuffer)
 {
-    using namespace Red;
-
     static const auto statTypes = GetEnum<game::data::StatType>();
 
     // TODO: ugly, needs to accept void* in ctor
@@ -128,7 +128,7 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     }
 
     // Ugly, but inheritance is fucked on this struct...
-    auto asStatsStateMap = reinterpret_cast<Red::game::StatsStateMapStructure*>(handlePtr->GetPtr());
+    auto asStatsStateMap = reinterpret_cast<game::StatsStateMapStructure*>(handlePtr->GetPtr());
 
     // Will this help?
     m_statsMap.reserve(asStatsStateMap->keys.size);
@@ -138,7 +138,7 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     }
 }
 
-std::uint64_t StatsSystemNode::GetEntityHashFromItemId(const Red::ItemID& aId) noexcept
+std::uint64_t StatsSystemNode::GetEntityHashFromItemId(const ItemID& aId) noexcept
 {
     // Shamelessly stolen from WKit
     const auto c = 0xC6A4A7935BD1E995;
@@ -161,7 +161,7 @@ std::uint64_t StatsSystemNode::GetEntityHashFromItemId(const Red::ItemID& aId) n
 }
 
 void StatsSystemNode::DumpStatModifiersToConsole(
-    const Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>>& aStatModifierList) noexcept
+    const DynArray<Handle<game::StatModifierData_Deprecated>>& aStatModifierList) noexcept
 {
     using namespace Red;
     static const auto statTypes = GetEnum<game::data::StatType>();
@@ -205,7 +205,7 @@ void StatsSystemNode::DumpStatModifiersToConsole(
     }
 }
 
-Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> StatsSystemNode::GetStatModifiers(std::uint64_t aEntityHash) noexcept
+DynArray<Handle<game::StatModifierData_Deprecated>> StatsSystemNode::GetStatModifiers(std::uint64_t aEntityHash) noexcept
 {
     if (!m_statsMap.contains(aEntityHash))
     {
@@ -213,12 +213,24 @@ Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> StatsSystemNo
     }
     
     auto savedStatsDataPtr = m_statsMap[aEntityHash];
-    auto modifiers = GetStatModifiersInternal(&savedStatsDataPtr->modifiersBuffer);
 
-    return modifiers;
+    return GetStatModifiersInternal(&savedStatsDataPtr->modifiersBuffer);
 }
 
-Red::DynArray<Red::game::data::StatType> StatsSystemNode::GetDisabledModifiers(std::uint64_t aEntityHash) noexcept 
+DynArray<Handle<game::StatModifierData_Deprecated>> StatsSystemNode::GetForcedModifiers(
+    std::uint64_t aEntityHash) noexcept
+{
+    if (!m_statsMap.contains(aEntityHash))
+    {
+        return {};
+    }
+
+    auto savedStatsDataPtr = m_statsMap[aEntityHash];
+    
+    return GetStatModifiersInternal(&savedStatsDataPtr->forcedModifiersBuffer);
+}
+
+DynArray<game::data::StatType> StatsSystemNode::GetDisabledModifiers(std::uint64_t aEntityHash) noexcept 
 {
     if (!m_statsMap.contains(aEntityHash))
     {
