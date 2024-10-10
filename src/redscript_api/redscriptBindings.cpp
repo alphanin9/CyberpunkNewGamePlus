@@ -506,6 +506,7 @@ private:
     RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
     RTTI_IMPL_ALLOCATOR();
 };
+
 } // namespace redscript
 
 RTTI_DEFINE_ENUM(redscript::ENewGamePlusStartType);

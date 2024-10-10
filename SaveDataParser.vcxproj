@@ -94,7 +94,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\simdjson\singleheader;deps\lz4\lib;deps\tweakxl\support\red4ext;deps\minhook\include;deps\wil\include;src\context;src\parsing\definitions\nodeParsers;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\lz4\lib;deps\tweakxl\support\red4ext;deps\minhook\include;deps\wil\include;src\context;src\parsing\definitions\nodeParsers;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>
@@ -186,7 +186,6 @@
     <ClCompile Include="deps\minhook\src\hde\hde64.c" />
     <ClCompile Include="deps\minhook\src\hook.c" />
     <ClCompile Include="deps\minhook\src\trampoline.c" />
-    <ClCompile Include="deps\simdjson\singleheader\simdjson.cpp" />
     <ClCompile Include="src\filesystem\fs_util.cpp" />
     <ClCompile Include="src\hooking\hooking.cpp" />
     <ClCompile Include="src\main.cpp" />

@@ -5,7 +5,7 @@ import NGPlus.EP1Listener.NGPlusEP1StatusListener
 import NGPlus.Ripperdoc.NGPlusTutorialCyberwareProvider
 
 @if(ModuleExists("EquipmentEx"))
-import EquipmentEx.EquipmentExTransfer
+import EquipmentEx.*
 
 class PlayerProgressionLoader {
     private let m_ngPlusPlayerSaveData: PlayerSaveData;
@@ -427,7 +427,42 @@ class PlayerProgressionLoader {
 
     @if(ModuleExists("EquipmentEx"))
     private final func LoadEquipmentEx() {
-        EquipmentExTransfer.Make().TransferEquipmentEx();
+        let viewManagerResults = this.m_ngPlusProgression.GetEquipmentExViewManagerResults();
+
+        if IsDefined(viewManagerResults) {
+            let itemSource = viewManagerResults.GetSource();
+            let viewManager = ViewManager.GetInstance(GetGameInstance());
+
+            switch(itemSource) {
+                case 0ul:
+                    viewManager.SetItemSource(WardrobeItemSource.WardrobeStore);
+                    break;
+                case 1ul:
+                    viewManager.SetItemSource(WardrobeItemSource.InventoryAndStash);
+                    break;
+                case 2ul:
+                    viewManager.SetItemSource(WardrobeItemSource.InventoryOnly);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        let outfits = this.m_ngPlusProgression.GetEquipmentExOutfitSystemResults();
+
+        if IsDefined(outfits) {
+            let outfitSystem = OutfitSystem.GetInstance(GetGameInstance());
+
+            for outfit in outfits.GetData() {
+                let outfitParts: [ref<OutfitPart>];
+
+                for outfitPart in outfit.GetOutfitParts() {
+                    ArrayPush(outfitParts, OutfitPart.Create(outfitPart.GetItemID(), outfitPart.GetSlotID()));    
+                }
+
+                outfitSystem.AddOutfit(outfit.GetName(), outfitParts, false);
+            }
+        }
     }
 
     @if(!ModuleExists("EquipmentEx"))

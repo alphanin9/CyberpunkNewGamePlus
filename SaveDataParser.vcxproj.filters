@@ -30,9 +30,6 @@
     <ClCompile Include="src\hooking\hooking.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="deps\simdjson\singleheader\simdjson.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="deps\lz4\lib\lz4.c">
       <Filter>Source Files</Filter>
     </ClCompile>

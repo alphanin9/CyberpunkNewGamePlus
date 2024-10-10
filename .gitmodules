@@ -7,9 +7,6 @@
 [submodule "deps/archivexl"]
 	path = deps/archivexl
 	url = https://github.com/psiberx/cp2077-archive-xl.git
-[submodule "deps/simdjson"]
-	path = deps/simdjson
-	url = https://github.com/simdjson/simdjson.git
 [submodule "deps/lz4"]
 	path = deps/lz4
 	url = https://github.com/lz4/lz4.git

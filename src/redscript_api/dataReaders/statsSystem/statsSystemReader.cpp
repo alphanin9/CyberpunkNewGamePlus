@@ -10,20 +10,7 @@ StatsSystemReader::StatsSystemResults::StatsSystemResults(ResultContext& aContex
 {
     constexpr auto c_playerEntityId = 1ull;
 
-    const auto gameEngine = CGameEngine::Get();
-
-    auto isEP1 = false;
-
-    // IsEP1() has this weird check
-    if (gameEngine)
-    {
-        isEP1 = util::OffsetPtr<724u, bool>::Ref(gameEngine);
-    }
-        
-    auto savedModifiers = aContext.m_statsSystem->GetStatModifiers(c_playerEntityId);
-    auto forcedModifiers = aContext.m_statsSystem->GetForcedModifiers(c_playerEntityId);
-
-    for (auto& i : savedModifiers)
+    for (auto& i : aContext.m_statsSystem->GetStatModifiers(c_playerEntityId))
     {
         auto& asConstant = Cast<game::ConstantStatModifierData_Deprecated>(i);
         constexpr auto c_bigCWCapValue = 250.f;
@@ -34,7 +21,7 @@ StatsSystemReader::StatsSystemResults::StatsSystemResults(ResultContext& aContex
         }
     }
 
-    for (auto& i : forcedModifiers)
+    for (auto& i : aContext.m_statsSystem->GetForcedModifiers(c_playerEntityId))
     {
         auto& asConstant = Cast<game::ConstantStatModifierData_Deprecated>(i);
 
@@ -84,8 +71,22 @@ StatsSystemReader::StatsSystemResults::StatsSystemResults(ResultContext& aContex
             m_technicalAbility = asConstant->value;
             break;
         case StatType::Level:
+            const auto gameEngine = CGameEngine::Get();
+
+            auto isEP1 = false;
+
+            // IsEP1() has this weird check
+            if (gameEngine)
+            {
+                isEP1 = util::OffsetPtr<724u, bool>::Ref(gameEngine);
+            }
+
+            constexpr auto c_ep1MaxLevel = 50.f;
+            constexpr auto c_nonEp1MaxLevel = 40.f;
+
             // Keep the non-EP1 clamp...
-            m_level = std::max(asConstant->value, isEP1 ? 50.f : 40.f);
+            // Oops, wrong func!
+            m_level = std::min(asConstant->value, isEP1 ? c_ep1MaxLevel : c_nonEp1MaxLevel);
             break;
         }
     }
