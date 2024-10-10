@@ -76,7 +76,7 @@ jobs:
           # DLL hash generation
           Get-FileHash -Algorithm SHA256 -Path $packagingDir/red4ext/plugins/NewGamePlus/NewGamePlus.dll | Out-File -FilePath $packagingDir/red4ext/plugins/NewGamePlus/DLLHash.txt -Width 512
 
-          Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $pdbPackaging
+          Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $pdbPackaging/NewGamePlus.pdb
           
           # Create the ZIP file.
           7z a NewGamePlus.zip $packagingDir/*
