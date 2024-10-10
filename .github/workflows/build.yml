@@ -86,9 +86,12 @@ jobs:
       with:
         name: newgameplus_${{ env.NGPLUS_COMMIT_SHA }}
         path: _packaging/
+        if-no-files-found: error
+
     - name: Upload PDB
       uses: actions/upload-artifact@v3
       with:
         name: newgameplus_pdb_${{ env.NGPLUS_COMMIT_SHA }}
-        path: _pdbDir/
+        path: _pdbDir/*.pdb
+        if-no-files-found: error
 
