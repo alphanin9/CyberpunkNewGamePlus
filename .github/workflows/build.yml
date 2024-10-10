@@ -57,6 +57,7 @@ jobs:
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/redscript
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/tweaks
+          New-Item -ItemType directory -Path $pdbPackaging
           
           # Copy the build artifact
           Copy-Item -Path ./x64/Release/NewGamePlus.dll -Destination $packagingDir/red4ext/plugins/NewGamePlus
