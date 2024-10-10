@@ -1,6 +1,6 @@
 module NGPlus.Q101StartHelper
 
-import NGPlus.DifficultyConfig.*
+import NGPlus.*
 
 // Hacky way to do this, but no real other way...
 public class NGPlusQ101Helper extends ScriptableSystem {
@@ -15,8 +15,10 @@ public class NGPlusQ101Helper extends ScriptableSystem {
         this.m_newQ101ListenerId = this.m_questsSystem.RegisterListener(n"ngplus_use_new_q101", this, n"OnFactChange");
     }
 
-    public final func OnFactChange(newValue: Int32) -> Void {
-        if newValue != 1 || !GetShouldFastForwardQ101Start() {
+    public final cb func OnFactChange(newValue: Int32) -> Void {
+        let settings = UserSettings.Get();
+
+        if newValue != 1 || NotEquals(settings.q101StartPoint, ENGPlusQ101StartPoint.AtVApartment) {
             return;
         }
 

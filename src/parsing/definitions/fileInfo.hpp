@@ -8,11 +8,11 @@ namespace save {
 	constexpr auto FILE_NODE = 0x4e4f4445; // NODE
 
 	struct SaveHeader {
-		std::uint32_t saveVersion;
-		std::uint32_t gameVersion;
-		std::wstring gameDefinition;
-		std::uint64_t timeStamp;
-		std::uint32_t archiveVersion;
+        std::uint32_t saveVersion{};
+        std::uint32_t gameVersion{};
+        std::wstring gameDefinition{};
+        std::uint64_t timeStamp{};
+        std::uint32_t archiveVersion{};
 
 		static SaveHeader fromCursor(FileCursor& fileCursor) {
 			SaveHeader header{};

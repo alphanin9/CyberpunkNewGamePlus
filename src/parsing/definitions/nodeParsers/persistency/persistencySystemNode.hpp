@@ -61,8 +61,8 @@ class PersistencySystemNode : public NodeDataInterface
 private:
     static constexpr auto m_onlyDoVehicleGarage = true;
 
-    std::uint32_t m_unk1;
-    std::vector<Red::Handle<Red::game::PersistentState>> m_instances;
+    std::uint32_t m_unk1{};
+    std::vector<Red::Handle<Red::game::PersistentState>> m_instances{};
 
 public:
     static constexpr Red::CName m_nodeName = "PersistencySystem2";

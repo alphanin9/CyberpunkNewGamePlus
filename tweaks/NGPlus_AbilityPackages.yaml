@@ -50,3 +50,10 @@ ArchetypeData.NGPlusAbilityGroup_Sneaky:
   $type: GameplayAbilityGroup
   abilities:
     - Ability.CanUseOpticalCamo
+
+ArchetypeData.NGPlusAbilityGroup_Dodger:
+  $type: GameplayAbilityGroup
+  abilities:
+    - Ability.HasKerenzikov
+    - Ability.CanDodge
+    - Ability.NGPlus_SuperDodge

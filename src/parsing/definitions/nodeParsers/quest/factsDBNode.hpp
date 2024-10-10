@@ -16,8 +16,9 @@ public:
 
 class FactsDBNode : public NodeDataInterface
 {
-    std::vector<FactsTableNode*> m_factsTables; // Does not need to be dynamic, but no real worry
-    std::size_t m_tableCount;
+    std::vector<FactsTableNode*> m_factsTables{}; // Does not need to be dynamic, but no real worry
+    std::size_t m_tableCount{};
+
 public:
     static constexpr Red::CName m_nodeName = "FactsDB";
     virtual void ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept final;

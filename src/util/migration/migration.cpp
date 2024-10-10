@@ -15,7 +15,10 @@ void migration::RemoveUnusedFiles()
     constexpr std::array c_unusedFiles = {
         L"red4ext\\plugins\\NewGamePlus\\redscript\\DifficultyAdjustment\\NGPlusDifficultyFixes.reds",
         L"red4ext\\plugins\\NewGamePlus\\redscript\\Scenario\\NGPlusStatsAdjustmentController.reds",
-        L"red4ext\\plugins\\NewGamePlus\\tweaks\\NGPlus_BasegameFlatPatches.yaml"};
+        L"red4ext\\plugins\\NewGamePlus\\tweaks\\NGPlus_BasegameFlatPatches.yaml",
+        L"red4ext\\plugins\\NewGamePlus\\redscript\\NGPlusEP1Listener.reds",
+        L"red4ext\\plugins\\NewGamePlus\\redscript\\SpawnTagController.reds"
+        L"red4ext\\plugins\\NewGamePlus\\redscript\\DifficultyAdjustment\\NGPlusDifficultyDefaultConfig.reds"};
 
     std::wstring modulePath{};
 
@@ -29,13 +32,13 @@ void migration::RemoveUnusedFiles()
 
     for (auto relativePath : c_unusedFiles)
     {
-        auto absolutePath = rootDirectory / relativePath;
+        auto pathToFile = rootDirectory / relativePath;
 
         std::error_code ec{};
 
-        if (std::filesystem::is_regular_file(absolutePath, ec))
+        if (std::filesystem::is_regular_file(pathToFile, ec))
         {
-            std::filesystem::remove(absolutePath, ec);
+            std::filesystem::remove(pathToFile, ec);
             cleanedUpAny = true;
         }
     }

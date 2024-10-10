@@ -1,6 +1,7 @@
 module NGPlus.Difficulty.System
 
 import NGPlus.DifficultyConfig.*
+import NGPlus.*
 
 class PuppetPowerUpSystem {
     private let m_puppet: ref<NPCPuppet>;
@@ -76,14 +77,14 @@ class PuppetPowerUpSystem {
             return;
         }
 
-        let netrunnerChance = GetNetrunnerUpgradeChance() / 100.0;
-        let fastChance = GetFastUpgradeChance() / 100.0;
-        let tankChance = GetTankUpgradeChance() / 100.0;
-        let regenChance = GetRegenUpgradeChance() / 100.0;
-        let stealthChance = GetOpticalCamoUpgradeChance() / 100.0;
+        let settings = UserSettings.Get();
 
-        // Unused ATM
-        // let dodgeChance = GetDodgeUpgradeChance() / 100.0; 
+        let netrunnerChance = settings.netrunnerUpgradeChance / 100.0;
+        let fastChance = settings.fastUpgradeChance / 100.0;
+        let tankChance = settings.tankUpgradeChance / 100.0;
+        let regenChance = settings.regenUpgradeChance / 100.0;
+        let stealthChance = settings.opticalCamoUpgradeChance / 100.0;
+        let dodgeChance = settings.dodgeUpgradeChance / 100.0;
 
         if netrunnerChance > 0.0 && this.RandMeetsChance(netrunnerChance) && this.m_puppet.IsNetrunnerPuppet() {
             this.ApplyAbilityGroup(t"ArchetypeData.NGPlusAbilityGroup_Netrunner");
@@ -105,6 +106,10 @@ class PuppetPowerUpSystem {
         // FIX: unexpected units getting Optical Camo
         if stealthChance > 0.0 && this.RandMeetsChance(stealthChance) && !this.m_puppet.IsMech() {
             this.ApplyAbilityGroup(t"ArchetypeData.NGPlusAbilityGroup_Sneaky");
+        }
+
+        if dodgeChance > 0.0 && this.RandMeetsChance(dodgeChance) {
+            this.ApplyAbilityGroup(t"ArchetypeData.NGPlusAbilityGroup_Dodger");
         }
     }
 

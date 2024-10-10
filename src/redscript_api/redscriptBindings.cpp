@@ -13,21 +13,11 @@
 #include "../filesystem/fs_util.hpp"
 #include "../parsing/fileReader.hpp"
 
-#include "../parsing/definitions/nodeParsers/inventory/inventoryNode.hpp"
-#include "../parsing/definitions/nodeParsers/parserHelper.hpp"
-#include "../parsing/definitions/nodeParsers/persistency/persistencySystemNode.hpp"
-#include "../parsing/definitions/nodeParsers/scriptable/scriptableContainerNode.hpp"
-#include "../parsing/definitions/nodeParsers/stats/statsSystemNode.hpp"
-#include "../parsing/definitions/nodeParsers/wardrobe/wardrobeSystemNode.hpp"
-
-#include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/craftBook.hpp"
-#include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/equipmentSystem.hpp"
-#include "../parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/playerDevelopmentData.hpp"
-
 #include "../util/offsetPtr.hpp"
 #include "../util/threads.hpp"
 
 #include <chrono>
+#include <unordered_set>
 
 #include "definitions/playerSaveData.hpp"
 
@@ -36,179 +26,10 @@
 // Redesign things: move loaders for different data into their own namespaces, pass handle to progression data around?
 // Maybe figure out how to add things to save metadata and add ngplusActive field to it...
 
-// Small refactor: move complex reader stuff (player development system, equipment system, inventory...) into their own files
+// Small refactor: move complex reader stuff (player development system, equipment system, inventory...) into their own
+// files
 
 using namespace Red;
-
-using scriptable::native::CraftBook::CraftBook;
-using scriptable::native::EquipmentSystem::EquipmentSystemPlayerData;
-using scriptable::native::PlayerDevelopment::PlayerDevelopmentData;
-
-// Enums
-using scriptable::native::PlayerDevelopment::AttributeDataType;
-using scriptable::native::PlayerDevelopment::EspionageMilestonePerks;
-
-// Wrappers
-using scriptable::native::CraftBook::ItemRecipe;
-using scriptable::native::PlayerDevelopment::SAttribute;
-using scriptable::native::PlayerDevelopment::SAttributeData;
-using scriptable::native::PlayerDevelopment::SDevelopmentPoints;
-using scriptable::native::PlayerDevelopment::SNewPerk;
-using scriptable::native::PlayerDevelopment::SProficiency;
-
-namespace redscript
-{
-struct RedItemData
-{
-    ItemID m_itemId{};
-    int32_t m_itemQuantity{};
-
-    // HACK: make CW upgrades carry over...
-    // Makes things a bit heavier, but w/e
-    DynArray<ItemID> m_attachments;
-    DynArray<Handle<game::StatModifierData_Deprecated>> m_statModifiers;
-
-    RTTI_IMPL_TYPEINFO(RedItemData);
-    RTTI_IMPL_ALLOCATOR();
-};
-
-struct RedCraftInfo
-{
-    TweakDBID m_targetItem;
-    int m_amount{};
-    DynArray<ItemID> m_hideOnItemsAdded;
-
-    RTTI_IMPL_TYPEINFO(RedCraftInfo);
-    RTTI_IMPL_ALLOCATOR();
-};
-} // namespace redscript
-
-RTTI_DEFINE_CLASS(redscript::RedItemData, {
-    RTTI_PROPERTY(m_itemId);
-    RTTI_PROPERTY(m_itemQuantity);
-    RTTI_PROPERTY(m_attachments);
-    RTTI_PROPERTY(m_statModifiers);
-});
-
-RTTI_DEFINE_CLASS(redscript::RedCraftInfo, {
-    RTTI_PROPERTY(m_targetItem);
-    RTTI_PROPERTY(m_amount);
-    RTTI_PROPERTY(m_hideOnItemsAdded);
-});
-
-namespace redscript
-{
-// NOTE: needs ISerializable inheritance for handle stuff - later...
-struct PlayerSaveData
-{
-    bool m_isValid{};
-    // We do not save actual perks - what if the player wants a respec?
-    // Excessive cyberware can be fixed by not giving it all in one go
-    // and debug cyberware capacity shards
-    int32_t m_playerPerkPoints{};
-    // Not sure how progression builds handle this, but you get Relic perks even without doing anything there
-    // Fact n"ep1_tree_unlocked"
-    int32_t m_playerRelicPoints{};
-    int32_t m_playerAttributePoints{};
-
-    // Maybe put attributes in the character creation screen?
-    // Would be cool
-    int32_t m_playerBodyAttribute{};
-    int32_t m_playerReflexAttribute{};
-    int32_t m_playerTechAttribute{};
-    int32_t m_playerIntelligenceAttribute{};
-    int32_t m_playerCoolAttribute{};
-
-    int32_t m_playerBodySkillLevel{};
-    int32_t m_playerReflexSkillLevel{};
-    int32_t m_playerTechSkillLevel{};
-    int32_t m_playerIntelligenceSkillLevel{};
-    int32_t m_playerCoolSkillLevel{};
-
-    // Cap this to 50 on the scripting side, so the player still has something to level towards
-    int32_t m_playerLevel{};
-
-    // Dumb and can just be set to 50 LMAO
-    int32_t m_playerStreetCred{};
-
-    // Special treatment :D
-    int32_t m_playerMoney{};
-
-    // No other inventories matter too much
-    // Johnny and Kurtz get their own shit anyway
-    // Filter stash items from useless shit like vehicle weapons
-    // in native or on the Redscript side?
-    DynArray<RedItemData> m_playerItems{};
-    DynArray<RedItemData> m_playerStashItems{};
-
-    DynArray<RedCraftInfo> m_knownRecipeTargetItems{};
-
-    // Most distinctive cyberware needs to be equipped
-    // by the scripting side to make
-    // the player feel at home from the get-go
-    // Clothing does not, as the endpoint in Q101
-    // will still end up with the player naked
-
-    // Cyberware-EX will mess this up, but do we care?
-    ItemID m_playerEquippedOperatingSystem{};
-    ItemID m_playerEquippedKiroshis{};
-    ItemID m_playerEquippedLegCyberware{};
-    ItemID m_playerEquippedArmCyberware{};
-
-    DynArray<ItemID> m_playerEquippedCardiacSystemCW;
-
-    // Filter this from quest vehicles?
-    // (Quadra, Demiurge, ETC)
-    // Nah, shit idea, maybe for the Demiurge
-    // Seeing as acquiring it is pretty cool
-    DynArray<TweakDBID> m_playerVehicleGarage{};
-
-    bool m_addedPerkPointsFromOverflow{};
-
-    // NOTE: these do not account for perks like Edgerunner/whatever else... only shards
-    // Whatever, we won't be overallocating CW cap anyway :P
-    DynArray<float> m_playerCyberwareCapacity{};
-    DynArray<float> m_playerCarryCapacity{};
-
-    DynArray<save::WardrobeEntry> m_wardrobeEntries{};
-
-    // In theory we don't need this
-    RTTI_IMPL_TYPEINFO(PlayerSaveData);
-    RTTI_IMPL_ALLOCATOR();
-};
-} // namespace redscript
-
-RTTI_DEFINE_CLASS(redscript::PlayerSaveData, {
-    RTTI_PROPERTY(m_isValid);
-    RTTI_PROPERTY(m_playerPerkPoints);
-    RTTI_PROPERTY(m_playerRelicPoints);
-    RTTI_PROPERTY(m_playerAttributePoints);
-    RTTI_PROPERTY(m_playerBodyAttribute);
-    RTTI_PROPERTY(m_playerReflexAttribute);
-    RTTI_PROPERTY(m_playerTechAttribute);
-    RTTI_PROPERTY(m_playerIntelligenceAttribute);
-    RTTI_PROPERTY(m_playerCoolAttribute);
-    RTTI_PROPERTY(m_playerBodySkillLevel);
-    RTTI_PROPERTY(m_playerReflexSkillLevel);
-    RTTI_PROPERTY(m_playerTechSkillLevel);
-    RTTI_PROPERTY(m_playerIntelligenceSkillLevel);
-    RTTI_PROPERTY(m_playerCoolSkillLevel);
-    RTTI_PROPERTY(m_playerLevel);
-    RTTI_PROPERTY(m_playerStreetCred);
-    RTTI_PROPERTY(m_playerMoney);
-    RTTI_PROPERTY(m_playerItems);
-    RTTI_PROPERTY(m_playerStashItems);
-    RTTI_PROPERTY(m_knownRecipeTargetItems);
-    RTTI_PROPERTY(m_playerEquippedOperatingSystem);
-    RTTI_PROPERTY(m_playerEquippedKiroshis);
-    RTTI_PROPERTY(m_playerEquippedLegCyberware);
-    RTTI_PROPERTY(m_playerEquippedArmCyberware);
-    RTTI_PROPERTY(m_playerEquippedCardiacSystemCW);
-    RTTI_PROPERTY(m_playerVehicleGarage);
-    RTTI_PROPERTY(m_playerCyberwareCapacity);
-    RTTI_PROPERTY(m_playerCarryCapacity);
-    RTTI_PROPERTY(m_wardrobeEntries);
-});
 
 namespace BlacklistedTDBIDs
 {
@@ -267,17 +88,9 @@ enum class ENewGamePlusStartType
     Invalid
 };
 
-// Sidenote: this does not need IGameSystem inheritance...
-// Whatever
 class NewGamePlusSystem : public IGameSystem
 {
 public:
-    // Should really be ref/wref...
-    PlayerSaveData GetSaveData()
-    {
-        return m_saveData;
-    }
-
     Handle<NGPlusProgressionData> GetProgressionData()
     {
         return m_progressionData;
@@ -413,7 +226,7 @@ public:
         DynArray<int> returnedData{};
         returnedData.Reserve(aSaves->size);
         // Technically a signed/unsigned mismatch, but I have doubts about people having 2 billion+ saves
-        for (auto i = 0; i < aSaves->size; i++)
+        for (auto i = 0u; i < aSaves->size; i++)
         {
             // We need the save index for this...
             auto& saveName = aSaves->entries[i];
@@ -434,7 +247,7 @@ public:
 
             playthroughIds.insert(hash);
 
-            returnedData.PushBack(i);
+            returnedData.PushBack(int(i));
         }
 
         return returnedData;
@@ -447,32 +260,24 @@ public:
             return false;
         }
 
-        // Invalidate and reset
-        m_saveData = PlayerSaveData{};
-
         auto start = std::chrono::high_resolution_clock{}.now();
 
-        try
+        parser::Parser parser{};
+
+        if (!parser.ParseSavegame(*aSaveName))
         {
-            parser::Parser parser{};
-
-            if (!parser.ParseSavegame(*aSaveName))
-            {
-                return false;
-            }
-
-            if (m_progressionData)
-            {
-                m_progressionData.Reset();
-            }
-
-            m_progressionData = MakeHandle<NGPlusProgressionData>(parser);
-        }
-        catch (std::exception e)
-        {
-            PluginContext::Error(std::format("EXCEPTION {}", e.what()));
             return false;
         }
+
+        if (m_progressionData)
+        {
+            // Invalidate already present data
+            m_progressionData.Reset();
+        }
+
+        // Constructor also runs all the progression logic
+        m_progressionData = MakeHandle<NGPlusProgressionData>(parser);
+        m_progressionData->PostProcess();
 
         auto end = std::chrono::high_resolution_clock{}.now();
 
@@ -480,7 +285,6 @@ public:
 
         PluginContext::Spew(std::format("Time taken: {}", duration));
 
-        m_saveData.m_isValid = true;
         return true;
     }
 
@@ -496,9 +300,6 @@ public:
     }
 
 private:
-    // Old now
-    PlayerSaveData m_saveData{};
-
     Handle<NGPlusProgressionData> m_progressionData{};
 
     bool m_isInStandalone{};
@@ -517,7 +318,6 @@ RTTI_DEFINE_CLASS(redscript::NewGamePlusSystem, {
     RTTI_METHOD(ResolveNewGamePlusSaves);
     RTTI_METHOD(GetNewGamePlusState);
     RTTI_METHOD(SetNewGamePlusState);
-    RTTI_METHOD(GetSaveData);
     RTTI_METHOD(GetProgressionData);
     RTTI_METHOD(SetNewGamePlusGameDefinition);
     RTTI_METHOD(IsSaveValidForNewGamePlus);

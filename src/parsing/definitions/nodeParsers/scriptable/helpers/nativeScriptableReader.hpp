@@ -42,7 +42,7 @@ class ScriptableReader : redRTTI::native::NativeReader
     {
         aRet = aEnum->valueList.Back();
 
-        for (auto i = 0; i < aEnum->hashList.size; i++)
+        for (auto i = 0u; i < aEnum->hashList.size; i++)
         {
             if (aEnum->hashList[i] == aName)
             {
@@ -51,7 +51,7 @@ class ScriptableReader : redRTTI::native::NativeReader
             }
         }
 
-        for (auto i = 0; i < aEnum->aliasList.size; i++)
+        for (auto i = 0u; i < aEnum->aliasList.size; i++)
         {
             if (aEnum->aliasList[i] == aName)
             {

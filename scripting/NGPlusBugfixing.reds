@@ -1,8 +1,9 @@
 module NGPlus.EP1Listener
 
 import NGPlus.DifficultyConfig.*
+import NGPlus.*
 
-// General scriptable system-viable retrofixes, old filename is kept for manual installs...
+// General scriptable system-viable retrofixes
 public class NGPlusEP1StatusListener extends ScriptableSystem {
     private let m_questsSystem: ref<QuestsSystem>;
 
@@ -16,9 +17,11 @@ public class NGPlusEP1StatusListener extends ScriptableSystem {
     public final static func ApplyRandomEncounterDisabler(questsSystem: ref<QuestsSystem>) {
         let factValue = 0;
 
-        if GetShouldEnableRandomEncounters() {
+        let settings = UserSettings.Get();
+
+        if settings.enableRandomEncounters {
             factValue = 1;
-        }        
+        }
 
         questsSystem.SetFactStr("ngplus_enable_random_encounters", factValue);
     }
@@ -38,8 +41,11 @@ public class NGPlusEP1StatusListener extends ScriptableSystem {
 
         let ngPlusSystem = GameInstance.GetNewGamePlusSystem();
 
-        ngPlusSystem.Spew("EP1 installed, but not activated: loading...");
-        ngPlusSystem.LoadExpansionIntoSave();
+        // Fix: Encounter testing no longer triggers EP1 activation
+        if ngPlusSystem.IsInNewGamePlusSave() {
+            ngPlusSystem.Spew("EP1 installed, but not activated: loading...");
+            ngPlusSystem.LoadExpansionIntoSave();
+        }
     }
 
     public final func OnRestored(saveVersion: Int32, gameVersion: Int32) -> Void {

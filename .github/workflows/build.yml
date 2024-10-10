@@ -51,19 +51,16 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
           $packagingDir = "./_packaging"
+          $pdbPackaging = "./_pdbDir"
 
           # Create the necessary directories
-          New-Item -ItemType directory -Path $packagingDir/red4ext
-          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/redscript
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/tweaks
-
-          # Copy the build artifacts
           
+          # Copy the build artifact
           Copy-Item -Path ./x64/Release/NewGamePlus.dll -Destination $packagingDir/red4ext/plugins/NewGamePlus
-          Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $packagingDir/red4ext/plugins/NewGamePlus
-
+          
           # Copy over Redscript/tweaks
           Copy-Item -Path ./scripting/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/redscript -Recurse
           Copy-Item -Path ./tweaks/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/tweaks -Recurse
@@ -78,7 +75,8 @@ jobs:
 
           # DLL hash generation
           Get-FileHash -Algorithm SHA256 -Path $packagingDir/red4ext/plugins/NewGamePlus/NewGamePlus.dll | Out-File -FilePath $packagingDir/red4ext/plugins/NewGamePlus/DLLHash.txt -Width 512
-          Get-FileHash -Algorithm SHA256 -Path $packagingDir/red4ext/plugins/NewGamePlus/NewGamePlus.pdb | Out-File -FilePath $packagingDir/red4ext/plugins/NewGamePlus/PDBHash.txt -Width 512
+
+          Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $pdbPackaging
           
           # Create the ZIP file.
           7z a NewGamePlus.zip $packagingDir/*
@@ -88,3 +86,9 @@ jobs:
       with:
         name: newgameplus_${{ env.NGPLUS_COMMIT_SHA }}
         path: _packaging/
+    - name: Upload PDB
+      uses: actions/upload-artifact@v3
+      with:
+        name: newgameplus_pdb_${{ env.NGPLUS_COMMIT_SHA }}
+        path: _pdbDir/
+

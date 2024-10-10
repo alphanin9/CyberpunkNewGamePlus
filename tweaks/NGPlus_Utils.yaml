@@ -87,10 +87,31 @@ Ability.NGPlus_RandomEncounterBossMarker:
 Character.NGPlus_TechDodgeEffector:
   $type: gamedataApplyStatusEffectEffector_Record
   statusEffect: BaseStatusEffect.ForceAllowTechWeaponDodge
+  effectorClassName: "ApplyStatusEffectEffector"
+  applicationTarget: ""
+  removeWithEffector: true
+  inverted: false
+  count: 1
+  instigator: ""
+  useCountWhenRemoving: false
 
 Character.NGPlus_AnyDirDodgeEffector:
   $type: gamedataApplyStatusEffectEffector_Record
   statusEffect: BaseStatusEffect.ForceAllowAnyDirectionDodge
+  effectorClassName: "ApplyStatusEffectEffector"
+  applicationTarget: ""
+  removeWithEffector: true
+  inverted: false
+  count: 1
+  instigator: ""
+  useCountWhenRemoving: false
+
+Ability.NGPlus_SuperDodge:
+  $type: GameplayAbility
+  abilityPackage:
+    effectors:
+      - Character.NGPlus_TechDodgeEffector
+      - Character.NGPlus_AnyDirDodgeEffector
 
 # End of abilities
 

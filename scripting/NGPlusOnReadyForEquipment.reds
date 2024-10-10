@@ -8,7 +8,6 @@ import NGPlus.Ripperdoc.NGPlusTutorialCyberwareProvider
 import EquipmentEx.*
 
 class PlayerProgressionLoader {
-    private let m_ngPlusPlayerSaveData: PlayerSaveData;
     private let m_ngPlusProgression: ref<NGPlusProgressionData>;
     private let m_ngPlusSystem: ref<NewGamePlusSystem>;
     private let m_player: ref<PlayerPuppet>;
@@ -21,8 +20,6 @@ class PlayerProgressionLoader {
     public final func LoadPlayerProgression(player: ref<PlayerPuppet>) -> Void {
         // Has some bugs during the Q001 start, iron them out later!
         this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
-        this.m_ngPlusPlayerSaveData = this.m_ngPlusSystem.GetSaveData();
-
         this.m_ngPlusProgression = this.m_ngPlusSystem.GetProgressionData();
 
         if !IsDefined(this.m_ngPlusProgression) {
