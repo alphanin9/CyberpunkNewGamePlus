@@ -168,7 +168,6 @@ bool HasValidPointOfNoReturnSave()
     {
         if (IsValidForNewGamePlus(i))
         {
-            PluginContext::Spew("Has valid point of no return savegame file!");
             return true;
         }
     }

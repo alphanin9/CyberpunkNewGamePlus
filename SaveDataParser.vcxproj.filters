@@ -131,9 +131,6 @@
     <ClInclude Include="src\parsing\definitions\rttiHelpers\rttiValueReaderNative.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\nativeScriptableReader.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\playerDevelopmentData.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -225,6 +222,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\redscript_api\dataReaders\equipmentExViewManager\viewManagerReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\defaultNodeData.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\interfaceNodeData.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeParsers\parserHelper.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\nodeEntry.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\parsing\definitions\fileInfo.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

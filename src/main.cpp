@@ -14,19 +14,22 @@
 #include "hooking/hooking.hpp"
 #include "util/migration/migration.hpp"
 
-RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::EMainReason aReason, const RED4ext::Sdk* aSdk)
+using namespace Red;
+
+RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReason, const Sdk* aSdk)
 {
 	switch (aReason)
 	{
-	case RED4ext::EMainReason::Load:
+	case EMainReason::Load:
 	{
 		PluginContext::m_redPlugin = aHandle;
 		PluginContext::m_redSdk = aSdk;
 
-		Red::TypeInfoRegistrar::RegisterDiscovered();
+		TypeInfoRegistrar::RegisterDiscovered();
 
-		constexpr auto loadDependenciesFromPluginFolder = true;
-		if constexpr (loadDependenciesFromPluginFolder) {
+		constexpr auto c_loadDependenciesFromPluginFolder = true;
+        if constexpr (c_loadDependenciesFromPluginFolder)
+        {
 			if (!ArchiveXL::RegisterArchive(aHandle, L"NewGamePlus.archive")) {
                 PluginContext::Error("Failed to load archive from the plugin's folder, quitting...");
 				return false;
@@ -62,7 +65,7 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
             });
 		break;
 	}
-	case RED4ext::EMainReason::Unload:
+	case EMainReason::Unload:
 	{
 		if (!hooking::DetachHooking()) {
 			return false;
@@ -75,11 +78,11 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
 	return true;
 }
 
-RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::PluginInfo* aInfo)
+RED4EXT_C_EXPORT void RED4EXT_CALL Query(PluginInfo* aInfo)
 {
 	aInfo->name = L"New Game+";
 	aInfo->author = L"not_alphanine";
-    aInfo->version = RED4EXT_SEMVER_EX(1, 0, 5, RED4EXT_V0_SEMVER_PRERELEASE_TYPE_NONE, 0); // Set your version here.
+    aInfo->version = RED4EXT_SEMVER_EX(1, 1, 0, RED4EXT_V0_SEMVER_PRERELEASE_TYPE_NONE, 0); // Set your version here.
 	aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
 	aInfo->sdk = RED4EXT_SDK_LATEST;
 }

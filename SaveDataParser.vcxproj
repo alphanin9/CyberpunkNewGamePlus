@@ -223,7 +223,12 @@
     <ClInclude Include="src\hooking\hooking.hpp" />
     <ClInclude Include="src\parsing\cursorDef.hpp" />
     <ClInclude Include="src\parsing\definitions\compression\compressionHeader.hpp" />
+    <ClInclude Include="src\parsing\definitions\fileInfo.hpp" />
+    <ClInclude Include="src\parsing\definitions\nodeEntry.hpp" />
+    <ClInclude Include="src\parsing\definitions\nodeParsers\defaultNodeData.hpp" />
+    <ClInclude Include="src\parsing\definitions\nodeParsers\interfaceNodeData.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\inventory\inventoryNode.hpp" />
+    <ClInclude Include="src\parsing\definitions\nodeParsers\parserHelper.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\helpers\nativePersistencyReader.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\persistency\persistencySystemNode.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\quest\factsDBNode.hpp" />
@@ -233,7 +238,6 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\craftBook.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\equipmentSystem.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\classDefinitions\playerDevelopmentData.hpp" />
-    <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\helpers\nativeScriptableReader.hpp" />
     <ClInclude Include="src\parsing\definitions\nodeParsers\stats\statsSystemNode.hpp" />
     <ClInclude Include="src\parsing\definitions\package\packageReader.hpp" />
     <ClInclude Include="src\parsing\fileReader.hpp" />

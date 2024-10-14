@@ -47,6 +47,7 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
           $packagingDir = "./_packaging"
+          $pdbDir = "./_pdb"
 
           # Create the necessary directories
           New-Item -ItemType directory -Path $packagingDir/red4ext
@@ -55,9 +56,11 @@ jobs:
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/redscript
           New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/tweaks
 
+          New-Item -ItemType directory -Path $pdbDir/red4ext/plugins/NewGamePlus
+
           # Copy the build artifacts
           Copy-Item -Path ./x64/Release/NewGamePlus.dll -Destination $packagingDir/red4ext/plugins/NewGamePlus
-          Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $packagingDir/red4ext/plugins/NewGamePlus
+          Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $pdbDir/red4ext/plugins/NewGamePlus
 
           # Copy over Redscript/tweaks
           Copy-Item -Path ./scripting/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/redscript -Recurse
@@ -73,6 +76,7 @@ jobs:
           
           # Create the ZIP file.
           7z a NewGamePlus_${env:NGPLUS_VERSION}.zip $packagingDir/*
+          7z a NewGamePlus_${env:NGPLUS_VERSION}_pdb.zip $pdbDir/*
     - name: Generate hash for .zip
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
@@ -92,3 +96,4 @@ jobs:
           - ${{env.NGPLUS_SHA256}}
         files: | 
           NewGamePlus_${{env.NGPLUS_VERSION }}.zip
+          NewGamePlus_${{env.NGPLUS_VERSION }}_pdb.zip

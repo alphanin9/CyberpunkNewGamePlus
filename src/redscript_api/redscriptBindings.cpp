@@ -21,57 +21,7 @@
 
 #include "definitions/playerSaveData.hpp"
 
-// TODO: redo all of this
-// All of this is SHIT
-// Redesign things: move loaders for different data into their own namespaces, pass handle to progression data around?
-// Maybe figure out how to add things to save metadata and add ngplusActive field to it...
-
-// Small refactor: move complex reader stuff (player development system, equipment system, inventory...) into their own
-// files
-
 using namespace Red;
-
-namespace BlacklistedTDBIDs
-{
-inline constexpr auto MaskCW = TweakDBID("Items.MaskCW");
-inline constexpr auto MaskCWPlus = TweakDBID("Items.MaskCWPlus");
-inline constexpr auto MaskCWPlusPlus = TweakDBID("Items.MaskCWPlusPlus");
-inline constexpr auto Fists = TweakDBID("Items.w_melee_004__fists_a");
-inline constexpr auto PersonalLink = TweakDBID("Items.PersonalLink");
-
-inline constexpr auto PersonalLink2 = TweakDBID("Items.personal_link");
-inline constexpr auto MaTppHead = TweakDBID("Items.PlayerMaTppHead");
-inline constexpr auto WaTppHead = TweakDBID("Items.PlayerWaTppHead");
-inline constexpr auto FppHead = TweakDBID("Items.PlayerFppHead");
-inline constexpr auto HolsteredFists = TweakDBID("Items.HolsteredFists");
-
-inline constexpr auto MQ024DataCarrier = TweakDBID("Items.mq024_sandra_data_carrier");
-inline constexpr auto Skippy = TweakDBID("Items.mq007_skippy");
-inline constexpr auto SkippyPostQuest = TweakDBID("Items.mq007_skippy_post_quest");
-inline constexpr auto PresetSkippy = TweakDBID("Items.Preset_Yukimura_Skippy");
-inline constexpr auto PresetSkippyPostQuest = TweakDBID("Items.Preset_Yukimura_Skippy_PostQuest");
-
-inline constexpr auto SaburoDataCarrier = TweakDBID("Items.q005_saburo_data_carrier");
-inline constexpr auto SaburoDataCarrierCracked = TweakDBID("Items.q005_saburo_data_carrier_cracked");
-inline constexpr auto Q003Chip = TweakDBID("Items.q003_chip");
-inline constexpr auto Q003ChipCracked = TweakDBID("Items.q003_chip_cracked");
-inline constexpr auto Q003ChipCrackedFunds = TweakDBID("Items.q003_chip_cracked_funds");
-
-inline constexpr auto CyberdeckSplinter = TweakDBID("Items.CyberdeckSplinter");
-inline constexpr auto TiconGwent = TweakDBID("Items.Preset_Ticon_Gwent");
-inline constexpr auto WitcherSword = TweakDBID("Items.Preset_Sword_Witcher");
-
-inline bool IsForbidden(TweakDBID aId)
-{
-    // Disgusting
-    return aId == MaskCW || aId == MaskCWPlus || aId == MaskCWPlusPlus || aId == Fists || aId == PersonalLink ||
-           aId == PersonalLink2 || aId == MaTppHead || aId == WaTppHead || aId == FppHead || aId == HolsteredFists ||
-           aId == MQ024DataCarrier || aId == Skippy || aId == SkippyPostQuest || aId == PresetSkippy ||
-           aId == PresetSkippyPostQuest || aId == SaburoDataCarrier || aId == SaburoDataCarrierCracked ||
-           aId == Q003Chip || aId == Q003ChipCracked || aId == Q003ChipCrackedFunds || aId == CyberdeckSplinter ||
-           aId == TiconGwent || aId == WitcherSword;
-}
-}; // namespace BlacklistedTDBIDs
 
 namespace redscript
 {
