@@ -1,3 +1,5 @@
+$dlc: EP1
+
 # Backups - what if I wanna add new stat modifiers?
 Items.NGPlus_JackieLeftGun:
   $base: Items.Preset_Nue_Jackie_Left_Hand
