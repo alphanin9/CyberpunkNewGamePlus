@@ -9,36 +9,44 @@
 
 #include "migration.hpp"
 
+namespace migration
+{
+static std::filesystem::path m_modulePath{};
+}
+
 void migration::RemoveUnusedFiles()
 {
     // To be updated with more later on...
     constexpr std::array c_unusedFiles = {
-        L"red4ext\\plugins\\NewGamePlus\\redscript\\DifficultyAdjustment\\NGPlusDifficultyFixes.reds",
-        L"red4ext\\plugins\\NewGamePlus\\redscript\\Scenario\\NGPlusStatsAdjustmentController.reds",
-        L"red4ext\\plugins\\NewGamePlus\\tweaks\\NGPlus_BasegameFlatPatches.yaml",
-        L"red4ext\\plugins\\NewGamePlus\\redscript\\NGPlusEP1Listener.reds",
-        L"red4ext\\plugins\\NewGamePlus\\redscript\\SpawnTagController.reds"
-        L"red4ext\\plugins\\NewGamePlus\\redscript\\DifficultyAdjustment\\NGPlusDifficultyDefaultConfig.reds"};
-
-    std::wstring modulePath{};
-
-    wil::GetModuleFileNameW(GetModuleHandleW(nullptr), modulePath);
-
-    std::filesystem::path exePath = modulePath;
-    // bin\\x64\\Cyberpunk2077.exe
-    const auto rootDirectory = exePath.parent_path().parent_path().parent_path();
+        L"redscript\\DifficultyAdjustment\\NGPlusDifficultyFixes.reds",
+        L"redscript\\Scenario\\NGPlusStatsAdjustmentController.reds",
+        L"redscript\\NGPlusEP1Listener.reds",
+        L"redscript\\SpawnTagController.reds",
+        L"redscript\\DifficultyAdjustment\\NGPlusDifficultyDefaultConfig.reds",
+        L"tweaks\\NGPlus_BasegameFlatPatches.yaml",
+    };
 
     auto cleanedUpAny = false;
+    auto cleanupFailed = false;
 
     for (auto relativePath : c_unusedFiles)
     {
-        auto pathToFile = rootDirectory / relativePath;
+        auto pathToFile = m_modulePath / relativePath;
+        PluginContext::Spew("Cleaning up {}...", pathToFile.string());
 
         std::error_code ec{};
 
         if (std::filesystem::is_regular_file(pathToFile, ec))
         {
-            std::filesystem::remove(pathToFile, ec);
+            if (!std::filesystem::remove(pathToFile, ec))
+            {
+                PluginContext::Error("Failed to clean up {}, error: {}", pathToFile.string(), ec.message());
+                cleanupFailed = true;
+            }
+            else
+            {
+                PluginContext::Spew("Cleaned file up!");
+            }
             cleanedUpAny = true;
         }
     }
@@ -47,4 +55,19 @@ void migration::RemoveUnusedFiles()
     {
         PluginContext::Spew("Cleaned up unused files...");
     }
+
+    if (cleanupFailed)
+    {
+        PluginContext::Error("Some files were not cleaned! Check the log to get the reasons.");
+    }
+}
+
+// Here to not pollute context.hpp too much
+void migration::SetupModulePath(HMODULE aModule)
+{
+    std::wstring modulePath{};
+    wil::GetModuleFileNameW(aModule, modulePath);
+
+    m_modulePath = modulePath;
+    m_modulePath = m_modulePath.parent_path(); // red4ext/plugins/NewGamePlus
 }

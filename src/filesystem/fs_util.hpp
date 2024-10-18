@@ -8,10 +8,7 @@ namespace files
 inline constexpr const char* c_metadataFileName = "metadata.9.json";
 inline constexpr const char* c_saveFileName = "sav.dat";
 
-std::filesystem::path GetCpSaveFolder();
-bool HasValidPointOfNoReturnSave();
-
-Red::DynArray<Red::CString> LookupSavePaths() noexcept;
+bool HasValidPointOfNoReturnSave() noexcept;
 
 Red::CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexcept;
 

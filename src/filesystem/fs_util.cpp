@@ -20,50 +20,6 @@ using namespace Red;
 
 namespace files
 {
-uintptr_t GetFileHandler()
-{
-    constexpr auto c_fileHandler = 3788966949u;
-
-    // Oops, forgot to deref...
-    static auto s_fileHandler = *UniversalRelocPtr<uintptr_t>(c_fileHandler).GetAddr();
-
-    return s_fileHandler;
-}
-
-CString& GetCpSaveFolder_Raw()
-{
-    constexpr auto c_GetSavedGamesFolderPath = 4293661415u;
-
-    // Returns a static
-    static const auto s_fnGetSavedGamesFolderPath =
-        UniversalRelocFunc<CString&(__fastcall*)()>(c_GetSavedGamesFolderPath);
-
-    static auto& s_savedGamesFolder = s_fnGetSavedGamesFolderPath();
-
-    return s_savedGamesFolder;
-}
-
-std::filesystem::path GetCpSaveFolder()
-{
-    static const auto& s_savedGamesFolder = GetCpSaveFolder_Raw();
-    static const std::filesystem::path s_path = s_savedGamesFolder.c_str();
-
-    return s_path;
-}
-
-// A lot of funcs for file system use some weird stringview-like thing
-struct StringView
-{
-    const char* m_ptr;
-    int m_len;
-
-    StringView(std::string_view aStr)
-        : m_ptr(aStr.data())
-        , m_len(aStr.size())
-    {
-    }
-};
-
 struct FileStreamPtr
 {
     BaseStream* m_stream;
@@ -71,7 +27,6 @@ struct FileStreamPtr
     FileStreamPtr(BaseStream* aStream)
         : m_stream(aStream)
     {
-    
     }
 
     FileStreamPtr() = default;
@@ -101,46 +56,93 @@ struct FileStreamPtr
         return m_stream;
     }
 
+    operator BaseStream*()
+    {
+        return m_stream;
+    }
+
+    operator BaseStream* const() const
+    {
+        return m_stream;
+    }
+
     operator bool() const
     {
         return m_stream != nullptr;
     }
 };
 
-FileStreamPtr OpenFileWithRedReader(const CString& aPath, char aFlags = 0)
+// Note: start using RED4ext string view when it gets merged
+struct StringView
 {
-    constexpr auto c_fileHandler_OpenFileStream = 1917464012u;
+    const char* m_ptr;
+    int m_len;
 
-    static const auto s_fileHandler_OpenFileStream = UniversalRelocFunc<int64_t(__fastcall*)(
-        uintptr_t aThis, FileStreamPtr & aStream, const CString& aName, char aFlags)>(c_fileHandler_OpenFileStream);
+    StringView(std::string_view aStr)
+        : m_ptr(aStr.data())
+        , m_len(aStr.size())
+    {
+    }
+};
 
-    FileStreamPtr ret{};
-
-    s_fileHandler_OpenFileStream(GetFileHandler(), ret, aPath, aFlags);
-
-    return ret;
-}
-
-DynArray<CString> LookupSavePaths() noexcept
+class RedFileManager
 {
-    constexpr auto c_fileHandler_FindFiles = 4051576167u;
+public:
+    static RedFileManager* Get() noexcept
+    {
+        constexpr auto c_fileMgr = 3788966949u;
+        static const auto ptr = UniversalRelocPtr<RedFileManager*>(c_fileMgr);
 
-    static auto s_fnFileHandler_FindFiles = UniversalRelocFunc<int64_t(__fastcall*)(
-        uintptr_t aThis, const CString& aRoot, const StringView& aFileToSearchFor, DynArray<CString>& aRet,
-        bool aRecurse)>(c_fileHandler_FindFiles);
+        return ptr;
+    }
 
-    DynArray<CString> filePaths{};
+    static const CString& GetCyberpunkSaveFolder()
+    {
+        constexpr auto c_GetSavedGamesFolderPath = 4293661415u;
 
-    static const StringView s_metadataName{"metadata.9.json"};
+        static const auto s_fnGetSavedGamesFolderPath =
+            UniversalRelocFunc<CString&(__fastcall*)()>(c_GetSavedGamesFolderPath);
 
-    s_fnFileHandler_FindFiles(GetFileHandler(), GetCpSaveFolder_Raw(), s_metadataName, filePaths, true);
+        static auto& s_savedGamesFolder = s_fnGetSavedGamesFolderPath();
 
-    return filePaths;
-}
+        return s_savedGamesFolder;
+    }
+
+    FileStreamPtr CreateFileStream(const CString& aPath)
+    {
+        constexpr auto c_fileMgr_OpenFileStream = 1917464012u;
+
+        static const auto s_fileMgr_OpenFileStream = UniversalRelocFunc<int64_t(__fastcall*)(RedFileManager*, FileStreamPtr&, const CString&, char)>(
+                c_fileMgr_OpenFileStream);
+
+        FileStreamPtr ret{};
+
+        s_fileMgr_OpenFileStream(this, ret, aPath, 0);
+
+        return ret;
+    }
+
+    DynArray<CString> GetAllSaveMetadata()
+    {
+        constexpr auto c_fileMgr_FindFiles = 4051576167u;
+
+        static const auto s_fileMgr_FindFiles = UniversalRelocFunc<int64_t(__fastcall*)(
+            RedFileManager*, const CString& aRootPath, const StringView& aFileName, DynArray<CString>&,
+            bool aRecurse)>(c_fileMgr_FindFiles);
+
+        static const StringView s_metadata{"metadata.9.json"};
+
+        DynArray<CString> paths{};
+
+        s_fileMgr_FindFiles(this, GetCyberpunkSaveFolder(), s_metadata, paths, true);
+
+        return paths;
+    }
+};
 
 CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexcept
 {
-    static const auto& rootPath = GetCpSaveFolder_Raw();
+    static const auto& rootPath = RedFileManager::GetCyberpunkSaveFolder();
 
     constexpr auto c_mergeDirPath = 836113218u; // Does a few more checks for stuff
     static const auto s_mergeDirPath = 
@@ -162,9 +164,16 @@ CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexc
 }
 
 // No longer checks for PONR, needs a name change
-bool HasValidPointOfNoReturnSave()
+bool HasValidPointOfNoReturnSave() noexcept
 {
-    for (auto& i : LookupSavePaths())
+    auto fileManager = RedFileManager::Get();
+
+    if (!fileManager)
+    {
+        return false;
+    }
+
+    for (auto& i : fileManager->GetAllSaveMetadata())
     {
         if (IsValidForNewGamePlus(i))
         {
@@ -659,7 +668,7 @@ constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
 
 bool IsValidForNewGamePlus(const CString& aSaveName, uint64_t& aPlaythroughHash) noexcept
 {
-    auto engineStream = OpenFileWithRedReader(aSaveName);
+    auto engineStream = RedFileManager::Get()->CreateFileStream(aSaveName);
 
     if (!engineStream)
     {
@@ -671,7 +680,7 @@ bool IsValidForNewGamePlus(const CString& aSaveName, uint64_t& aPlaythroughHash)
 
     save::Metadata metadata{};
 
-    if (!s_loadSaveMetadataFromFile(engineStream.m_stream, metadata))
+    if (!s_loadSaveMetadataFromFile(engineStream, metadata))
     {
         return false;
     }
@@ -692,6 +701,13 @@ bool IsValidForNewGamePlus(const CString& aSaveName, uint64_t& aPlaythroughHash)
     }
 
     if (metadata.isEndGameSave)
+    {
+        return false;
+    }
+
+    // Note: maybe for future implementation of an interesting idea, not sure how the technical side will work yet
+    // It's going to be rad, though
+    if (metadata.debugString == "pre_replay_ponr_save")
     {
         return false;
     }
@@ -746,9 +762,16 @@ bool IsValidForNewGamePlus(const CString& aSaveName) noexcept
 
 bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>& aBuffer) noexcept
 {
+    const auto fileManager = RedFileManager::Get();
+
+    if (!fileManager)
+    {
+        return false;
+    }
+
     // Use engine reader to read file to buffer, since fstream seems to be failing...
     auto filePath = GetRedPathToSaveFile(aSaveName.c_str(), c_saveFileName);
-    auto stream = OpenFileWithRedReader(filePath, 0);
+    auto stream = fileManager->CreateFileStream(filePath);
 
     if (!stream)
     {
@@ -757,6 +780,7 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
 
     const auto fileSize = stream->GetLength();
 
+    // At this point, why not just use std::unique_ptr or some new struct for RAII of game allocator results? We don't care about vector's additional stuff anyway
     aBuffer = std::vector<std::byte>(fileSize);
 
     stream->ReadWrite(&aBuffer[0], fileSize);

@@ -128,6 +128,7 @@ public:
         constexpr auto standalonePathNoEP1 =
             ResourcePath::HashSanitized("mod/quest/NewGamePlus_Standalone_NoEP1.gamedef");
 
+        // Note: I believe EP1 and non-EP1 resolving should take place here, not script-side
         switch (aStartType)
         {
         case ENewGamePlusStartType::StartFromQ001:

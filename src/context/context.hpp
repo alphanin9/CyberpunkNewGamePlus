@@ -3,6 +3,7 @@
 
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
+#include <filesystem>
 
 namespace PluginContext {
 	inline bool m_isInStartNewGame{};

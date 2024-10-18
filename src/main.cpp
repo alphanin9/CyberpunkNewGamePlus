@@ -25,6 +25,8 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReaso
 		PluginContext::m_redPlugin = aHandle;
 		PluginContext::m_redSdk = aSdk;
 
+		migration::RemoveUnusedFiles();
+
 		TypeInfoRegistrar::RegisterDiscovered();
 
 		constexpr auto c_loadDependenciesFromPluginFolder = true;
@@ -53,8 +55,6 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReaso
 		if (!hooking::InitializeHooking()) {
 			return false;
 		}
-
-		migration::RemoveUnusedFiles();
 
 		PluginContext::m_rtti = Red::CRTTISystem::Get();
         PluginContext::m_rtti->AddPostRegisterCallback(
@@ -90,4 +90,15 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(PluginInfo* aInfo)
 RED4EXT_C_EXPORT uint32_t RED4EXT_CALL Supports()
 {
 	return RED4EXT_API_VERSION_LATEST;
+}
+
+// Note: added to grab module ptr for migration to get NG+ path
+BOOL APIENTRY DllMain(HMODULE aModule, DWORD aReason, LPVOID)
+{
+    if (aReason == DLL_PROCESS_ATTACH)
+    {
+        migration::SetupModulePath(aModule);
+	}
+
+	return TRUE;
 }
