@@ -30,6 +30,12 @@ class PlayerProgressionLoader {
         this.m_player = player;
         this.m_isEp1 = IsEP1();
 
+        if !this.m_player.IsPlayerControlled() {
+            this.m_ngPlusSystem.Error("Note: player is not player-controlled!");
+        }
+
+        this.m_ngPlusSystem.Spew(s"Adding progression data to \(this.m_player.GetEntityID())");
+
         this.m_transactionSystem = GameInstance.GetTransactionSystem(this.m_player.GetGame());
         this.m_statsSystem = GameInstance.GetStatsSystem(this.m_player.GetGame());
         this.m_delaySystem = GameInstance.GetDelaySystem(this.m_player.GetGame());
@@ -270,9 +276,17 @@ class PlayerProgressionLoader {
             this.m_ngPlusSystem.Error("Stash entity was not loaded after all!");
             return;
         }
-
+        
+        let errCount = 0;
+        
         for stashItem in this.m_ngPlusProgression.GetPlayerInventory().GetStash() {
-            this.AddItemToInventory(stashItem, stashEntity, true);
+            if !this.AddItemToInventory(stashItem, stashEntity, true) {
+                errCount += 1;
+            }
+        }
+
+        if errCount > 0 {
+            this.m_ngPlusSystem.Error(s"[Stash] Number of items not transferred: \(errCount)");
         }
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerStash done!");
@@ -290,8 +304,16 @@ class PlayerProgressionLoader {
 
         this.m_transactionSystem.GiveItem(this.m_player, ItemID.FromTDBID(t"Items.money"), inventory.GetMoney());
 
+        let errCount = 0;
+
         for inventoryItem in inventory.GetInventory() {
-            this.AddItemToInventory(inventoryItem, this.m_player, true);
+            if !this.AddItemToInventory(inventoryItem, this.m_player, true) {
+                errCount += 1;
+            }
+        }
+
+        if errCount > 0 {
+            this.m_ngPlusSystem.Error(s"[Inventory] Number of items not transferred: \(errCount)");
         }
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerInventory done!");
@@ -489,12 +511,20 @@ class NewGamePlusProgressionLoader extends ScriptableSystem {
             return;
         }
 
-        let player = GameInstance.GetPlayerSystem(GetGameInstance()).GetLocalPlayerMainGameObject() as PlayerPuppet;
+        let player = GameInstance.GetPlayerSystem(GetGameInstance()).GetLocalPlayerControlledGameObject() as PlayerPuppet;
 
         if !IsDefined(player) {
             this.m_questsSystem.SetFactStr("ngplus_apply_progression", 0);
             this.m_ngPlusSystem.Error("NewGamePlusProgressionLoader::OnProgressionTransferCalled, player not found");
             return;
+        }
+
+        let recordId = player.GetRecordID();
+
+        if Equals(recordId, t"Character.Player_Puppet_Base") {
+            this.m_ngPlusSystem.Spew("Player has good TDBID!");
+        } else {
+            this.m_ngPlusSystem.Spew(s"Player has bad TDBID: \(recordId)");
         }
 
         let loader = new PlayerProgressionLoader();
