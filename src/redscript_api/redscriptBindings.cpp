@@ -279,14 +279,14 @@ public:
         // Rebuilt IsEntityInInteriorArea
         if (!m_playerSystem || !m_questsSystem)
         {
-            m_isExterior = true;
+            m_isExterior = false;
             return;
         }
 
         if (!m_modConfig.m_enableRandomEncounters || !m_modConfig.m_useExteriorDetectionForRandomEncounters ||
             !m_isInNewGamePlusSave)
         {
-            m_isExterior = true;
+            m_isExterior = false;
             return;
         }
 
@@ -295,7 +295,7 @@ public:
 
         if (!player || player->status != EntityStatus::Attached)
         {
-            m_isExterior = true;
+            m_isExterior = false;
             return;
         }
 
@@ -307,7 +307,7 @@ public:
 
         if (!unk2)
         {
-            m_isExterior = true;
+            m_isExterior = false;
             return;
         }
         
@@ -319,7 +319,10 @@ public:
 
     void TickFactsDB()
     {
-        raw::QuestsSystem::FactsDB(m_questsSystem)->SetFact("ngplus_is_outside", static_cast<int>(m_isExterior));
+        if (m_questsSystem)
+        {
+            raw::QuestsSystem::FactsDB(m_questsSystem)->SetFact("ngplus_is_outside", static_cast<int>(m_isExterior));
+        }
     }
 #pragma endregion
 
