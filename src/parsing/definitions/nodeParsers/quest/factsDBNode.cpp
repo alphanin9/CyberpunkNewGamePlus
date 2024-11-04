@@ -5,7 +5,7 @@
 #include "../../nodeEntry.hpp"
 #include "../parserHelper.hpp"
 
-#include <context.hpp>
+#include <context/context.hpp>
 
 namespace save
 {
@@ -34,14 +34,6 @@ void FactsDBNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 
     // Apparently some trailing stuff gets thrown in...
     aCursor.seekTo(aNode.offset + aNode.GetExpectedSize());
-
-    constexpr auto testReader = false;
-
-    if constexpr (testReader) 
-    {
-        PluginContext::Spew(std::format("NG+ active: {}", GetFact("ngplus_active")));
-        PluginContext::Spew(std::format("Q101 done: {}", GetFact("q101_done")));
-    }
 }
 
 // Not very efficient, might get slow...
