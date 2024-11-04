@@ -1,16 +1,14 @@
 #include <RED4ext/RED4ext.hpp>
-
-#include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
-#include <RED4ext/Scripting/Natives/Generated/quest/PhaseInstance.hpp>
-#include <RED4ext/Scripting/Natives/Generated/quest/NodeDefinition.hpp>
-#include <RED4ext/Scripting/Natives/Generated/quest/DynamicSpawnSystemNodeDefinition.hpp>
-#include <RED4ext/Scripting/Natives/Generated/quest/DynamicVehicleSpawn_NodeType.hpp>
-#include <RED4ext/Scripting/Natives/Generated/quest/DynamicVehicleDespawn_NodeType.hpp>
-
 #include <RedLib.hpp>
 
-#include <context.hpp>
-#include "../util/offsetPtr.hpp"
+#include <RED4ext/Scripting/Natives/Generated/quest/DynamicSpawnSystemNodeDefinition.hpp>
+#include <RED4ext/Scripting/Natives/Generated/quest/DynamicVehicleDespawn_NodeType.hpp>
+#include <RED4ext/Scripting/Natives/Generated/quest/DynamicVehicleSpawn_NodeType.hpp>
+#include <RED4ext/Scripting/Natives/Generated/quest/NodeDefinition.hpp>
+#include <RED4ext/Scripting/Natives/Generated/quest/PhaseInstance.hpp>
+#include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
+
+#include <raw/questsSystem.hpp>
 
 using namespace Red;
 
@@ -19,79 +17,26 @@ namespace test
 // Dynamic spawn system testing, use at-will quest node execution to spawn random encounters
 namespace DynamicSpawnSystemTests
 {
-using QuestNodeID = uint16_t;
-using QuestNodePath = DynArray<QuestNodeID>;
-using QuestNodePathHash = uint32_t;
-
-struct QuestPhaseContext
-{
-    virtual ~QuestPhaseContext() = default;
-
-    uintptr_t m_game;              // 08
-    uintptr_t m_unk1;              // 10
-    uintptr_t m_unk2;              // 18
-    uintptr_t m_unk3;              // 20
-    uintptr_t m_unk4;              // 28
-    void* m_prefabLoader;        // 30
-    uint8_t m_unk38[0x230 - 0x38]; // 38
-};
-RED4EXT_ASSERT_SIZE(QuestPhaseContext, 0x230);
-
-struct QuestContext
-{
-    uint8_t m_unk0[0xF8];                         // 00
-    DynArray<questPhaseInstance*> m_phaseStack; // F8
-    QuestNodeID m_nodeID;                       // 108
-    QuestPhaseContext m_phaseContext;           // 110
-};
-RED4EXT_ASSERT_SIZE(QuestContext, 0x340);
-RED4EXT_ASSERT_OFFSET(QuestContext, m_phaseStack, 0xF8);
-
-struct QuestNodeSocket
-{
-    QuestNodeSocket(CName aName = {})
-        : m_name(aName)
-        , m_unk08(0)
-    {
-    }
-
-    CName m_name;
-    uint8_t m_unk08;
-};
-
-constexpr auto QuestsSystem_CreateContext = 3144298192u;
-constexpr auto QuestPhaseInstance_ExecuteNode = 3227858325u;
-
 // Runs a single quest node
 // https://github.com/psiberx/cp2077-codeware/blob/7f511885624e7785c8b2311f855883ed4b747fb3/src/App/Quest/QuestPhaseExecutor.hpp#L20
-void RunQuestNode(Handle<quest::NodeDefinition> aNode)
+void RunQuestNode(Handle<quest::NodeDefinition>& aNode)
 {
     auto questsSystem = GetGameSystem<quest::QuestsSystem>();
 
-    auto questMutex = util::OffsetPtr<0x60, SharedSpinLock>::Ptr(questsSystem);
-    auto rootPhase = util::OffsetPtr<0x68, Handle<quest::PhaseInstance>>::Ptr(questsSystem);
+    auto& questMutex = raw::QuestsSystem::QuestMutex::Ref(questsSystem);
+    auto& rootPhase = raw::QuestsSystem::RootPhase::Ref(questsSystem);
 
-    std::unique_lock lock(*questMutex);
+    std::unique_lock _(questMutex);
 
-    using CreateContext_t = void* (*)(quest::QuestsSystem* aThis, QuestContext* aCtx, int a3, int a4, int a5, int a6);
+    raw::QuestsSystem::QuestContext ctx{};
+    raw::QuestsSystem::CreateQuestContext(questsSystem, &ctx, 1, 0, -1, -1);
 
-    static const auto s_createContext = UniversalRelocFunc<CreateContext_t>(QuestsSystem_CreateContext);
+    ctx.m_phaseStack.PushBack(rootPhase);
 
-    QuestContext ctx{};
+    raw::QuestsSystem::QuestNodeSocket socket{};
+    DynArray<raw::QuestsSystem::QuestNodeSocket> outputSockets{};
 
-    s_createContext(questsSystem, &ctx, 1, 0, -1, -1);
-
-    ctx.m_phaseStack.PushBack(rootPhase->GetPtr());
-
-    using ExecuteNode_t = uint8_t (*)(quest::PhaseInstance* aPhase, quest::NodeDefinition* aInputNode, QuestContext& aCtx,
-                                    const QuestNodeSocket& aInputSocket, DynArray<QuestNodeSocket>& aOutputSockets);
-
-    static const auto s_executeQuestNode = UniversalRelocFunc<ExecuteNode_t>(QuestPhaseInstance_ExecuteNode);
-
-    QuestNodeSocket socket{};
-    DynArray<QuestNodeSocket> outputSockets{};
-
-    s_executeQuestNode(rootPhase->GetPtr(), aNode, ctx, socket, outputSockets);
+    raw::QuestsSystem::PhaseInstance::RunQuestNode(rootPhase, aNode, ctx, socket, outputSockets);
 
     ctx.m_phaseStack.Clear();
 }
@@ -132,8 +77,8 @@ public:
         RunQuestNode(node);
     }
 };
-}
-}
+} // namespace DynamicSpawnSystemTests
+} // namespace test
 
 RTTI_DEFINE_CLASS(test::DynamicSpawnSystemTests::NGPlusDynamicSpawnSystem, {
     RTTI_METHOD(RequestDynamicSpawnSystemSpawn);

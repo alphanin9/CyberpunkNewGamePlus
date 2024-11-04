@@ -1,9 +1,8 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
-#include <context.hpp>
-
-#include <scriptable/helpers/classDefinitions/playerDevelopmentData.hpp>
+#include <context/context.hpp>
+#include <parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/playerDevelopmentData.hpp>
 
 #include "playerDevelopmentSystemReader.hpp"
 

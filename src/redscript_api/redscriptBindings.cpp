@@ -1,4 +1,9 @@
+#include <chrono>
+#include <unordered_set>
+
 #include <RED4ext/RED4ext.hpp>
+#include <RedLib.hpp>
+
 #include <RED4ext/Scripting/Natives/Generated/game/ConstantStatModifierData_Deprecated.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemCategory_Record.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType.hpp>
@@ -6,20 +11,20 @@
 #include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
 #include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
 
-#include <RedLib.hpp>
+#include <RED4ext/Scripting/Natives/entIPlacedComponent.hpp>
 
-#include <context.hpp>
+#include <context/context.hpp>
 
-#include "../filesystem/fs_util.hpp"
-#include "../parsing/fileReader.hpp"
+#include <filesystem/filesystem.hpp>
+#include <parsing/fileReader.hpp>
 
-#include "../util/offsetPtr.hpp"
-#include "../util/threads.hpp"
-
-#include <chrono>
-#include <unordered_set>
+#include <util/settings/settingsAccessor.hpp>
 
 #include "definitions/playerSaveData.hpp"
+
+#include <raw/playerSystem.hpp>
+#include <raw/questsSystem.hpp>
+#include <raw/world.hpp>
 
 using namespace Red;
 
@@ -66,26 +71,48 @@ public:
         m_isInStandalone = aNewState;
     }
 
+    static constexpr ResourcePath c_ngPlusQuest = R"(mod\quest\newgameplus.quest)";
+    static constexpr ResourcePath c_ngPlusPrologueQuest = R"(mod\quest\newgameplus_q001.quest)";
+    static constexpr ResourcePath c_ngPlusStandaloneQuest = R"(mod\quest\newgameplus_standalone.quest)";
+
     bool IsInNewGamePlusSave()
     {
-        auto questsSystem = GetGameSystem<quest::QuestsSystem>();
-
-        if (!questsSystem)
+        if (!m_questsSystem)
         {
             return false;
         }
 
         // https://github.com/psiberx/cp2077-archive-xl/blob/9653e9d2eb07831941533fdff3839fc9bef80c8d/src/Red/QuestsSystem.hpp#L169
         // Should be accessed somewhere in QuestsSystem::OnGameLoad, I think?
-        auto& questsList = util::OffsetPtr<0xA8, DynArray<ResourcePath>>::Ref(questsSystem);
-
-        constexpr std::array c_ngPlusQuests = {ResourcePath(R"(mod\quest\NewGamePlus.quest)"),
-                                               ResourcePath(R"(mod\quest\NewGamePlus_Standalone.quest)"),
-                                               ResourcePath(R"(mod\quest\NewGamePlus_Q001.quest)")};
+        auto& questsList = raw::QuestsSystem::QuestsList::Ref(m_questsSystem);
 
         for (auto questResource : questsList)
         {
-            if (std::find(c_ngPlusQuests.begin(), c_ngPlusQuests.end(), questResource) != c_ngPlusQuests.end())
+            if (questResource == c_ngPlusQuest || questResource == c_ngPlusPrologueQuest ||
+                questResource == c_ngPlusStandaloneQuest)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Only checks for NG+ and NG+ Q001 quests, not standalone
+    bool IsInNonStandaloneNewGamePlusSave()
+    {
+        if (!m_questsSystem)
+        {
+            return false;
+        }
+
+        // https://github.com/psiberx/cp2077-archive-xl/blob/9653e9d2eb07831941533fdff3839fc9bef80c8d/src/Red/QuestsSystem.hpp#L169
+        // Should be accessed somewhere in QuestsSystem::OnGameLoad, I think?
+        auto& questsList = raw::QuestsSystem::QuestsList::Ref(m_questsSystem);
+
+        for (auto questResource : questsList)
+        {
+            if (questResource == c_ngPlusQuest || questResource == c_ngPlusPrologueQuest)
             {
                 return true;
             }
@@ -96,22 +123,18 @@ public:
 
     void LoadExpansionIntoSave()
     {
-        // We only have the one expansion... Thank God
-
-        // TODO: move all hashes into a header?
         // Vtable index 62
         // Sig: 48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 33 ED B8
-        constexpr auto addQuestHash = 1617892594u;
 
-        // Maybe check if EP1 is already running? Eh, the Redscript side already does...
-
-        static const auto fnAddQuest =
-            UniversalRelocFunc<void(__fastcall*)(quest::QuestsSystem * aQuestsSystem, ResourcePath aPath)>(
-                addQuestHash);
+        if (!m_questsSystem)
+        {
+            PluginContext::Error("[LoadExpansionIntoSave] m_questsSystem == NULL");
+            return;
+        }
 
         constexpr ResourcePath EP1 = R"(ep1\quest\ep1.quest)";
 
-        fnAddQuest(GetGameSystem<quest::QuestsSystem>(), EP1);
+        raw::QuestsSystem::AddQuest(m_questsSystem, EP1);
     }
 
     void SetNewGamePlusGameDefinition(ENewGamePlusStartType aStartType)
@@ -250,10 +273,102 @@ public:
         PluginContext::Error(aStr->c_str());
     }
 
+#pragma region InteriorDetection
+    void TickInteriors()
+    {
+        // Rebuilt IsEntityInInteriorArea
+        if (!m_playerSystem || !m_questsSystem)
+        {
+            m_isExterior = true;
+            return;
+        }
+
+        if (!m_modConfig.m_enableRandomEncounters || !m_modConfig.m_useExteriorDetectionForRandomEncounters ||
+            !m_isInNewGamePlusSave)
+        {
+            m_isExterior = true;
+            return;
+        }
+
+        Handle<game::Object> player{};
+        raw::cp::PlayerSystem::GetPlayerControlledGameObject(m_playerSystem, player);
+
+        if (!player || player->status != EntityStatus::Attached)
+        {
+            m_isExterior = true;
+            return;
+        }
+
+        auto runtimeScene = player->runtimeScene;
+
+        // *(_QWORD *)(*(_QWORD *)(*(_QWORD *)(entityPtr + 0xB8) + 8LL) + 112LL) )
+        auto unk1 = util::OffsetPtr<0x8, void*>::Ref(runtimeScene);
+        auto unk2 = util::OffsetPtr<0x70, void*>::Ref(unk1);
+
+        if (!unk2)
+        {
+            m_isExterior = true;
+            return;
+        }
+        
+        auto& coordinates = player->transformComponent->worldTransform.Position;
+        int result{};
+
+        m_isExterior = *raw::World::IsInInterior(unk2, &result, coordinates, false) == 0;
+    }
+
+    void TickFactsDB()
+    {
+        raw::QuestsSystem::FactsDB(m_questsSystem)->SetFact("ngplus_is_outside", static_cast<int>(m_isExterior));
+    }
+#pragma endregion
+
+#pragma region Overrides
+    void OnTick(FrameInfo& aFrame, JobQueue& aJob)
+    {
+        TickInteriors();
+        TickFactsDB();
+    }
+
+    void OnRegisterUpdates(UpdateRegistrar* aRegistrar) override
+    {
+        aRegistrar->RegisterUpdate(UpdateTickGroup::EntityUpdateState, this, "NewGamePlusSystem/Tick",
+                                   [this](FrameInfo& aFrame, JobQueue& aJob) { this->OnTick(aFrame, aJob); });
+    }
+
+    void OnGamePrepared() override
+    {
+        m_questsSystem = GetGameSystem<quest::QuestsSystem>();
+        m_playerSystem = GetGameSystem<cp::PlayerSystem>();
+
+        m_modConfig = settings::GetRandomEncounterSettings();
+        // I think we should be using a save node for this
+        m_isInNewGamePlusSave = IsInNonStandaloneNewGamePlusSave();
+    }
+
+    void OnWorldDetached(world::RuntimeScene* aScene)
+    {
+        // Clean up state
+
+        m_playerSystem = nullptr;
+        m_questsSystem = nullptr;
+
+        m_isInNewGamePlusSave = false;
+        m_isExterior = true;
+    }
+#pragma endregion
 private:
     Handle<NGPlusProgressionData> m_progressionData{};
 
+    settings::ModConfig m_modConfig{};
+
+    bool m_isExterior{};
+
+    bool m_isInNewGamePlusSave{};
     bool m_isInStandalone{};
+
+    cp::PlayerSystem* m_playerSystem{};
+    quest::QuestsSystem* m_questsSystem{};
 
     RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
     RTTI_IMPL_ALLOCATOR();

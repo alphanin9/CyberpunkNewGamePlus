@@ -6,9 +6,8 @@
 #include <chrono>
 #include <unordered_map>
 
-#include <context.hpp>
+#include <context/context.hpp>
 
-// Currently unused, is meant to replace nativeScriptableReader...
 namespace package
 {
 bool Package::ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aRet) noexcept
@@ -160,7 +159,6 @@ void Package::ReadEnum(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBase
     // Scriptable systems only seem to use actualSize=4
     if (enumType->actualSize == 0)
     {
-        PluginContext::Error("Package::ReadEnum, enumType->actualSize == 0");
         return;
     }
 
@@ -308,8 +306,8 @@ bool Package::TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::C
 
         if (!this->TryReadValue(aCursor, propPtr, propTypeExpected))
         {
-            PluginContext::Error(std::format("NativeScriptableReader::TryReadClass, failed to read prop {}::{}",
-                                             classType->GetName().ToString(), propData->name.ToString()));
+            PluginContext::Error("NativeScriptableReader::TryReadClass, failed to read prop {}::{}",
+                                             classType->GetName().ToString(), propData->name.ToString());
         }
     }
 
@@ -342,7 +340,7 @@ Red::Handle<Red::ISerializable> Package::ReadChunkById(std::size_t aId, bool aRo
     
     if (!ret)
     {
-        PluginContext::Error(std::format("Package::ReadChunkById failed reading chunk {}!", aId));
+        PluginContext::Error("Package::ReadChunkById failed reading chunk {}!", aId);
     }
 
     m_objects.insert_or_assign(aId, handle);
@@ -419,7 +417,7 @@ Red::Handle<Red::ISerializable>* Package::GetChunkByTypeName(Red::CName aType) n
 
     if (!objType)
     {
-        PluginContext::Spew(std::format("Type {} does not have a corresponding RTTI entry!", aType.ToString()));
+        PluginContext::Spew("Type {} does not have a corresponding RTTI entry!", aType.ToString());
         return nullptr;
     }
 

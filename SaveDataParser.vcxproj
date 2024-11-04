@@ -94,7 +94,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ExternalIncludePath>$(ExternalIncludePath)</ExternalIncludePath>
-    <IncludePath>deps\red4ext.sdk\include;deps\json\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\lz4\lib;deps\tweakxl\support\red4ext;deps\minhook\include;deps\wil\include;src\context;src\parsing\definitions\nodeParsers;$(IncludePath)</IncludePath>
+    <IncludePath>deps\red4ext.sdk\include;deps\redlib\include;deps\redlib\vendor;deps\archivexl\support\red4ext;deps\tweakxl\support\red4ext;deps\lz4\lib;deps\minhook\include;deps\wil\include;src\;$(IncludePath)</IncludePath>
     <EnableClangTidyCodeAnalysis>false</EnableClangTidyCodeAnalysis>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <ClangTidyChecks>clang-diagnostic-pragma-once-outside-header</ClangTidyChecks>
@@ -186,7 +186,7 @@
     <ClCompile Include="deps\minhook\src\hde\hde64.c" />
     <ClCompile Include="deps\minhook\src\hook.c" />
     <ClCompile Include="deps\minhook\src\trampoline.c" />
-    <ClCompile Include="src\filesystem\fs_util.cpp" />
+    <ClCompile Include="src\filesystem\filesystem.cpp" />
     <ClCompile Include="src\hooking\hooking.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\parsing\definitions\nodeParsers\parserHelper.cpp" />
@@ -208,6 +208,7 @@
     <ClCompile Include="src\redscript_api\definitions\playerSaveData.cpp" />
     <ClCompile Include="src\redscript_api\testingDefs.cpp" />
     <ClCompile Include="src\util\migration\migration.cpp" />
+    <ClCompile Include="src\util\settings\settingsAccessor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="deps\minhook\src\buffer.h" />
@@ -219,7 +220,8 @@
     <ClInclude Include="deps\minhook\src\trampoline.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="src\context\context.hpp" />
-    <ClInclude Include="src\filesystem\fs_util.hpp" />
+    <ClInclude Include="src\detail\hashes.hpp" />
+    <ClInclude Include="src\filesystem\filesystem.hpp" />
     <ClInclude Include="src\hooking\hooking.hpp" />
     <ClInclude Include="src\parsing\cursorDef.hpp" />
     <ClInclude Include="src\parsing\definitions\compression\compressionHeader.hpp" />
@@ -244,6 +246,10 @@
     <ClCompile Include="src\redscript_api\redscriptBindings.cpp">
       <FileType>CppHeader</FileType>
     </ClCompile>
+    <ClInclude Include="src\raw\playerSystem.hpp" />
+    <ClInclude Include="src\raw\questsSystem.hpp" />
+    <ClInclude Include="src\raw\redFilesystem.hpp" />
+    <ClInclude Include="src\raw\world.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\craftingSystem\craftingSystemReader.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\equipmentExOutfitSystem\outfitSystemReader.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\equipmentExViewManager\viewManagerReader.hpp" />
@@ -255,8 +261,9 @@
     <ClInclude Include="src\redscript_api\dataReaders\vehicleGarage\vehicleGarageReader.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\wardrobeSystem\wardrobeReader.hpp" />
     <ClInclude Include="src\redscript_api\definitions\playerSaveData.hpp" />
+    <ClInclude Include="src\util\core.hpp" />
     <ClInclude Include="src\util\migration\migration.hpp" />
-    <ClInclude Include="src\util\offsetPtr.hpp" />
+    <ClInclude Include="src\util\settings\settingsAccessor.hpp" />
     <ClInclude Include="src\util\threads.hpp" />
   </ItemGroup>
   <ItemGroup>

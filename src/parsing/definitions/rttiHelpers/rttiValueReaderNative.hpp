@@ -1,7 +1,7 @@
 #pragma once
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
-#include <context.hpp>
+#include <context/context.hpp>
 
 #include "../../cursorDef.hpp"
 
@@ -68,26 +68,18 @@ protected:
 
     void ReadDataBuffer(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept
     {
-        // NOTE: this is necessary because, unlike SDK RawBuffer dtor, game RawBuffer dtor does not check if buf allocator is valid...
+        // NOTE: this is necessary because, unlike SDK RawBuffer dtor, game RawBuffer dtor does not check if buf allocator is valid
         // Since we already manage the memory of decompressed save data and we don't use classes after parser gets destructed, it should be fine
         struct RawBufferAllocatorNoFree
         {
             virtual void sub_0()
             {
-                // Do nothing, we don't know what this does...
+                
             }
 
             virtual void Free(void* aPtr)
             {
-                constexpr auto shouldLogFreeCalls = false;
-
-                if constexpr (shouldLogFreeCalls)
-                {
-                    PluginContext::Spew(std::format("RawBufferAllocatorNoFree::Free called, buf: {:#x}",
-                                                    reinterpret_cast<uintptr_t>(aPtr)));
-                }
-                // Do nothing, again...
-                // We clean up the memory anyway
+                
             }
 
             virtual Red::Memory::IAllocator* GetAllocator()
@@ -189,7 +181,6 @@ protected:
             else if (typeName == Red::CName{"DataBuffer"})
             {
                 ReadDataBuffer(aCursor, aOut);
-                // AAAAAAAAAAAAAAAAAAAA
                 return true;
             }
             break;

@@ -2,7 +2,7 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
-#include <stats/statsSystemNode.hpp>
+#include <parsing/definitions/nodeParsers/stats/statsSystemNode.hpp>
 
 // Bits that need to be passed around
 struct ResultContext

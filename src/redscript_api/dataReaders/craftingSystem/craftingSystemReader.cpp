@@ -1,6 +1,6 @@
 #include "craftingSystemReader.hpp"
 
-#include <scriptable/helpers/classDefinitions/craftBook.hpp>
+#include <parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/craftBook.hpp>
 
 using namespace Red;
 

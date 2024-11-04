@@ -1,8 +1,9 @@
 #include "playerSaveData.hpp"
 #include "../dataReaders/resultContext.hpp"
 
-#include <persistency/persistencySystemNode.hpp>
-#include <scriptable/scriptableContainerNodeV2.hpp>
+#include <parsing/definitions/nodeParsers/persistency/persistencySystemNode.hpp>
+#include <parsing/definitions/nodeParsers/scriptable/scriptableContainerNodeV2.hpp>
+#include <parsing/definitions/nodeParsers/stats/statsSystemNode.hpp>
 
 using namespace Red;
 

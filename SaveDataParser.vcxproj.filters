@@ -18,7 +18,7 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\filesystem\fs_util.cpp">
+    <ClCompile Include="src\filesystem\filesystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\parsing\fileReader.cpp">
@@ -102,9 +102,12 @@
     <ClCompile Include="src\redscript_api\dataReaders\equipmentExViewManager\viewManagerReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\util\settings\settingsAccessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\filesystem\fs_util.hpp">
+    <ClInclude Include="src\filesystem\filesystem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\fileReader.hpp">
@@ -185,9 +188,6 @@
     <ClInclude Include="src\parsing\definitions\nodeParsers\wardrobe\wardrobeSystemNode.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\util\offsetPtr.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\parsing\definitions\nodeParsers\scriptable\scriptableContainerNodeV2.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -237,6 +237,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\parsing\definitions\fileInfo.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\settings\settingsAccessor.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\core.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\raw\questsSystem.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\detail\hashes.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\raw\redFilesystem.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\raw\playerSystem.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\raw\world.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

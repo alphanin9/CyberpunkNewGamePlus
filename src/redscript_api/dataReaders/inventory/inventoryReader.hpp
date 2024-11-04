@@ -5,7 +5,7 @@
 #include <RED4ext/Scripting/Natives/Generated/game/ConstantStatModifierData_Deprecated.hpp>
 
 #include "../resultContext.hpp"
-#include <inventory/inventoryNode.hpp>
+#include <parsing/definitions/nodeParsers/inventory/inventoryNode.hpp>
 
 namespace InventoryReader
 {

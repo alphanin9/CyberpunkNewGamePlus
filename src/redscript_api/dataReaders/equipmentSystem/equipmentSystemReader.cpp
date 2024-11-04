@@ -1,6 +1,6 @@
 #include "equipmentSystemReader.hpp"
 
-#include "scriptable/helpers/classDefinitions/equipmentSystem.hpp"
+#include <parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/equipmentSystem.hpp>
 
 using namespace Red;
 

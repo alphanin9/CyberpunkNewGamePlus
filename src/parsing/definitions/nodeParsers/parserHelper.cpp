@@ -12,8 +12,8 @@
 #include "stats/statsSystemNode.hpp"
 #include "wardrobe/wardrobeSystemNode.hpp"
 
-#include "../../cursorDef.hpp"
-#include "../nodeEntry.hpp"
+#include <parsing/cursorDef.hpp>
+#include <parsing/definitions/nodeEntry.hpp>
 
 using ParseNodeFn = std::unique_ptr<save::NodeDataInterface> (*)(FileCursor& cursor, save::NodeEntry& node);
 

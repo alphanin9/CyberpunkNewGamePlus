@@ -6,8 +6,8 @@
 
 #include "../resultContext.hpp"
 
-#include <../package/packageReader.hpp>
-#include <inventory/inventoryNode.hpp>
+#include <parsing/definitions/package/packageReader.hpp>
+#include <parsing/definitions/nodeParsers/inventory/inventoryNode.hpp>
 
 #include <unordered_set>
 

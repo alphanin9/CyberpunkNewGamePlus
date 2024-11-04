@@ -1,6 +1,7 @@
 #include "statsSystemReader.hpp"
-#include "../util/offsetPtr.hpp"
+#include <util/core.hpp>
 
+#include <parsing/definitions/nodeParsers/stats/statsSystemNode.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/ConstantStatModifierData_Deprecated.hpp>
 
 using namespace Red;

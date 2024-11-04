@@ -1,164 +1,32 @@
 #include <algorithm>
-#include <filesystem>
-#include <fstream>
 #include <ranges>
 #include <unordered_set>
-
-#include "Windows.h"
-#include "shlobj_core.h"
 
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/save/MetadataContainer.hpp>
 
-#include "fs_util.hpp"
+#include "filesystem.hpp"
 
-#include <context.hpp>
+#include <context/context.hpp>
+#include <raw/redFilesystem.hpp>
 
 using namespace Red;
 
 namespace files
 {
-struct FileStreamPtr
-{
-    BaseStream* m_stream;
-
-    FileStreamPtr(BaseStream* aStream)
-        : m_stream(aStream)
-    {
-    }
-
-    FileStreamPtr() = default;
-    FileStreamPtr(const FileStreamPtr&) = delete;
-    FileStreamPtr& operator=(const FileStreamPtr&) = delete;
-    FileStreamPtr(FileStreamPtr&&) = default;
-    ~FileStreamPtr()
-    {
-        if (m_stream)
-        {
-            constexpr auto c_fileStream_dtor = 1924865980u;
-
-            static const auto s_fileStream_dtor =
-                UniversalRelocFunc<void(__fastcall*)(FileStreamPtr * aThis)>(c_fileStream_dtor);
-
-            s_fileStream_dtor(this);
-        }
-    }
-
-    BaseStream* operator->()
-    {
-        return m_stream;
-    }
-
-    BaseStream* const operator->() const
-    {
-        return m_stream;
-    }
-
-    operator BaseStream*()
-    {
-        return m_stream;
-    }
-
-    operator BaseStream* const() const
-    {
-        return m_stream;
-    }
-
-    operator bool() const
-    {
-        return m_stream != nullptr;
-    }
-};
-
-// Note: start using RED4ext string view when it gets merged
-struct StringView
-{
-    const char* m_ptr;
-    int m_len;
-
-    StringView(std::string_view aStr)
-        : m_ptr(aStr.data())
-        , m_len(aStr.size())
-    {
-    }
-};
-
-class RedFileManager
-{
-public:
-    static RedFileManager* Get() noexcept
-    {
-        constexpr auto c_fileMgr = 3788966949u;
-        static const auto ptr = UniversalRelocPtr<RedFileManager*>(c_fileMgr);
-
-        return ptr;
-    }
-
-    static const CString& GetCyberpunkSaveFolder()
-    {
-        constexpr auto c_GetSavedGamesFolderPath = 4293661415u;
-
-        static const auto s_fnGetSavedGamesFolderPath =
-            UniversalRelocFunc<CString&(__fastcall*)()>(c_GetSavedGamesFolderPath);
-
-        static auto& s_savedGamesFolder = s_fnGetSavedGamesFolderPath();
-
-        return s_savedGamesFolder;
-    }
-
-    FileStreamPtr CreateFileStream(const CString& aPath)
-    {
-        constexpr auto c_fileMgr_OpenFileStream = 1917464012u;
-
-        static const auto s_fileMgr_OpenFileStream = UniversalRelocFunc<int64_t(__fastcall*)(RedFileManager*, FileStreamPtr&, const CString&, char)>(
-                c_fileMgr_OpenFileStream);
-
-        FileStreamPtr ret{};
-
-        s_fileMgr_OpenFileStream(this, ret, aPath, 0);
-
-        return ret;
-    }
-
-    DynArray<CString> GetAllSaveMetadata()
-    {
-        constexpr auto c_fileMgr_FindFiles = 4051576167u;
-
-        static const auto s_fileMgr_FindFiles = UniversalRelocFunc<int64_t(__fastcall*)(
-            RedFileManager*, const CString& aRootPath, const StringView& aFileName, DynArray<CString>&,
-            bool aRecurse)>(c_fileMgr_FindFiles);
-
-        static const StringView s_metadata{"metadata.9.json"};
-
-        DynArray<CString> paths{};
-
-        s_fileMgr_FindFiles(this, GetCyberpunkSaveFolder(), s_metadata, paths, true);
-
-        return paths;
-    }
-};
-
 CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexcept
 {
-    static const auto& rootPath = RedFileManager::GetCyberpunkSaveFolder();
-
-    constexpr auto c_mergeDirPath = 836113218u; // Does a few more checks for stuff
-    static const auto s_mergeDirPath = 
-        UniversalRelocFunc<CString*(__fastcall*)(const CString&, CString*, const StringView&)>(c_mergeDirPath);
-
-    constexpr auto c_mergeFilePaths = 1194333091u;
-    static const auto s_mergeFilePaths =
-        UniversalRelocFunc<CString*(__fastcall*)(const CString&, CString*, const StringView&)>(c_mergeFilePaths);
+    static const auto& rootPath = raw::Filesystem::Path::GetSaveFolder();
 
     CString saveFolder{};
 
-    s_mergeDirPath(rootPath, &saveFolder, StringView{aSaveName});
+    raw::Filesystem::Path::MergeDirToPath(rootPath, &saveFolder, aSaveName);
 
     CString filePath{};
 
-    s_mergeFilePaths(saveFolder, &filePath, StringView{aFileName});
+    raw::Filesystem::Path::MergeFileToPath(saveFolder, &filePath, aFileName);
 
     return filePath;
 }
@@ -166,14 +34,16 @@ CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexc
 // No longer checks for PONR, needs a name change
 bool HasValidPointOfNoReturnSave() noexcept
 {
-    auto fileManager = RedFileManager::Get();
+    auto fileManager = raw::Filesystem::RedFileManager::GetInstance();
 
     if (!fileManager)
     {
         return false;
     }
 
-    for (auto& i : fileManager->GetAllSaveMetadata())
+    static const auto& c_saveFolder = raw::Filesystem::Path::GetSaveFolder();
+
+    for (auto& i : fileManager->FindFilesByName(c_saveFolder, "metadata.9.json"))
     {
         if (IsValidForNewGamePlus(i))
         {
@@ -189,7 +59,8 @@ constexpr std::int64_t c_minSupportedGameVersion = 2000;
 
 // Hacky-ish way to get save selection to filter saves that are potentially bad (Post-epilogue, for example...)
 constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
-    // Q307, some are stripped due to being accessible in basegame... (Not sure if I stripped all the right ones, though?)
+    // Q307, some are stripped due to being accessible in basegame... (Not sure if I stripped all the right ones,
+    // though?)
     FNV1a64("ep1/quests/main_quest/q307_before_tomorrow/00_hook/02_confirm_pickup"),
     FNV1a64("ep1/quests/main_quest/q307_before_tomorrow/00_hook/02c_talk_johnny"),
     FNV1a64("ep1/quests/main_quest/q307_before_tomorrow/00_hook/03c_text_friends"),
@@ -604,10 +475,8 @@ constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
     FNV1a64("quests/main_quest/epilogues/q204_reborn/04_columbarium/talk_steve"),
 
     // Q115, Hanako bit
-    FNV1a64("quests/meta/02_sickness/q115/03_sit_hanako"),
-    FNV1a64("quests/meta/02_sickness/q115/04_talk_hanako"),
-    FNV1a64("quests/meta/02_sickness/q115/05_leave_restaurant"),
-    FNV1a64("quests/meta/02_sickness/q115/06_talk_johnny"),
+    FNV1a64("quests/meta/02_sickness/q115/03_sit_hanako"), FNV1a64("quests/meta/02_sickness/q115/04_talk_hanako"),
+    FNV1a64("quests/meta/02_sickness/q115/05_leave_restaurant"), FNV1a64("quests/meta/02_sickness/q115/06_talk_johnny"),
     FNV1a64("quests/meta/02_sickness/q115/07_reactivate_elevator"),
     FNV1a64("quests/meta/02_sickness/q115_ripperdoc/00_talk_johnny"),
     FNV1a64("quests/meta/02_sickness/q115_ripperdoc/00b_talk_johnny"),
@@ -645,46 +514,33 @@ constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
     FNV1a64("quests/meta/02_sickness/q115_ripperdoc/13_leave_misty"),
 
     // Secret ending
-    FNV1a64("quests/meta/09_solo/404/000_talk_johnny"),
-    FNV1a64("quests/meta/09_solo/404/00b_find_way"),
-    FNV1a64("quests/meta/09_solo/404/00c_gain_access_elev"),
-    FNV1a64("quests/meta/09_solo/404/00d2_defeat_enemies"),
-    FNV1a64("quests/meta/09_solo/404/00d_find_loot"),
-    FNV1a64("quests/meta/09_solo/404/00e_take_elev"),
-    FNV1a64("quests/meta/09_solo/404/01b_find_mikoshi"),
-    FNV1a64("quests/meta/09_solo/404/01c2_clear_control"),
-    FNV1a64("quests/meta/09_solo/404/01c_talk_johnny"),
-    FNV1a64("quests/meta/09_solo/404/01d_connect_alt"),
-    FNV1a64("quests/meta/09_solo/404/01e_to_mikoshi"),
-    FNV1a64("quests/meta/09_solo/404/01f2_clear_nest"),
-    FNV1a64("quests/meta/09_solo/404/01f_figure_out"),
-    FNV1a64("quests/meta/09_solo/404/01g_raise_mainframe"),
-    FNV1a64("quests/meta/09_solo/404/01h_wait_mainframe"),
-    FNV1a64("quests/meta/09_solo/404/02_defeat_smasher"),
-    FNV1a64("quests/meta/09_solo/404/02b_decide_smasher"),
-    FNV1a64("quests/meta/09_solo/404/03_get_to_access"),
-    FNV1a64("quests/meta/09_solo/404/04_jack_in")
-};
+    FNV1a64("quests/meta/09_solo/404/000_talk_johnny"), FNV1a64("quests/meta/09_solo/404/00b_find_way"),
+    FNV1a64("quests/meta/09_solo/404/00c_gain_access_elev"), FNV1a64("quests/meta/09_solo/404/00d2_defeat_enemies"),
+    FNV1a64("quests/meta/09_solo/404/00d_find_loot"), FNV1a64("quests/meta/09_solo/404/00e_take_elev"),
+    FNV1a64("quests/meta/09_solo/404/01b_find_mikoshi"), FNV1a64("quests/meta/09_solo/404/01c2_clear_control"),
+    FNV1a64("quests/meta/09_solo/404/01c_talk_johnny"), FNV1a64("quests/meta/09_solo/404/01d_connect_alt"),
+    FNV1a64("quests/meta/09_solo/404/01e_to_mikoshi"), FNV1a64("quests/meta/09_solo/404/01f2_clear_nest"),
+    FNV1a64("quests/meta/09_solo/404/01f_figure_out"), FNV1a64("quests/meta/09_solo/404/01g_raise_mainframe"),
+    FNV1a64("quests/meta/09_solo/404/01h_wait_mainframe"), FNV1a64("quests/meta/09_solo/404/02_defeat_smasher"),
+    FNV1a64("quests/meta/09_solo/404/02b_decide_smasher"), FNV1a64("quests/meta/09_solo/404/03_get_to_access"),
+    FNV1a64("quests/meta/09_solo/404/04_jack_in")};
 
-bool IsValidForNewGamePlus(const CString& aSaveName, uint64_t& aPlaythroughHash) noexcept
+bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughHash) noexcept
 {
-    auto engineStream = RedFileManager::Get()->CreateFileStream(aSaveName);
+    auto engineStream = raw::Filesystem::RedFileManager::GetInstance()->OpenFileStream(aSaveFullPath);
 
     if (!engineStream)
     {
         return false;
     }
 
-    constexpr auto c_loadSaveMetadataFromFile = 1649938065u;
-    static const auto s_loadSaveMetadataFromFile = UniversalRelocFunc <bool(__fastcall*)(BaseStream* aPtr, save::Metadata & aMetadata)>(c_loadSaveMetadataFromFile);
-
     save::Metadata metadata{};
 
-    if (!s_loadSaveMetadataFromFile(engineStream, metadata))
+    if (!raw::SaveMetadata::LoadSaveMetadataFromStream(engineStream, metadata))
     {
         return false;
     }
-    
+
     constexpr CName c_pcPlatformName = "pc";
     constexpr CName c_steamDeckPlatformName = "steamdeck";
 
@@ -754,15 +610,15 @@ bool IsValidForNewGamePlus(const CString& aSaveName, uint64_t& aPlaythroughHash)
     return false;
 }
 
-bool IsValidForNewGamePlus(const CString& aSaveName) noexcept
+bool IsValidForNewGamePlus(const CString& aSaveFullPath) noexcept
 {
     uint64_t dummy{};
-    return IsValidForNewGamePlus(aSaveName, dummy);
+    return IsValidForNewGamePlus(aSaveFullPath, dummy);
 }
 
 bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>& aBuffer) noexcept
 {
-    const auto fileManager = RedFileManager::Get();
+    const auto fileManager = raw::Filesystem::RedFileManager::GetInstance();
 
     if (!fileManager)
     {
@@ -771,7 +627,7 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
 
     // Use engine reader to read file to buffer, since fstream seems to be failing...
     auto filePath = GetRedPathToSaveFile(aSaveName.c_str(), c_saveFileName);
-    auto stream = fileManager->CreateFileStream(filePath);
+    auto stream = fileManager->OpenFileStream(filePath);
 
     if (!stream)
     {
@@ -780,7 +636,8 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
 
     const auto fileSize = stream->GetLength();
 
-    // At this point, why not just use std::unique_ptr or some new struct for RAII of game allocator results? We don't care about vector's additional stuff anyway
+    // At this point, why not just use std::unique_ptr or some new struct for RAII of game allocator results? We don't
+    // care about vector's additional stuff anyway
     aBuffer = std::vector<std::byte>(fileSize);
 
     stream->ReadWrite(&aBuffer[0], fileSize);

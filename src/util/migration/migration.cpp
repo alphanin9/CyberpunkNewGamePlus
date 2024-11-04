@@ -5,7 +5,7 @@
 #include <wil/stl.h>
 #include <wil/win32_helpers.h>
 
-#include <context.hpp>
+#include <context/context.hpp>
 
 #include "migration.hpp"
 

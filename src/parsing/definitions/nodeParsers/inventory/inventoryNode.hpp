@@ -8,7 +8,7 @@
 #include "../interfaceNodeData.hpp"
 #include "../parserHelper.hpp"
 
-#include <context.hpp>
+#include <context/context.hpp>
 
 // TODO: Optimize this
 // Make this use Red structures instead of STL for noexcept stuff?

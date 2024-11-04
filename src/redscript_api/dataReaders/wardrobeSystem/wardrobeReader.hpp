@@ -1,8 +1,7 @@
 #pragma once
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
-
-#include <wardrobe/wardrobeSystemNode.hpp>
+#include <parsing/definitions/nodeParsers/wardrobe/wardrobeSystemNode.hpp>
 
 namespace WardrobeReader
 {

@@ -1,7 +1,7 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
-#include <context.hpp>
+#include <context/context.hpp>
 
 #include <MinHook.h>
 
@@ -53,6 +53,8 @@ namespace hooking {
 	}
 
 	bool InitializeHooking() {
+		// TODO: move this to proper game session transition using system from replay
+		// As soon as we have initial loading screen implemented
 		const auto addrSelectGameDefinition = Red::UniversalRelocBase::Resolve(SelectGameDefinition::m_fnHash);
         const auto addrStartNewGame = Red::UniversalRelocBase::Resolve(StartNewGame::m_fnHash);
 

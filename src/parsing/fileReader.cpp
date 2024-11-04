@@ -16,10 +16,10 @@
 #include <RedLib.hpp>
 #include <lz4.h>
 
-#include <context.hpp>
+#include <context/context.hpp>
 
-#include "../filesystem/fs_util.hpp"
-#include "../util/threads.hpp"
+#include <filesystem/filesystem.hpp>
+#include <util/threads.hpp>
 
 // Copypasted from WolvenKit :(
 

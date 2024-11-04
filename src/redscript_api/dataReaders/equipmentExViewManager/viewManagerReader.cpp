@@ -1,7 +1,5 @@
 #include "viewManagerReader.hpp"
 
-#include <../package/packageReader.hpp>
-
 using namespace Red;
 
 ViewManagerReader::ViewManagerResults::ViewManagerResults(Red::Handle<Red::ISerializable>* aViewManager) noexcept
