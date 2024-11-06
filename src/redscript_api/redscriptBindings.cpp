@@ -24,6 +24,7 @@
 
 #include <raw/playerSystem.hpp>
 #include <raw/questsSystem.hpp>
+#include <raw/save.hpp>
 #include <raw/world.hpp>
 
 using namespace Red;
@@ -41,6 +42,11 @@ enum class ENewGamePlusStartType
     StartFromQ101_ProgressionBuild_NoEP1,
     Count,
     Invalid
+};
+
+enum class ENewGamePlusSaveVersion : std::uint32_t
+{
+    Initial = 1u
 };
 
 class NewGamePlusSystem : public IGameSystem
@@ -77,49 +83,48 @@ public:
 
     bool IsInNewGamePlusSave()
     {
-        if (!m_questsSystem)
-        {
-            return false;
-        }
-
-        // https://github.com/psiberx/cp2077-archive-xl/blob/9653e9d2eb07831941533fdff3839fc9bef80c8d/src/Red/QuestsSystem.hpp#L169
-        // Should be accessed somewhere in QuestsSystem::OnGameLoad, I think?
-        auto& questsList = raw::QuestsSystem::QuestsList::Ref(m_questsSystem);
-
-        for (auto questResource : questsList)
-        {
-            if (questResource == c_ngPlusQuest || questResource == c_ngPlusPrologueQuest ||
-                questResource == c_ngPlusStandaloneQuest)
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return m_isInNewGamePlusPrologue || m_isInNewGamePlusHeist || m_isInNewGamePlusStandalone;
     }
 
     // Only checks for NG+ and NG+ Q001 quests, not standalone
     bool IsInNonStandaloneNewGamePlusSave()
     {
+        return m_isInNewGamePlusPrologue || m_isInNewGamePlusHeist;
+    }
+
+    void UpdateNewGamePlusState()
+    {
         if (!m_questsSystem)
         {
-            return false;
+            return;
         }
 
         // https://github.com/psiberx/cp2077-archive-xl/blob/9653e9d2eb07831941533fdff3839fc9bef80c8d/src/Red/QuestsSystem.hpp#L169
         // Should be accessed somewhere in QuestsSystem::OnGameLoad, I think?
         auto& questsList = raw::QuestsSystem::QuestsList::Ref(m_questsSystem);
 
+        // We can't have multiple NG+ quests in the same game, so returning immediately is fine
         for (auto questResource : questsList)
         {
-            if (questResource == c_ngPlusQuest || questResource == c_ngPlusPrologueQuest)
+            if (questResource == c_ngPlusQuest)
             {
-                return true;
+                m_isInNewGamePlusHeist = true;
+                return;
+            }
+            else if (questResource == c_ngPlusPrologueQuest)
+            {
+                m_isInNewGamePlusPrologue = true;
+                return;
+            }
+            else if (questResource == c_ngPlusStandaloneQuest)
+            {
+                m_isInNewGamePlusStandalone = true;
+                return;
             }
         }
-
-        return false;
     }
+
+    
 
     void LoadExpansionIntoSave()
     {
@@ -339,17 +344,72 @@ public:
                                    [this](FrameInfo& aFrame, JobQueue& aJob) { this->OnTick(aFrame, aJob); });
     }
 
+    void OnGameLoad(const JobGroup& aJobGroup, bool& aSuccess, void* aStream) override
+    {
+        auto stream = static_cast<BaseStream*>(aStream);
+
+        static auto s_nodeName = CNamePool::Add("NewGamePlusSystem");
+        
+        raw::Save::NodeAccessor node(stream, s_nodeName, false, false);
+
+        if (!node.m_nodeIsPresentInSave)
+        {
+            // Not NG+ save, skip it
+            return;
+        }
+
+        ENewGamePlusSaveVersion version{};
+
+        stream->ReadWriteEx(&version);
+
+        if (version >= ENewGamePlusSaveVersion::Initial)
+        {
+            stream->ReadWriteEx(&m_isInNewGamePlusPrologue);
+            stream->ReadWriteEx(&m_isInNewGamePlusHeist);
+            stream->ReadWriteEx(&m_isInNewGamePlusStandalone);
+        }
+
+        m_restoredDataFromSave = true;
+    }
+
+    std::uint32_t OnBeforeGameSave(const JobGroup& aJobGroup, void* aMetadataObject) override
+    {
+        // Unfortunately we can't add more metadata from mod, would be very useful
+        return static_cast<std::uint32_t>(IsInNewGamePlusSave()); // We only need to do anything when NG+ is active
+    }
+
+    void OnGameSave(void* aStream) override
+    {
+        auto stream = static_cast<BaseStream*>(aStream);
+
+        static auto s_nodeName = CNamePool::Add("NewGamePlusSystem");
+
+        raw::Save::NodeAccessor node(stream, s_nodeName, true, false);
+
+        auto version = ENewGamePlusSaveVersion::Initial;
+
+        stream->ReadWriteEx(&version);
+        stream->ReadWriteEx(&m_isInNewGamePlusPrologue);
+        stream->ReadWriteEx(&m_isInNewGamePlusHeist);
+        stream->ReadWriteEx(&m_isInNewGamePlusStandalone);
+    }
+
     void OnGamePrepared() override
     {
         m_questsSystem = GetGameSystem<quest::QuestsSystem>();
         m_playerSystem = GetGameSystem<cp::PlayerSystem>();
 
         m_modConfig = settings::GetRandomEncounterSettings();
-        // I think we should be using a save node for this
+        // If we haven't restored, update NG+ config
+        if (!m_restoredDataFromSave)
+        {
+            UpdateNewGamePlusState();
+        }
+
         m_isInNewGamePlusSave = IsInNonStandaloneNewGamePlusSave();
     }
 
-    void OnWorldDetached(world::RuntimeScene* aScene)
+    void OnWorldDetached(world::RuntimeScene* aScene) override
     {
         // Clean up state
 
@@ -357,7 +417,13 @@ public:
         m_questsSystem = nullptr;
 
         m_isInNewGamePlusSave = false;
-        m_isExterior = true;
+
+        m_isInNewGamePlusPrologue = false;
+        m_isInNewGamePlusHeist = false;
+        m_isInNewGamePlusStandalone = false;
+
+        m_isExterior = false;
+        m_restoredDataFromSave = false;
     }
 #pragma endregion
 private:
@@ -366,6 +432,11 @@ private:
     settings::ModConfig m_modConfig{};
 
     bool m_isExterior{};
+    bool m_restoredDataFromSave{};
+
+    bool m_isInNewGamePlusPrologue{};
+    bool m_isInNewGamePlusHeist{};
+    bool m_isInNewGamePlusStandalone{};
 
     bool m_isInNewGamePlusSave{};
     bool m_isInStandalone{};

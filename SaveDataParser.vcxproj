@@ -249,6 +249,7 @@
     <ClInclude Include="src\raw\playerSystem.hpp" />
     <ClInclude Include="src\raw\questsSystem.hpp" />
     <ClInclude Include="src\raw\redFilesystem.hpp" />
+    <ClInclude Include="src\raw\save.hpp" />
     <ClInclude Include="src\raw\world.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\craftingSystem\craftingSystemReader.hpp" />
     <ClInclude Include="src\redscript_api\dataReaders\equipmentExOutfitSystem\outfitSystemReader.hpp" />

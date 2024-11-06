@@ -23,6 +23,12 @@ constexpr auto QuestsSystem_CreateContext = 3144298192u;
 constexpr auto QuestPhaseInstance_ExecuteNode = 3227858325u;
 #pragma endregion
 
+#pragma region Save
+constexpr auto SaveNodeAccessor_ctor = 3391557872u;
+constexpr auto SaveNodeAccessor_dtor = 2159741197u;
+constexpr auto SaveNodeAccessor_IsGoodNode = 2352744844u;
+#pragma endregion
+
 #pragma region SaveMetadata
 constexpr auto SaveMetadata_LoadSaveMetadataFromFile = 1649938065u;
 #pragma endregion

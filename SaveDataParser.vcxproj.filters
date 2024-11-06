@@ -260,6 +260,9 @@
     <ClInclude Include="src\raw\world.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\raw\save.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="NewGamePlus.rc">
