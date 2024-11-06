@@ -33,6 +33,10 @@ constexpr auto SaveNodeAccessor_IsGoodNode = 2352744844u;
 constexpr auto SaveMetadata_LoadSaveMetadataFromFile = 1649938065u;
 #pragma endregion
 
+#pragma region Telemetry
+constexpr auto Telemetry_LoadUsedFactsForImportantFactsList = 3923848734u;
+#pragma endregion
+
 #pragma region World
 constexpr auto World_IsInInterior = 3384552122u;
 #pragma endregion
