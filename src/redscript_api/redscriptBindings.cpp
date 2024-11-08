@@ -407,6 +407,11 @@ public:
         }
 
         m_isInNewGamePlusSave = IsInNonStandaloneNewGamePlusSave();
+
+        if constexpr (c_forceOutdoorsSpawns)
+        {
+            m_isInNewGamePlusSave = true;
+        }
     }
 
     void OnWorldDetached(world::RuntimeScene* aScene) override
@@ -443,6 +448,8 @@ private:
 
     cp::PlayerSystem* m_playerSystem{};
     quest::QuestsSystem* m_questsSystem{};
+
+    static constexpr auto c_forceOutdoorsSpawns = true;
 
     RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
     RTTI_IMPL_ALLOCATOR();
