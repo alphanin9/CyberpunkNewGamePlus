@@ -1,5 +1,5 @@
 set_project("New Game+")
-set_version("1.1.1", {build="%y%m%d%h"})
+set_version("1.1.1", {build="%y%m%d%H%M"})
 
 set_arch("x64")
 set_languages("c++latest")
@@ -12,7 +12,7 @@ set_optimize("faster")
 add_cxxflags("/Zi /Ob2 /Oi /GL")
 set_runtimes("MD")
 
-add_requires("lz4", "minhook", "wil")
+add_requires("lz4", "minhook", "semver", "wil")
 
 target("New Game+")
     set_default(true)
@@ -23,9 +23,15 @@ target("New Game+")
     add_headerfiles("src/**.hpp")
     add_includedirs("src/")
     add_deps("red4ext.sdk", "redlib", "archivexl", "tweakxl")
-    add_packages("lz4", "minhook", "wil")
+    add_packages("lz4", "minhook", "semver", "wil")
     add_syslinks("Version", "User32")
     add_defines("WINVER=0x0601", "WIN32_LEAN_AND_MEAN", "NOMINMAX")
+    set_configdir("src")
+    add_configfiles("config/projectTemplate.hpp.in", {prefixdir="config"})
+    add_configfiles("config/projectMetadata.rc.in", {prefixdir="config"})
+    set_configvar("NAME", "New Game+")
+    set_configvar("DESC", "New Game+ for Cyberpunk 2077")
+    set_configvar("AUTHOR_NAME", "not_alphanine")
     on_package(function(target)
         os.rm("packaging/*")
         os.rm("packaging_pdb/*")
@@ -47,7 +53,7 @@ target("New Game+")
         os.mkdir("packaging_pdb/red4ext/plugins/NewGamePlus")
 
         os.cp(path.join(
-            path.directory(targetfile), 
+            path.directory(targetfile),
             path.basename(targetfile)..".pdb" -- Evil hack
         ), "packaging_pdb/red4ext/plugins/NewGamePlus")
     end)
