@@ -5,12 +5,6 @@ on:
     tags:
       - v*.*.*
 
-env:
-  # Path to the solution file relative to the root of the project.
-  SOLUTION_FILE_PATH: ./SaveDataParser.vcxproj
-  BUILD_CONFIGURATION: Release
-  BUILD_PLATFORM: x64
-
 permissions:
   contents: write
 
@@ -32,51 +26,27 @@ jobs:
           echo "NGPLUS_VERSION=${version}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
           echo "NGPLUS_COMMITS_SINCE_LAST_TAG=${changes} | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append"
       
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
+    - name: Setup XMake
+      uses: xmake-io/github-action-setup-xmake@v1
+      with:
+        xmake-version: latest
 
-    - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+    - name: Update XMake repo
+      run: xmake.exe repo --update
 
-    - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=${{env.BUILD_PLATFORM}} ${{env.SOLUTION_FILE_PATH}}
+    - name: Configure XMake and install dependencies
+      run: xmake.exe config --yes
+
+    - name: Build and bundle with XMake
+      run: xmake.exe package
 
     - name: Prepare ZIP
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
-          $packagingDir = "./_packaging"
-          $pdbDir = "./_pdb"
-
-          # Create the necessary directories
-          New-Item -ItemType directory -Path $packagingDir/red4ext
-          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins
-          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus
-          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/redscript
-          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/tweaks
-
-          New-Item -ItemType directory -Path $pdbDir/red4ext/plugins/NewGamePlus
-
-          # Copy the build artifacts
-          Copy-Item -Path ./x64/Release/NewGamePlus.dll -Destination $packagingDir/red4ext/plugins/NewGamePlus
-          Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $pdbDir/red4ext/plugins/NewGamePlus
-
-          # Copy over Redscript/tweaks
-          Copy-Item -Path ./scripting/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/redscript -Recurse
-          Copy-Item -Path ./tweaks/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/tweaks -Recurse
-
-          # Copy over archive and .xl file (TODO: pack .archive dynamically)
-          Copy-Item -Path ./wolvenkit/packed/archive/pc/mod/NewGamePlus.archive -Destination $packagingDir/red4ext/plugins/NewGamePlus
-          Copy-Item -Path ./wolvenkit/packed/archive/pc/mod/NewGamePlus.archive.xl -Destination $packagingDir/red4ext/plugins/NewGamePlus
-
-          # Copy the license and third-party licenses
-          Copy-Item -Path ./LICENSE -Destination $packagingDir/red4ext/plugins/NewGamePlus/LICENSE
-          Copy-Item -Path ./THIRDPARTY_LICENSES -Destination $packagingDir/red4ext/plugins/NewGamePlus/THIRD_PARTY_LICENSES
-          
-          # Create the ZIP file.
-          7z a NewGamePlus_${env:NGPLUS_VERSION}.zip $packagingDir/*
-          7z a NewGamePlus_${env:NGPLUS_VERSION}_pdb.zip $pdbDir/*
+          # Create the ZIP files.
+          7z a NewGamePlus_${env:NGPLUS_VERSION}.zip packaging/*
+          7z a NewGamePlus_${env:NGPLUS_VERSION}_pdb.zip packaging_pdb/*
+  
     - name: Generate hash for .zip
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |

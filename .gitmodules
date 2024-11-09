@@ -7,15 +7,6 @@
 [submodule "deps/archivexl"]
 	path = deps/archivexl
 	url = https://github.com/psiberx/cp2077-archive-xl.git
-[submodule "deps/lz4"]
-	path = deps/lz4
-	url = https://github.com/lz4/lz4.git
 [submodule "deps/tweakxl"]
 	path = deps/tweakxl
 	url = https://github.com/psiberx/cp2077-tweak-xl.git
-[submodule "deps/minhook"]
-	path = deps/minhook
-	url = https://github.com/TsudaKageyu/minhook.git
-[submodule "deps/wil"]
-	path = deps/wil
-	url = https://github.com/microsoft/wil.git

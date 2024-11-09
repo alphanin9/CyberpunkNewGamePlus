@@ -1,0 +1,6 @@
+#include <semver.hpp>
+
+namespace build 
+{
+constexpr auto c_version = semver::from_string_noexcept("${VERSION}").value();
+}
