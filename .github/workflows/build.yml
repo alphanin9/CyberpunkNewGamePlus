@@ -29,6 +29,9 @@ jobs:
     - name: Update XMake repo
       run: xmake.exe repo --update
 
+    - name: Configure XMake and install dependencies
+      run: xmake.exe config --yes
+
     - name: Build and bundle with XMake
       run: xmake.exe package
 
