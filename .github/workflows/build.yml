@@ -1,23 +1,8 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Build artifact on commit
 
 on:
+  pull_request:
   push:
-    branches: [ "main" ]
-
-env:
-  # Path to the solution file relative to the root of the project.
-  SOLUTION_FILE_PATH: ./SaveDataParser.vcxproj
-
-  # Configuration type to build.
-  # You can convert this to a build matrix if you need coverage of multiple configuration types.
-  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-  BUILD_CONFIGURATION: Release
-  BUILD_PLATFORM: x64
 
 permissions:
   contents: read
@@ -35,64 +20,29 @@ jobs:
       run: |
           $commitSha = (git rev-parse --short $env:GITHUB_SHA)
           echo "NGPLUS_COMMIT_SHA=${commitSha}" | Out-File -FilePath $env:GITHUB_ENV -Encoding UTF8 -Append
-      
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v1.0.2
+    
+    - name: Setup XMake
+      uses: xmake-io/github-action-setup-xmake@v1
+      with:
+        xmake-version: latest
 
-    - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+    - name: Update XMake repo
+      run: xmake.exe repo --update
 
-    - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform=${{env.BUILD_PLATFORM}} ${{env.SOLUTION_FILE_PATH}}
-
-    - name: Prepare ZIP
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: |
-          $packagingDir = "./_packaging"
-          $pdbPackaging = "./_pdbDir"
-
-          # Create the necessary directories
-          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus
-          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/redscript
-          New-Item -ItemType directory -Path $packagingDir/red4ext/plugins/NewGamePlus/tweaks
-          New-Item -ItemType directory -Path $pdbPackaging
-          
-          # Copy the build artifact
-          Copy-Item -Path ./x64/Release/NewGamePlus.dll -Destination $packagingDir/red4ext/plugins/NewGamePlus
-          
-          # Copy over Redscript/tweaks
-          Copy-Item -Path ./scripting/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/redscript -Recurse
-          Copy-Item -Path ./tweaks/* -Destination $packagingDir/red4ext/plugins/NewGamePlus/tweaks -Recurse
-
-          # Copy over archive and .xl file (TODO: pack .archive dynamically)
-          Copy-Item -Path ./wolvenkit/packed/archive/pc/mod/NewGamePlus.archive -Destination $packagingDir/red4ext/plugins/NewGamePlus
-          Copy-Item -Path ./wolvenkit/packed/archive/pc/mod/NewGamePlus.archive.xl -Destination $packagingDir/red4ext/plugins/NewGamePlus
-
-          # Copy the license and third-party licenses
-          Copy-Item -Path ./LICENSE -Destination $packagingDir/red4ext/plugins/NewGamePlus/LICENSE
-          Copy-Item -Path ./THIRDPARTY_LICENSES -Destination $packagingDir/red4ext/plugins/NewGamePlus/THIRD_PARTY_LICENSES
-
-          # DLL hash generation
-          Get-FileHash -Algorithm SHA256 -Path $packagingDir/red4ext/plugins/NewGamePlus/NewGamePlus.dll | Out-File -FilePath $packagingDir/red4ext/plugins/NewGamePlus/DLLHash.txt -Width 512
-
-          Copy-Item -Path ./x64/Release/NewGamePlus.pdb -Destination $pdbPackaging/NewGamePlus.pdb
-          
-          # Create the ZIP file.
-          7z a NewGamePlus.zip $packagingDir/*
+    - name: Build and bundle with XMake
+      run: xmake.exe package
 
     - name: Upload build
       uses: actions/upload-artifact@v3
       with:
         name: newgameplus_${{ env.NGPLUS_COMMIT_SHA }}
-        path: _packaging/
+        path: packaging/
         if-no-files-found: error
 
     - name: Upload PDB
       uses: actions/upload-artifact@v3
       with:
         name: newgameplus_pdb_${{ env.NGPLUS_COMMIT_SHA }}
-        path: _pdbDir/*.pdb
+        path: packaging_pdb/*.pdb
         if-no-files-found: error
 
