@@ -36,16 +36,15 @@ jobs:
       run: xmake.exe package
 
     - name: Upload build
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: newgameplus_${{ env.NGPLUS_COMMIT_SHA }}
         path: packaging/
         if-no-files-found: error
 
     - name: Upload PDB
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: newgameplus_pdb_${{ env.NGPLUS_COMMIT_SHA }}
         path: packaging_pdb/
         if-no-files-found: error
-
