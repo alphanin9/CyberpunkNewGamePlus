@@ -14,6 +14,8 @@ set_runtimes("MD")
 
 add_requires("lz4", "minhook", "semver", "wil")
 
+local cp2077_path = os.getenv("CP2077_PATH")
+
 target("New Game+")
     set_default(true)
     set_kind("shared")
@@ -32,6 +34,7 @@ target("New Game+")
     set_configvar("NAME", "New Game+")
     set_configvar("DESC", "New Game+ for Cyberpunk 2077")
     set_configvar("AUTHOR_NAME", "not_alphanine")
+    set_rundir(path.join(cp2077_path, "bin", "x64"))
     on_package(function(target)
         os.rm("packaging/*")
         os.rm("packaging_pdb/*")
@@ -47,15 +50,30 @@ target("New Game+")
         os.cp("scripting/*", "packaging/red4ext/plugins/NewGamePlus/redscript")
         os.cp("tweaks/*", "packaging/red4ext/plugins/NewGamePlus/tweaks")
         
-        local targetfile = target:targetfile()
+        local target_file = target:targetfile()
 
-        os.cp(targetfile, "packaging/red4ext/plugins/NewGamePlus")
+        os.cp(target_file, "packaging/red4ext/plugins/NewGamePlus")
         os.mkdir("packaging_pdb/red4ext/plugins/NewGamePlus")
 
         os.cp(path.join(
-            path.directory(targetfile),
-            path.basename(targetfile)..".pdb" -- Evil hack
+            path.directory(target_file),
+            path.basename(target_file)..".pdb" -- Evil hack
         ), "packaging_pdb/red4ext/plugins/NewGamePlus")
+    end)
+    on_install(function(target)
+        local target_file = target:targetfile()
+        local plugin_folder = path.join(cp2077_path, "red4ext/plugins/NewGamePlus")
+
+        os.cp(target_file, plugin_folder)
+        os.cp(path.join(
+            path.directory(target_file),
+            path.basename(target_file)..".pdb" -- Evil hack #2
+        ), plugin_folder)
+
+        cprint("${bright green}Installed plugin to "..plugin_folder)
+    end)
+    on_run(function(target)
+        os.run(path.join(cp2077_path, "bin", "x64", "Cyberpunk2077.exe"))
     end)
 
 target("red4ext.sdk")
