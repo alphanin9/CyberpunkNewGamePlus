@@ -367,3 +367,12 @@ FodyWeavers.xsd
 
 # WolvenKit graph editor states
 wolvenkit/GraphEditorStates/
+
+# XMake directories
+.xmake/
+vsxmake2022/
+build/
+
+# Packaging directories
+packaging/
+packaging_pdb/
