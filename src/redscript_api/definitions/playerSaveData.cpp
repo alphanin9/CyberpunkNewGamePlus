@@ -81,7 +81,7 @@ void NGPlusProgressionData::PostProcess() noexcept
 
     constexpr auto c_maxAttributePointCount = (20 - c_minAttributeValue) * c_attributeCount;
 
-    const int allocatedAttributes = (m_statsSystemResults->m_body + m_statsSystemResults->m_cool +
+    const auto allocatedAttributes = static_cast<int>(m_statsSystemResults->m_body + m_statsSystemResults->m_cool +
                                        m_statsSystemResults->m_intelligence + m_statsSystemResults->m_reflexes +
                                        m_statsSystemResults->m_technicalAbility) - c_minAttributeValue * c_attributeCount;
 

@@ -24,14 +24,16 @@
 
 #include <raw/playerSystem.hpp>
 #include <raw/questsSystem.hpp>
+#include <raw/safeAreaManager.hpp>
 #include <raw/save.hpp>
 #include <raw/world.hpp>
 
+#include <util/scopeguard.hpp>
+
 using namespace Red;
 
-namespace redscript
+namespace mod
 {
-
 enum class ENewGamePlusStartType
 {
     StartFromQ001,
@@ -44,9 +46,18 @@ enum class ENewGamePlusStartType
     Invalid
 };
 
+// Not used yet, placeholder
+enum class ENGPlusType
+{
+    StartFromQ001,
+    StartFromQ101,
+    StartFromQ101_ProgressionBuild
+};
+
 enum class ENewGamePlusSaveVersion : std::uint32_t
 {
-    Initial = 1u
+    Initial = 1u,
+    RandomEncounterChickenTestInDetection = 2u
 };
 
 class NewGamePlusSystem : public IGameSystem
@@ -80,16 +91,30 @@ public:
     static constexpr ResourcePath c_ngPlusQuest = R"(mod\quest\newgameplus.quest)";
     static constexpr ResourcePath c_ngPlusPrologueQuest = R"(mod\quest\newgameplus_q001.quest)";
     static constexpr ResourcePath c_ngPlusStandaloneQuest = R"(mod\quest\newgameplus_standalone.quest)";
+    static constexpr ResourcePath c_encounterTestQuest =
+        R"(mod\quest\newgameplus\bossencountertest\bossencountertest.quest)";
+
+    // Only checks for NG+ and NG+ Q001 quests, not standalone
+    // Encounter chicken now as well
+    bool IsGoodForRandomEncounters()
+    {
+        return m_isInNewGamePlusPrologue || m_isInNewGamePlusHeist || m_isInEncounterTest;
+    }
 
     bool IsInNewGamePlusSave()
     {
-        return m_isInNewGamePlusPrologue || m_isInNewGamePlusHeist || m_isInNewGamePlusStandalone;
+        return m_isInNewGamePlusPrologue || m_isInNewGamePlusHeist || m_isInNewGamePlusStandalone ||
+               m_isInEncounterTest;
     }
 
-    // Only checks for NG+ and NG+ Q001 quests, not standalone
-    bool IsInNonStandaloneNewGamePlusSave()
+    bool IsInNewGamePlusPrologue()
     {
-        return m_isInNewGamePlusPrologue || m_isInNewGamePlusHeist;
+        return m_isInNewGamePlusPrologue;
+    }
+
+    bool IsInNewGamePlusHeistOrStandalone()
+    {
+        return m_isInNewGamePlusHeist || m_isInNewGamePlusStandalone;
     }
 
     void UpdateNewGamePlusState()
@@ -121,16 +146,16 @@ public:
                 m_isInNewGamePlusStandalone = true;
                 return;
             }
+            else if (questResource == c_encounterTestQuest)
+            {
+                m_isInEncounterTest = true;
+                return;
+            }
         }
     }
 
-    
-
     void LoadExpansionIntoSave()
     {
-        // Vtable index 62
-        // Sig: 48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 48 83 EC ? 33 ED B8
-
         if (!m_questsSystem)
         {
             PluginContext::Error("[LoadExpansionIntoSave] m_questsSystem == NULL");
@@ -157,6 +182,7 @@ public:
             ResourcePath::HashSanitized("mod/quest/NewGamePlus_Standalone_NoEP1.gamedef");
 
         // Note: I believe EP1 and non-EP1 resolving should take place here, not script-side
+        // We will not need this anyway once we have session launch
         switch (aStartType)
         {
         case ENewGamePlusStartType::StartFromQ001:
@@ -282,16 +308,16 @@ public:
     void TickInteriors()
     {
         // Rebuilt IsEntityInInteriorArea
+
+        util::ScopeGuard guard(m_isExterior, false);
         if (!m_playerSystem || !m_questsSystem)
         {
-            m_isExterior = false;
             return;
         }
 
         if (!m_modConfig.m_enableRandomEncounters || !m_modConfig.m_useExteriorDetectionForRandomEncounters ||
             !m_isInNewGamePlusSave)
         {
-            m_isExterior = false;
             return;
         }
 
@@ -300,7 +326,6 @@ public:
 
         if (!player || player->status != EntityStatus::Attached)
         {
-            m_isExterior = false;
             return;
         }
 
@@ -312,14 +337,19 @@ public:
 
         if (!unk2)
         {
-            m_isExterior = false;
             return;
         }
-        
+
         auto& coordinates = player->transformComponent->worldTransform.Position;
+
+        Vector4 positionAsVec4{coordinates.x.Bits * 0.0000076293945f, coordinates.y.Bits * 0.0000076293945f,
+                               coordinates.z.Bits * 0.0000076293945f, 0};
+
         int result{};
 
-        m_isExterior = *raw::World::IsInInterior(unk2, &result, coordinates, false) == 0;
+        guard.SetEnabled(false);
+
+        m_isExterior = *raw::World::IsInInterior(unk2, &result, coordinates, false) == 0 && !raw::SafeAreaManager::IsPointInSafeArea(m_safeAreaManager, positionAsVec4);
     }
 
     void TickFactsDB()
@@ -349,7 +379,7 @@ public:
         auto stream = static_cast<BaseStream*>(aStream);
 
         static auto s_nodeName = CNamePool::Add("NewGamePlusSystem");
-        
+
         raw::Save::NodeAccessor node(stream, s_nodeName, false, false);
 
         if (!node.m_nodeIsPresentInSave)
@@ -367,6 +397,11 @@ public:
             stream->ReadWriteEx(&m_isInNewGamePlusPrologue);
             stream->ReadWriteEx(&m_isInNewGamePlusHeist);
             stream->ReadWriteEx(&m_isInNewGamePlusStandalone);
+
+            if (version >= ENewGamePlusSaveVersion::RandomEncounterChickenTestInDetection)
+            {
+                stream->ReadWriteEx(&m_isInEncounterTest);
+            }
         }
 
         m_restoredDataFromSave = true;
@@ -386,18 +421,20 @@ public:
 
         raw::Save::NodeAccessor node(stream, s_nodeName, true, false);
 
-        auto version = ENewGamePlusSaveVersion::Initial;
+        auto version = ENewGamePlusSaveVersion::RandomEncounterChickenTestInDetection;
 
         stream->ReadWriteEx(&version);
         stream->ReadWriteEx(&m_isInNewGamePlusPrologue);
         stream->ReadWriteEx(&m_isInNewGamePlusHeist);
         stream->ReadWriteEx(&m_isInNewGamePlusStandalone);
+        stream->ReadWriteEx(&m_isInEncounterTest);
     }
 
     void OnGamePrepared() override
     {
-        m_questsSystem = GetGameSystem<quest::QuestsSystem>();
         m_playerSystem = GetGameSystem<cp::PlayerSystem>();
+        m_questsSystem = GetGameSystem<quest::QuestsSystem>();
+        m_safeAreaManager = GetGameSystem<AI::SafeAreaManager>();
 
         m_modConfig = settings::GetRandomEncounterSettings();
         // If we haven't restored, update NG+ config
@@ -406,12 +443,7 @@ public:
             UpdateNewGamePlusState();
         }
 
-        m_isInNewGamePlusSave = IsInNonStandaloneNewGamePlusSave();
-
-        if constexpr (c_forceOutdoorsSpawns)
-        {
-            m_isInNewGamePlusSave = true;
-        }
+        m_isInNewGamePlusSave = IsGoodForRandomEncounters();
     }
 
     void OnWorldDetached(world::RuntimeScene* aScene) override
@@ -420,12 +452,14 @@ public:
 
         m_playerSystem = nullptr;
         m_questsSystem = nullptr;
+        m_safeAreaManager = nullptr;
 
         m_isInNewGamePlusSave = false;
 
         m_isInNewGamePlusPrologue = false;
         m_isInNewGamePlusHeist = false;
         m_isInNewGamePlusStandalone = false;
+        m_isInEncounterTest = false;
 
         m_isExterior = false;
         m_restoredDataFromSave = false;
@@ -436,30 +470,30 @@ private:
 
     settings::ModConfig m_modConfig{};
 
-    bool m_isExterior{};
     bool m_restoredDataFromSave{};
 
     bool m_isInNewGamePlusPrologue{};
     bool m_isInNewGamePlusHeist{};
     bool m_isInNewGamePlusStandalone{};
+    bool m_isInEncounterTest{};
 
+    bool m_isExterior{};
     bool m_isInNewGamePlusSave{};
     bool m_isInStandalone{};
 
     cp::PlayerSystem* m_playerSystem{};
     quest::QuestsSystem* m_questsSystem{};
-
-    static constexpr auto c_forceOutdoorsSpawns = true;
+    AI::SafeAreaManager* m_safeAreaManager{};
 
     RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
     RTTI_IMPL_ALLOCATOR();
 };
 
-} // namespace redscript
+} // namespace mod
 
-RTTI_DEFINE_ENUM(redscript::ENewGamePlusStartType);
+RTTI_DEFINE_ENUM(mod::ENewGamePlusStartType);
 
-RTTI_DEFINE_CLASS(redscript::NewGamePlusSystem, {
+RTTI_DEFINE_CLASS(mod::NewGamePlusSystem, {
     RTTI_METHOD(ParsePointOfNoReturnSaveData);
     RTTI_METHOD(HasPointOfNoReturnSave);
     RTTI_METHOD(ResolveNewGamePlusSaves);
@@ -474,4 +508,6 @@ RTTI_DEFINE_CLASS(redscript::NewGamePlusSystem, {
     RTTI_METHOD(GetStandaloneState);
     RTTI_METHOD(SetStandaloneState);
     RTTI_METHOD(IsInNewGamePlusSave);
+    RTTI_METHOD(IsInNewGamePlusPrologue);
+    RTTI_METHOD(IsInNewGamePlusHeistOrStandalone);
 });

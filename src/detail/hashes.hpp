@@ -23,6 +23,10 @@ constexpr auto QuestsSystem_CreateContext = 3144298192u;
 constexpr auto QuestPhaseInstance_ExecuteNode = 3227858325u;
 #pragma endregion
 
+#pragma region SafeAreaManager
+constexpr auto SafeAreaManager_IsPointInSafeArea = 2322404505u;
+#pragma endregion
+
 #pragma region Save
 constexpr auto SaveNodeAccessor_ctor = 3391557872u;
 constexpr auto SaveNodeAccessor_dtor = 2159741197u;

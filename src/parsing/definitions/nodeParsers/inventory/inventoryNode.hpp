@@ -201,12 +201,12 @@ enum class ItemStructure : std::uint8_t
 	public:
 		virtual void ReadData(FileCursor& cursor, NodeEntry& node) {
 			const auto count = cursor.readInt();
-			std::size_t offset = 0u;
+			auto offset = 0;
 
 			for (auto i = 0; i < count; i++) {
 				auto subInventory = ReadSubInventory(cursor, node, offset);
 
-				auto inventorySize = subInventory.m_inventoryItems.size();
+				auto inventorySize = static_cast<int>(subInventory.m_inventoryItems.size());
 
 				subInventories.push_back(std::move(subInventory));
 

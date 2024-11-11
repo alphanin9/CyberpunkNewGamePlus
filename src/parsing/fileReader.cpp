@@ -111,7 +111,7 @@ void Parser::DecompressFile() noexcept
                 [subCursor, decompressedSize, endIterator]()
                 {
                     LZ4_decompress_safe(reinterpret_cast<char*>(subCursor.GetCurrentPtr()),
-                                        reinterpret_cast<char*>(endIterator), subCursor.size, decompressedSize);
+                                        reinterpret_cast<char*>(endIterator), static_cast<int>(subCursor.size), decompressedSize);
                 });
 
             endIterator += chunkInfo.decompressedSize;
@@ -139,7 +139,7 @@ void Parser::DecompressFile() noexcept
 
     // Hold on, ain't this just the offset of the first compression block? O_o...
     // Meh, keep it this way - the calc is basically free and gives us perfect result
-    const auto nodeOffsetChangeAmount = compressionTablePosition + emptyByteSize;
+    const auto nodeOffsetChangeAmount = static_cast<int>(compressionTablePosition + emptyByteSize);
 
     for (auto& node : m_flatNodes)
     {
@@ -147,6 +147,7 @@ void Parser::DecompressFile() noexcept
     }
 
     // Timeout value is arbitrary
+    // Note: we can just decompress chunks on demand, there is no need to do this
     WaitForQueue(waiterJob, std::chrono::seconds(15));
 }
 
@@ -275,7 +276,7 @@ bool Parser::LoadNodes() noexcept
     {
         if (!node.isChild)
         {
-            FindChildren(node, m_flatNodes.size());
+            FindChildren(node, static_cast<int>(m_flatNodes.size()));
         }
         if (node.nextId > -1)
         {
@@ -292,7 +293,7 @@ bool Parser::LoadNodes() noexcept
         }
     }
 
-    CalculateTrueSizes(m_nodeList, m_decompressedDataSize);
+    CalculateTrueSizes(m_nodeList, static_cast<int>(m_decompressedDataSize));
 
     JobQueue delayQueue{};
 

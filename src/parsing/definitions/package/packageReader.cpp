@@ -21,20 +21,11 @@ bool Package::ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t
 
     aRet = aEnum->valueList.Back();
 
-    for (auto i = 0; i < aEnum->hashList.size; i++)
+    for (auto i = 0u; i < aEnum->hashList.size; i++)
     {
         if (aEnum->hashList[i] == aName)
         {
             aRet = aEnum->valueList[i];
-            return true;
-        }
-    }
-
-    for (auto i = 0; i < aEnum->aliasList.size; i++)
-    {
-        if (aEnum->aliasList[i] == aName)
-        {
-            aRet = aEnum->aliasValueList[i];
             return true;
         }
     }
@@ -49,14 +40,6 @@ const char* Package::GetEnumString(Red::CEnum* aEnum, std::int64_t aValue) noexc
         if (aEnum->valueList[i] == aValue)
         {
             return aEnum->hashList[i].ToString();
-        }
-    }
-
-    for (auto i = 0u; i < aEnum->aliasValueList.size; i++)
-    {
-        if (aEnum->aliasValueList[i] == aValue)
-        {
-            return aEnum->aliasList[i].ToString();
         }
     }
 
@@ -111,12 +94,12 @@ EnumCache::EnumCache() noexcept
 {
     static const auto statTypes = Red::GetEnum<Red::game::data::StatType>();
 
-    for (std::size_t i = 0u; i < statTypes->hashList.size; i++)
+    for (auto i = 0u; i < statTypes->hashList.size; i++)
     {
         m_map.insert_or_assign(statTypes->hashList[i], statTypes->valueList[i]);
     }
 
-    for (std::size_t i = 0u; i < statTypes->aliasList.size; i++)
+    for (auto i = 0u; i < statTypes->aliasList.size; i++)
     {
         m_map.insert_or_assign(statTypes->aliasList[i], statTypes->aliasValueList[i]);
     }

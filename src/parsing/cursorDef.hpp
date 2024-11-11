@@ -132,15 +132,11 @@ struct FileCursor {
         offset = aSeekOffset;
     }
 
-    static bool byteHasFlag(char byte, char flag) {
+    static bool byteHasFlag(int byte, int flag) {
         return (byte & flag) == flag;
     }
 
     int readVlqInt32() {
-        // FUCK THIS SHIT AAAAAAAAAAAAAAAAA
-        // I WISH I HAD CSHARP'S SHIT SO I COULD JUST COPYPASTE SEBEROTH'S CODE
-        // INSTEAD OF REWRITING ALL THIS SHIT
-
         char b = readByte();
         const auto isNegative = byteHasFlag(b, 0b10000000);
 
@@ -277,11 +273,11 @@ struct FileCursor {
     {
         auto buffer = readLengthPrefixedString();
 
-        auto lengthNeeded = WideCharToMultiByte(CP_UTF8, 0, &buffer[0], buffer.size(), nullptr, 0, nullptr, nullptr);
+        auto lengthNeeded = WideCharToMultiByte(CP_UTF8, 0, &buffer[0], static_cast<int>(buffer.size()), nullptr, 0, nullptr, nullptr);
         
         std::string ret(lengthNeeded, char{});
 
-        WideCharToMultiByte(CP_UTF8, 0, &buffer[0], buffer.size(), &ret[0], lengthNeeded, nullptr, nullptr);
+        WideCharToMultiByte(CP_UTF8, 0, &buffer[0], static_cast<int>(buffer.size()), &ret[0], lengthNeeded, nullptr, nullptr);
         
         return ret;
     }

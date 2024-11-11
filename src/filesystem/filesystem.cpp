@@ -640,7 +640,7 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
     // care about vector's additional stuff anyway
     aBuffer = std::vector<std::byte>(fileSize);
 
-    stream->ReadWrite(&aBuffer[0], fileSize);
+    stream->ReadWrite(&aBuffer[0], static_cast<std::uint32_t>(fileSize));
 
     return true;
 }

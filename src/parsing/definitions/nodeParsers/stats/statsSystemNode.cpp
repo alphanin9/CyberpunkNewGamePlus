@@ -132,7 +132,7 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 
     // Will this help?
     m_statsMap.reserve(asStatsStateMap->keys.size);
-    for (std::size_t i = 0u; i < asStatsStateMap->keys.size; i++)
+    for (auto i = 0u; i < asStatsStateMap->keys.size; i++)
     {
         m_statsMap.try_emplace(asStatsStateMap->keys[i].entityHash, &asStatsStateMap->values[i]); 
     }

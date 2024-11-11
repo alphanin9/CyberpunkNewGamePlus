@@ -84,6 +84,7 @@ bool InitializeHooking()
 {
     // TODO: move this to proper game session transition using system from replay
     // As soon as we have initial loading screen implemented
+    // Well we have it now
     const auto addrSelectGameDefinition = UniversalRelocBase::Resolve(SelectGameDefinition::m_fnHash);
     const auto addrStartNewGame = UniversalRelocBase::Resolve(StartNewGame::m_fnHash);
 
