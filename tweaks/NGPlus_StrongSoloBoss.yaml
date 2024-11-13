@@ -37,12 +37,8 @@ Character.NGPlus_EncounterStrongSoloBoss:
     equipmentItems:
       -
         $type: NPCEquipmentItem
-        item: t"Items.Preset_MA70_Default"
+        item: t"Items.Preset_HMG_Default"
         equipSlot: "AttachmentSlots.WeaponRight"
-        equipCondition:
-          - t"WeaponConditions.BaseRangedPrimaryWeaponEquipCondition"
-        unequipCondition:
-          - t"WeaponConditions.BaseRangedPrimaryWeaponUnequipCondition"
 
   effectors:
     - !append Character.NGPlus_TechDodgeEffector
@@ -86,7 +82,13 @@ Character.NGPlus_EncounterStrongSoloBoss:
       $type: ConstantStatModifier
       statType: BaseStats.Health
       modifierType: Multiplier
-      value: 0.8
+      value: 1.2
+    
+    - !append
+      $type: ConstantStatModifier
+      statType: BaseStats.Accuracy
+      modifierType: Multiplier
+      value: 9999
 
     - !append
       $type: ConstantStatModifier

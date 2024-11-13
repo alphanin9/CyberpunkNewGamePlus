@@ -90,6 +90,14 @@ public class UserSettings {
     @runtimeProperty("ModSettings.mod", "NewGamePlus_MainMenuButton")
     @runtimeProperty("ModSettings.category", "NewGamePlus_RandomEncounters_Name")
     @runtimeProperty("ModSettings.category.order", "2")
+    @runtimeProperty("ModSettings.displayName", "NewGamePlus_RandomEncountersWhileWalking_Name")
+    @runtimeProperty("ModSettings.description", "NewGamePlus_RandomEncountersWhileWalking_Desc")
+    @runtimeProperty("ModSettings.dependency", "enableRandomEncounters")
+    public let spawnRandomEncountersWhileWalking: Bool = true;
+
+    @runtimeProperty("ModSettings.mod", "NewGamePlus_MainMenuButton")
+    @runtimeProperty("ModSettings.category", "NewGamePlus_RandomEncounters_Name")
+    @runtimeProperty("ModSettings.category.order", "2")
     @runtimeProperty("ModSettings.displayName", "NewGamePlus_DynamicSpawnSystemLimit_Name")
     @runtimeProperty("ModSettings.description", "NewGamePlus_DynamicSpawnSystemLimit_Desc")
     @runtimeProperty("ModSettings.displayValues.Default", "NewGamePlus_DynamicSpawnSystemLimit_Default")
@@ -122,8 +130,6 @@ public class DynamicSpawnSystemCustomizer extends ScriptableTweak {
                 dynamicSpawnSystemCount = 100;
                 break;
         }
-
-        GameInstance.GetNewGamePlusSystem().Spew(s"Applied dynamic spawn system amt: \(dynamicSpawnSystemCount)");
         
         TweakDBManager.SetFlat(t"DynamicSpawnSystem.setup.totalEntitiesLimit", dynamicSpawnSystemCount);
         TweakDBManager.SetFlat(t"DynamicSpawnSystem.setup.numberOfDeadBodiesToTriggerImmediateDespawn", dynamicSpawnSystemCount);
