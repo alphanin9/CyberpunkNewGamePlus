@@ -561,6 +561,7 @@ public:
                     auto inputDeviceId =
                         shared::raw::Ink::SystemRequestsHandler::InputDeviceId::Ref(systemRequestsHandler);
 
+                    // Why does this get set in all session transfers? IDK
                     sessionData.AddArgument("inputDeviceID", &inputDeviceId);
 
                     shared::raw::Ink::SystemRequestsHandler::StartSession(systemRequestsHandler, &sessionData);
