@@ -13,7 +13,9 @@
 #include "cursorDef.hpp"
 #include "definitions/nodeParsers/parserHelper.hpp"
 
+#include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
+
 #include <lz4.h>
 
 #include <context/context.hpp>

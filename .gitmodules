@@ -10,3 +10,6 @@
 [submodule "deps/tweakxl"]
 	path = deps/tweakxl
 	url = https://github.com/psiberx/cp2077-tweak-xl.git
+[submodule "deps/sharedpunk"]
+	path = deps/sharedpunk
+	url = https://github.com/alphanin9/SharedPunk.git

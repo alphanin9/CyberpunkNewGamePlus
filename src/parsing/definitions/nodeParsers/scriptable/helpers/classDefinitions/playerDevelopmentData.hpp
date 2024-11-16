@@ -86,7 +86,7 @@ struct SAttributeData
         const auto arrayType = static_cast<Red::CRTTIArrayType*>(prop->type);
         const auto arrayPtr = prop->GetValuePtr<RawPointerToValue>(m_instance);
 
-        for (auto i = 0; i < arrayType->GetLength(arrayPtr); i++)
+        for (auto i = 0u; i < arrayType->GetLength(arrayPtr); i++)
         {
             fn(SNewPerk{arrayType->GetElement(arrayPtr, i)});
         }

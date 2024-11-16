@@ -10,7 +10,8 @@
 #include "filesystem.hpp"
 
 #include <context/context.hpp>
-#include <raw/redFilesystem.hpp>
+
+#include <Shared/Raw/FileSystem/FileSystem.hpp>
 
 using namespace Red;
 
@@ -18,15 +19,15 @@ namespace files
 {
 CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexcept
 {
-    static const auto& rootPath = raw::Filesystem::Path::GetSaveFolder();
+    static const auto& rootPath = shared::raw::Filesystem::Path::GetSaveFolder();
 
     CString saveFolder{};
 
-    raw::Filesystem::Path::MergeDirToPath(rootPath, &saveFolder, aSaveName);
+    shared::raw::Filesystem::Path::MergeDirToPath(rootPath, &saveFolder, aSaveName);
 
     CString filePath{};
 
-    raw::Filesystem::Path::MergeFileToPath(saveFolder, &filePath, aFileName);
+    shared::raw::Filesystem::Path::MergeFileToPath(saveFolder, &filePath, aFileName);
 
     return filePath;
 }
@@ -34,14 +35,14 @@ CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexc
 // No longer checks for PONR, needs a name change
 bool HasValidPointOfNoReturnSave() noexcept
 {
-    auto fileManager = raw::Filesystem::RedFileManager::GetInstance();
+    auto fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
 
     if (!fileManager)
     {
         return false;
     }
 
-    static const auto& c_saveFolder = raw::Filesystem::Path::GetSaveFolder();
+    static const auto& c_saveFolder = shared::raw::Filesystem::Path::GetSaveFolder();
 
     for (auto& i : fileManager->FindFilesByName(c_saveFolder, "metadata.9.json"))
     {
@@ -527,7 +528,7 @@ constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
 
 bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughHash) noexcept
 {
-    auto engineStream = raw::Filesystem::RedFileManager::GetInstance()->OpenFileStream(aSaveFullPath);
+    auto engineStream = shared::raw::Filesystem::RedFileManager::GetInstance()->OpenFileStream(aSaveFullPath);
 
     if (!engineStream)
     {
@@ -536,7 +537,7 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
 
     save::Metadata metadata{};
 
-    if (!raw::SaveMetadata::LoadSaveMetadataFromStream(engineStream, metadata))
+    if (!shared::raw::SaveMetadata::LoadSaveMetadataFromStream(engineStream, metadata))
     {
         return false;
     }
@@ -618,7 +619,7 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath) noexcept
 
 bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>& aBuffer) noexcept
 {
-    const auto fileManager = raw::Filesystem::RedFileManager::GetInstance();
+    const auto fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
 
     if (!fileManager)
     {

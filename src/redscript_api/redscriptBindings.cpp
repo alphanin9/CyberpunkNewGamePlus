@@ -22,13 +22,14 @@
 
 #include "definitions/playerSaveData.hpp"
 
-#include <raw/playerSystem.hpp>
-#include <raw/questsSystem.hpp>
-#include <raw/safeAreaManager.hpp>
-#include <raw/save.hpp>
-#include <raw/world.hpp>
-
 #include <util/scopeguard.hpp>
+
+#include <Shared/Raw/PlayerSystem/PlayerSystem.hpp>
+#include <Shared/Raw/Quest/QuestsSystem.hpp>
+#include <Shared/Raw/Save/Save.hpp>
+#include <Shared/Raw/World/World.hpp>
+#include <Shared/Raw/World/SafeAreaManager.hpp>
+#include <Shared/Util/Core.hpp>
 
 using namespace Red;
 
@@ -124,9 +125,7 @@ public:
             return;
         }
 
-        // https://github.com/psiberx/cp2077-archive-xl/blob/9653e9d2eb07831941533fdff3839fc9bef80c8d/src/Red/QuestsSystem.hpp#L169
-        // Should be accessed somewhere in QuestsSystem::OnGameLoad, I think?
-        auto& questsList = raw::QuestsSystem::QuestsList::Ref(m_questsSystem);
+        auto& questsList = shared::raw::QuestsSystem::QuestsList::Ref(m_questsSystem);
 
         // We can't have multiple NG+ quests in the same game, so returning immediately is fine
         for (auto questResource : questsList)
@@ -164,7 +163,7 @@ public:
 
         constexpr ResourcePath EP1 = R"(ep1\quest\ep1.quest)";
 
-        raw::QuestsSystem::AddQuest(m_questsSystem, EP1);
+        shared::raw::QuestsSystem::AddQuest(m_questsSystem, EP1);
     }
 
     void SetNewGamePlusGameDefinition(ENewGamePlusStartType aStartType)
@@ -322,7 +321,7 @@ public:
         }
 
         Handle<game::Object> player{};
-        raw::cp::PlayerSystem::GetPlayerControlledGameObject(m_playerSystem, player);
+        shared::raw::PlayerSystem::GetPlayerControlledGameObject(m_playerSystem, player);
 
         if (!player || player->status != EntityStatus::Attached)
         {
@@ -332,8 +331,8 @@ public:
         auto runtimeScene = player->runtimeScene;
 
         // *(_QWORD *)(*(_QWORD *)(*(_QWORD *)(entityPtr + 0xB8) + 8LL) + 112LL) )
-        auto unk1 = util::OffsetPtr<0x8, void*>::Ref(runtimeScene);
-        auto unk2 = util::OffsetPtr<0x70, void*>::Ref(unk1);
+        auto unk1 = shared::util::OffsetPtr<0x8, void*>::Ref(runtimeScene);
+        auto unk2 = shared::util::OffsetPtr<0x70, void*>::Ref(unk1);
 
         if (!unk2)
         {
@@ -349,14 +348,14 @@ public:
 
         guard.SetEnabled(false);
 
-        m_isExterior = *raw::World::IsInInterior(unk2, &result, coordinates, false) == 0 && !raw::SafeAreaManager::IsPointInSafeArea(m_safeAreaManager, positionAsVec4);
+        m_isExterior = *shared::raw::World::IsInInterior(unk2, &result, coordinates, false) == 0 && !shared::raw::SafeAreaManager::IsPointInSafeArea(m_safeAreaManager, positionAsVec4);
     }
 
     void TickFactsDB()
     {
         if (m_questsSystem)
         {
-            raw::QuestsSystem::FactsDB(m_questsSystem)->SetFact("ngplus_is_outside", static_cast<int>(m_isExterior));
+            shared::raw::QuestsSystem::FactsDB(m_questsSystem)->SetFact("ngplus_is_outside", static_cast<int>(m_isExterior));
         }
     }
 #pragma endregion
@@ -380,7 +379,7 @@ public:
 
         static auto s_nodeName = CNamePool::Add("NewGamePlusSystem");
 
-        raw::Save::NodeAccessor node(stream, s_nodeName, false, false);
+        shared::raw::Save::NodeAccessor node(stream, s_nodeName, false, false);
 
         if (!node.m_nodeIsPresentInSave)
         {
@@ -419,7 +418,7 @@ public:
 
         static auto s_nodeName = CNamePool::Add("NewGamePlusSystem");
 
-        raw::Save::NodeAccessor node(stream, s_nodeName, true, false);
+        shared::raw::Save::NodeAccessor node(stream, s_nodeName, true, false);
 
         auto version = ENewGamePlusSaveVersion::RandomEncounterChickenTestInDetection;
 

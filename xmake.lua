@@ -8,11 +8,13 @@ add_cxxflags("/MP /GR- /EHsc")
 -- Make the binary small, optimized and not static linked
 set_symbols("debug")
 set_strip("all")
-set_optimize("faster")
+set_optimize("fastest")
 add_cxxflags("/Zi /Ob2 /Oi /GL")
 set_runtimes("MD")
 
-add_requires("lz4", "minhook", "semver", "wil")
+add_requires("lz4", "semver", "wil")
+
+includes("deps/sharedpunk/xmake.lua")
 
 local cp2077_path = os.getenv("CP2077_PATH")
 
@@ -24,8 +26,8 @@ target("New Game+")
     add_files("src/**.cpp", "src/**.rc")
     add_headerfiles("src/**.hpp")
     add_includedirs("src/")
-    add_deps("red4ext.sdk", "redlib", "archivexl", "tweakxl")
-    add_packages("lz4", "minhook", "semver", "wil")
+    add_deps("cp2077-shared-data", "red4ext.sdk", "redlib", "archivexl", "tweakxl")
+    add_packages("lz4", "semver", "wil")
     add_syslinks("Version", "User32")
     add_defines("WINVER=0x0601", "WIN32_LEAN_AND_MEAN", "NOMINMAX")
     set_configdir("src")
