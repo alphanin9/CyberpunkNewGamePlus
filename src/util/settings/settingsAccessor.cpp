@@ -3,6 +3,8 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
+#include <Shared/RTTI/PropertyAccessor.hpp>
+
 using namespace Red;
 
 settings::ModConfig settings::GetRandomEncounterSettings() noexcept
@@ -16,9 +18,9 @@ settings::ModConfig settings::GetRandomEncounterSettings() noexcept
 
     ModConfig config{};
 
-    config.m_enableRandomEncounters = classInstance->GetType()->GetProperty("enableRandomEncounters")->GetValue<bool>(classInstance);
+    config.m_enableRandomEncounters = shared::rtti::GetClassProperty<bool, "enableRandomEncounters">(classInstance);
     config.m_useExteriorDetectionForRandomEncounters =
-        classInstance->GetType()->GetProperty("spawnRandomEncountersWhileWalking")->GetValue<bool>(classInstance);
+        shared::rtti::GetClassProperty<bool, "spawnRandomEncountersWhileWalking">(classInstance);
 
     return config;
 }

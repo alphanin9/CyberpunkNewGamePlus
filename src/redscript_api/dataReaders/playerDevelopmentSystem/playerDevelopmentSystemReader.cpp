@@ -6,6 +6,8 @@
 
 #include "playerDevelopmentSystemReader.hpp"
 
+#include <Shared/RTTI/PropertyAccessor.hpp>
+
 using namespace Red;
 
 using scriptable::native::PlayerDevelopment::PlayerDevelopmentData;
@@ -23,16 +25,10 @@ using scriptable::native::PlayerDevelopment::SProficiency;
 PlayerDevelopmentSystemReader::PlayerDevelopmentSystemResults::PlayerDevelopmentSystemResults(
     Handle<ISerializable>* aPlayerDevelopmentSystem) noexcept
 {
-    auto& instance = *aPlayerDevelopmentSystem;
-    auto playerData = instance->GetType()->GetProperty("playerData");
+    auto& playerOwnerData =
+        shared::rtti::GetClassProperty<DynArray<Handle<IScriptable>>, "playerData">(*aPlayerDevelopmentSystem);
 
-    if (!playerData)
-    {
-        return;
-    }
-
-    auto& playerDataPtr = *playerData->GetValuePtr<DynArray<Handle<IScriptable>>>(instance);
-    PlayerDevelopmentData playerDevelopmentData = playerDataPtr[0].instance;
+    PlayerDevelopmentData playerDevelopmentData = playerOwnerData[0].instance;
 
     auto developmentPointIterator = [this](SDevelopmentPoints aDevPoints)
     {

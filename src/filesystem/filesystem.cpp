@@ -12,6 +12,7 @@
 #include <context/context.hpp>
 
 #include <Shared/Raw/FileSystem/FileSystem.hpp>
+#include <Shared/Raw/Save/Save.hpp>
 
 using namespace Red;
 
@@ -526,18 +527,23 @@ constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
     FNV1a64("quests/meta/09_solo/404/02b_decide_smasher"), FNV1a64("quests/meta/09_solo/404/03_get_to_access"),
     FNV1a64("quests/meta/09_solo/404/04_jack_in")};
 
-bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughHash) noexcept
+bool LoadSaveMetadata(const CString& aFilePath, save::Metadata& aMetadataObject)
 {
-    auto engineStream = shared::raw::Filesystem::RedFileManager::GetInstance()->OpenFileStream(aSaveFullPath);
+    auto engineStream = shared::raw::Filesystem::RedFileManager::GetInstance()->OpenBufferedFileStream(aFilePath);
 
     if (!engineStream)
     {
         return false;
     }
 
+    return shared::raw::SaveMetadata::LoadSaveMetadataFromStream(engineStream, aMetadataObject);
+}
+
+bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughHash) noexcept
+{
     save::Metadata metadata{};
 
-    if (!shared::raw::SaveMetadata::LoadSaveMetadataFromStream(engineStream, metadata))
+    if (!LoadSaveMetadata(aSaveFullPath, metadata))
     {
         return false;
     }
@@ -628,7 +634,7 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
 
     // Use engine reader to read file to buffer, since fstream seems to be failing...
     auto filePath = GetRedPathToSaveFile(aSaveName.c_str(), c_saveFileName);
-    auto stream = fileManager->OpenFileStream(filePath);
+    auto stream = fileManager->OpenBufferedFileStream(filePath);
 
     if (!stream)
     {
@@ -642,6 +648,43 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
     aBuffer = std::vector<std::byte>(fileSize);
 
     stream->ReadWrite(&aBuffer[0], static_cast<std::uint32_t>(fileSize));
+
+    constexpr auto c_testSaveStream = false;
+
+    if constexpr (c_testSaveStream)
+    {
+        save::Metadata metadata{};
+
+        if (!LoadSaveMetadata(GetRedPathToSaveFile(aSaveName.c_str(), c_metadataFileName), metadata)) {
+            return true;
+        }
+
+        auto saveStream = shared::raw::Filesystem::RedFileManager::GetInstance()->OpenBufferedFileStream(
+            GetRedPathToSaveFile(aSaveName.c_str(), c_saveFileName));
+
+        auto loadStream = shared::raw::Save::Stream::LoadStream::Create(saveStream, metadata);
+        loadStream.Initialize();
+
+        shared::raw::Save::NodeAccessor sessionDesc(loadStream, "GameSessionDesc", true, false);
+
+        if (sessionDesc.IsGood())
+        {
+            shared::raw::Save::NodeAccessor sessionConfig(loadStream, "game::SessionConfig", true, false);
+
+            if (sessionConfig.IsGood()) {
+                PluginContext::Spew("Ebin");
+
+                Red::ResourcePath path1{};
+                Red::ResourcePath path2{};
+
+                loadStream->ReadWriteEx(&path1);
+                loadStream->ReadWriteEx(&path2);
+
+                PluginContext::Spew("Path 1: {}", path1.hash);
+                PluginContext::Spew("Path 2: {}", path2.hash);
+            }
+        }
+    }
 
     return true;
 }

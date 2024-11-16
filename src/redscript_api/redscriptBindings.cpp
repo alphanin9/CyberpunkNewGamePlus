@@ -34,6 +34,7 @@
 #include <Shared/Raw/World/SafeAreaManager.hpp>
 #include <Shared/Raw/World/World.hpp>
 #include <Shared/Util/Core.hpp>
+#include <Shared/Util/NamePoolRegistrar.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/game/ui/CharacterCustomizationState.hpp>
 
@@ -404,7 +405,7 @@ public:
     {
         auto stream = static_cast<BaseStream*>(aStream);
 
-        static auto s_nodeName = CNamePool::Add("NewGamePlusSystem");
+        static auto s_nodeName = shared::util::NamePoolRegistrar<"NewGamePlusSystem">::Get();
 
         shared::raw::Save::NodeAccessor node(stream, s_nodeName, false, false);
 
@@ -443,7 +444,7 @@ public:
     {
         auto stream = static_cast<BaseStream*>(aStream);
 
-        static auto s_nodeName = CNamePool::Add("NewGamePlusSystem");
+        static auto s_nodeName = shared::util::NamePoolRegistrar<"NewGamePlusSystem">::Get();
 
         shared::raw::Save::NodeAccessor node(stream, s_nodeName, true, false);
 

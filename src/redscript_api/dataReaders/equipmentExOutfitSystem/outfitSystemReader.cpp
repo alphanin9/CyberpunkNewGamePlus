@@ -3,32 +3,30 @@
 
 #include "outfitSystemReader.hpp"
 
+#include <Shared/RTTI/PropertyAccessor.hpp>
+
 using namespace Red;
 
 OutfitSystemReader::OutfitSystemResults::OutfitSystemResults(Handle<ISerializable>* aOutfitSystem) noexcept
 {
     auto& instance = *aOutfitSystem;
-    auto& outfitState =
-        *instance->GetType()->GetProperty("state")->GetValuePtr<Red::Handle<Red::IScriptable>>(instance);
-
-    auto& outfitSets =
-        *outfitState->GetType()->GetProperty("outfits")->GetValuePtr<DynArray<Handle<IScriptable>>>(outfitState);
+    auto& outfitState = shared::rtti::GetClassProperty<Handle<IScriptable>, "state">(instance);
+    auto& outfitSets = shared::rtti::GetClassProperty<DynArray<Handle<IScriptable>>, "outfits">(outfitState);
 
     for (auto& handle : outfitSets)
     {
         auto outfitSet = MakeHandle<NGPlusOutfitSet>();
 
-        outfitSet->m_name = handle->GetType()->GetProperty("name")->GetValue<CName>(handle);
+        outfitSet->m_name = shared::rtti::GetClassProperty<CName, "name">(handle);
 
-        auto& outfitSetParts =
-            *handle->GetType()->GetProperty("parts")->GetValuePtr<DynArray<Handle<IScriptable>>>(handle);
+        auto& outfitSetParts = shared::rtti::GetClassProperty<DynArray<Handle<IScriptable>>, "parts">(handle);
 
         for (auto& part : outfitSetParts)
         {
             auto outfitPart = MakeHandle<NGPlusOutfitPart>();
 
-            outfitPart->m_itemID = part->GetType()->GetProperty("itemID")->GetValue<ItemID>(part);
-            outfitPart->m_slotID = part->GetType()->GetProperty("slotID")->GetValue<TweakDBID>(part);
+            outfitPart->m_itemID = shared::rtti::GetClassProperty<ItemID, "itemID">(part);
+            outfitPart->m_slotID = shared::rtti::GetClassProperty<TweakDBID, "slotID">(part);
 
             outfitSet->m_outfitParts.PushBack(std::move(outfitPart));
         }
