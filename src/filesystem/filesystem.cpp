@@ -527,7 +527,7 @@ constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
     FNV1a64("quests/meta/09_solo/404/02b_decide_smasher"), FNV1a64("quests/meta/09_solo/404/03_get_to_access"),
     FNV1a64("quests/meta/09_solo/404/04_jack_in")};
 
-bool LoadSaveMetadata(const CString& aFilePath, save::Metadata& aMetadataObject)
+bool LoadSaveMetadata(const CString& aFilePath, save::Metadata& aMetadataObject) noexcept
 {
     auto engineStream = shared::raw::Filesystem::RedFileManager::GetInstance()->OpenBufferedFileStream(aFilePath);
 
