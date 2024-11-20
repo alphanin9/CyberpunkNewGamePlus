@@ -193,7 +193,7 @@ void ProcessStatModifiers(Handle<NGPlusItemData>& aItemData, ResultContext& aCon
     }
 }
 
-void ProcessAttachments(const save::ItemSlotPart& aSlotPart, Handle<NGPlusItemData>* aRootItemData,
+void ProcessAttachments(const modsave::ItemSlotPart& aSlotPart, Handle<NGPlusItemData>* aRootItemData,
                         DynArray<Handle<NGPlusItemData>>& aTargetList, ResultContext& aContext)
 {
     constexpr TweakDBID iconicWeaponModLegendary = "AttachmentSlots.IconicWeaponModLegendary";
@@ -233,7 +233,7 @@ void ProcessAttachments(const save::ItemSlotPart& aSlotPart, Handle<NGPlusItemDa
     }
 }
 
-void ProcessItem(const save::ItemData& aItem, DynArray<Handle<NGPlusItemData>>& aTargetList,
+void ProcessItem(const modsave::ItemData& aItem, DynArray<Handle<NGPlusItemData>>& aTargetList,
                  std::unordered_set<TweakDBID>& aAddedIconics, ResultContext& aContext)
 {
     if (BlacklistedTDBIDs::IsForbidden(aItem.GetRecordID()))
@@ -281,11 +281,11 @@ void ProcessItem(const save::ItemData& aItem, DynArray<Handle<NGPlusItemData>>& 
 
 } // namespace InventoryReader
 
-InventoryReader::InventoryReaderResults::InventoryReaderResults(save::InventoryNode& aInventory,
+InventoryReader::InventoryReaderResults::InventoryReaderResults(modsave::InventoryNode& aInventory,
                                                                 ResultContext& aContext) noexcept
 {
-    auto& localInventory = aInventory.LookupInventory(save::SubInventory::inventoryIdLocal);
-    auto& stashInventory = aInventory.LookupInventory(save::SubInventory::inventoryIdCarStash);
+    auto& localInventory = aInventory.LookupInventory(modsave::SubInventory::inventoryIdLocal);
+    auto& stashInventory = aInventory.LookupInventory(modsave::SubInventory::inventoryIdCarStash);
 
     m_inventory.Reserve(static_cast<std::uint32_t>(localInventory.m_inventoryItems.size()));
     m_stash.Reserve(static_cast<std::uint32_t>(stashInventory.m_inventoryItems.size()));

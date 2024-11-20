@@ -8,5 +8,5 @@
 struct ResultContext
 {
     Red::TweakDB* m_tweakDB;
-    save::StatsSystemNode* m_statsSystem;
+    modsave::StatsSystemNode* m_statsSystem;
 };

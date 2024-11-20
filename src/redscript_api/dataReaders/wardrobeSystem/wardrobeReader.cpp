@@ -2,7 +2,7 @@
 
 using namespace Red;
 
-WardrobeReader::WardrobeResults::WardrobeResults(save::WardrobeSystemNode& aNode) noexcept
+WardrobeReader::WardrobeResults::WardrobeResults(modsave::WardrobeSystemNode& aNode) noexcept
 {
     auto& entries = aNode.GetWardrobe();
 

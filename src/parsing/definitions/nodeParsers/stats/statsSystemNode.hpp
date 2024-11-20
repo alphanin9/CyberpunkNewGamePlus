@@ -6,7 +6,7 @@
 #include <RED4ext/Scripting/Natives/Generated/game/SavedStatsData.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/StatModifierData_Deprecated.hpp>
 
-namespace save
+namespace modsave
 {
 class StatsSystemNode : public NodeDataInterface
 {

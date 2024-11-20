@@ -13,7 +13,7 @@
 // TODO: Optimize this
 // Make this use Red structures instead of STL for noexcept stuff?
 // Seems to have a bunch of pointless copies - get rid of them later
-namespace save {
+namespace modsave {
 namespace item
 {
 inline Red::ItemID ReadItemId(FileCursor& aCursor)
@@ -59,7 +59,7 @@ enum class ItemStructure : std::uint8_t
 		bool isValid = false;
 
 		Red::ItemID m_itemId;
-		std::string m_appearanceName;
+		std::string m_appearanceName; // This is actually CName
 		Red::TweakDBID m_attachmentSlotTdbId;
 
 		std::vector<ItemSlotPart> m_children;
@@ -137,7 +137,7 @@ enum class ItemStructure : std::uint8_t
             return m_itemId;
 		}
 	};
-
+		
 	class ItemDataNode : public NodeDataInterface {
 	public:
 		static constexpr Red::CName m_nodeName = "itemData";
@@ -187,7 +187,7 @@ enum class ItemStructure : std::uint8_t
 				auto nextItemInfo = item::ReadItemId(cursor);
 
 				// Not a big fan of this... But it has to be done
-				save::ParseNode(cursor, *node.nodeChildren.at(offset + i));
+                modsave::ParseNode(cursor, *node.nodeChildren.at(offset + i));
 				node.nodeChildren.at(offset + i)->isReadByParent = true;
 
 				auto itemInfoActual = reinterpret_cast<ItemDataNode*>(node.nodeChildren.at(offset + i)->nodeData.get());

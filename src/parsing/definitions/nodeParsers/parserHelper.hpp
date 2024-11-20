@@ -5,7 +5,7 @@
 #include "../nodeEntry.hpp"
 #include "../../cursorDef.hpp"
 
-namespace save {
+namespace modsave {
 	void ParseNode(FileCursor& cursor, NodeEntry& node);
-	void ParseChildren(FileCursor& cursor, std::vector<save::NodeEntry*>& nodeChildren);
+	void ParseChildren(FileCursor& cursor, std::vector<modsave::NodeEntry*>& nodeChildren);
 }

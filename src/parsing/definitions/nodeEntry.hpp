@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 
-namespace save {
+namespace modsave {
 	struct NodeEntry {
 		std::string name;
 

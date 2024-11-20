@@ -20,12 +20,15 @@
 
 #include <context/context.hpp>
 
-#include <filesystem/filesystem.hpp>
+#include <filesystem/SaveFS.hpp>
 #include <util/threads.hpp>
 
 // Copypasted from WolvenKit :(
 
-using namespace Red;
+using Red::CName;
+using Red::CString;
+using Red::JobQueue;
+using Red::WaitForQueue;
 
 namespace parser
 {
@@ -40,12 +43,12 @@ bool Parser::ParseSavegame(const CString& aSaveName) noexcept
 
     const auto magic = cursor.readUInt();
 
-    if (magic != save::FILE_MAGIC)
+    if (magic != modsave::FILE_MAGIC)
     {
         return false;
     }
 
-    m_header = save::SaveHeader::fromCursor(cursor);
+    m_header = modsave::SaveHeader::fromCursor(cursor);
 
     if (m_header.gameVersion < 2000)
     {
@@ -57,19 +60,19 @@ bool Parser::ParseSavegame(const CString& aSaveName) noexcept
     cursor.seekTo(FileCursor::SeekTo::End, -8);
 
     infoStart = cursor.readInt();
-    if (cursor.readUInt() != save::FILE_DONE)
+    if (cursor.readUInt() != modsave::FILE_DONE)
     {
         return false;
     }
 
     cursor.seekTo(infoStart);
 
-    if (cursor.readUInt() != save::FILE_NODE)
+    if (cursor.readUInt() != modsave::FILE_NODE)
     {
         return false;
     }
 
-    m_flatNodes = cursor.ReadMultipleClasses<save::NodeEntry>(cursor.readVlqInt32());
+    m_flatNodes = cursor.ReadMultipleClasses<modsave::NodeEntry>(cursor.readVlqInt32());
 
     DecompressFile();
 
@@ -153,7 +156,7 @@ void Parser::DecompressFile() noexcept
     WaitForQueue(waiterJob, std::chrono::seconds(15));
 }
 
-void Parser::FindChildren(save::NodeEntry& node, int maxNextId) noexcept
+void Parser::FindChildren(modsave::NodeEntry& node, int maxNextId) noexcept
 {
     if (node.childId > -1)
     {
@@ -167,7 +170,7 @@ void Parser::FindChildren(save::NodeEntry& node, int maxNextId) noexcept
         for (auto i = node.childId; i < nextId; i++)
         {
             auto possibleChild = std::find_if(m_flatNodes.begin(), m_flatNodes.end(),
-                                              [i](save::NodeEntry& node) { return node.id == i; });
+                                              [i](modsave::NodeEntry& node) { return node.id == i; });
 
             if (possibleChild != m_flatNodes.end())
             {
@@ -188,12 +191,12 @@ void Parser::FindChildren(save::NodeEntry& node, int maxNextId) noexcept
     }
 }
 
-void Parser::CalculateTrueSizes(std::vector<save::NodeEntry*>& nodes, int maxLength) noexcept
+void Parser::CalculateTrueSizes(std::vector<modsave::NodeEntry*>& nodes, int maxLength) noexcept
 {
     for (auto i = 0ull; i < nodes.size(); i++)
     {
-        save::NodeEntry* currentNode = nodes.at(i);
-        save::NodeEntry* nextNode = nullptr;
+        modsave::NodeEntry* currentNode = nodes.at(i);
+        modsave::NodeEntry* nextNode = nullptr;
 
         if ((i + 1) < nodes.size())
         {
@@ -283,7 +286,7 @@ bool Parser::LoadNodes() noexcept
         if (node.nextId > -1)
         {
             node.nextNode = &*std::find_if(m_flatNodes.begin(), m_flatNodes.end(),
-                                           [&node](save::NodeEntry& aNode) { return node.nextId == aNode.id; });
+                                           [&node](modsave::NodeEntry& aNode) { return node.nextId == aNode.id; });
         }
     }
 
@@ -305,7 +308,7 @@ bool Parser::LoadNodes() noexcept
             [cursor, node]()
             {
                 auto cursorCopy = cursor;
-                save::ParseNode(cursorCopy, *node);
+                modsave::ParseNode(cursorCopy, *node);
             }));
     }
 
@@ -314,10 +317,10 @@ bool Parser::LoadNodes() noexcept
     return true;
 }
 
-save::NodeEntry* Parser::LookupNode(CName aNodeName) noexcept
+modsave::NodeEntry* Parser::LookupNode(CName aNodeName) noexcept
 {
     auto node = std::find_if(m_nodeList.begin(), m_nodeList.end(),
-                             [aNodeName](const save::NodeEntry* aNode) { return aNode->m_hash == aNodeName; });
+                             [aNodeName](const modsave::NodeEntry* aNode) { return aNode->m_hash == aNodeName; });
 
     if (node == m_nodeList.end())
     {

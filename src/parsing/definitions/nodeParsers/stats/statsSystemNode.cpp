@@ -13,7 +13,7 @@
 
 using namespace Red;
 
-namespace save
+namespace modsave
 {
 Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetStatModifiersInternal(Red::DataBuffer* aBuffer)
 {

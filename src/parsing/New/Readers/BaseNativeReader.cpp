@@ -3,7 +3,7 @@
 #include <Shared/Raw/Assert/AssertionFailed.hpp>
 #include <Shared/Util/BufferCreator.hpp>
 
-#include "RTTIReader.hpp"
+#include "BaseNativeReader.hpp"
 
 using namespace parser::reader;
 using namespace Red;

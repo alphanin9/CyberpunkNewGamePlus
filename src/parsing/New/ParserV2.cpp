@@ -1,9 +1,9 @@
 #include "ParserV2.hpp"
 
-#include <filesystem/filesystem.hpp>
+#include <filesystem/SaveFS.hpp>
 
 using namespace Red;
-using namespace shared::raw;
+//using namespace shared::raw;
 
 bool parser::LoadStreamContainer::Setup(StringView& aName) noexcept
 {
@@ -15,7 +15,7 @@ bool parser::LoadStreamContainer::Setup(StringView& aName) noexcept
         return false;
     }
 
-    auto fileManager = Filesystem::RedFileManager::GetInstance();
+    auto fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
 
     m_fileStream = std::move(fileManager->OpenBufferedFileStream(savePath));
 
@@ -24,7 +24,7 @@ bool parser::LoadStreamContainer::Setup(StringView& aName) noexcept
         return false;
     }
 
-    m_loadStream = std::move(Save::Stream::LoadStream::Create(m_fileStream, m_metadata));
+    m_loadStream = std::move(shared::raw::Save::Stream::LoadStream::Create(m_fileStream, m_metadata));
 
     if (!m_loadStream)
     {

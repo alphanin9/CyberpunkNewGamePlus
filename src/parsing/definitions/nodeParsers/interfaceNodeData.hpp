@@ -1,7 +1,7 @@
 #pragma once
 #include "../../cursorDef.hpp"
 
-namespace save {
+namespace modsave {
 	struct NodeEntry;
 
 	class NodeDataInterface {

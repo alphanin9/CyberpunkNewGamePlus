@@ -3,14 +3,14 @@
 
 using namespace Red;
 
-save::WardrobeEntry::WardrobeEntry(FileCursor& aCursor)
+modsave::WardrobeEntry::WardrobeEntry(FileCursor& aCursor)
 {
     m_appearanceName = aCursor.OptimizedReadLengthPrefixedCName();
     m_itemId = item::ReadItemId(aCursor);
 }
 
 // Note: wardrobe items still seem to carry quality with them from stats
-void save::WardrobeSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
+void modsave::WardrobeSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 {
     const auto itemCount = aCursor.readInt();
 
@@ -22,7 +22,7 @@ void save::WardrobeSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) n
     }
 }
 
-const std::vector<save::WardrobeEntry>& save::WardrobeSystemNode::GetWardrobe() noexcept
+const std::vector<modsave::WardrobeEntry>& modsave::WardrobeSystemNode::GetWardrobe() noexcept
 {
     return m_wardrobeEntries;
 }

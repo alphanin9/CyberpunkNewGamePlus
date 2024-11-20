@@ -12,7 +12,7 @@ set_optimize("fastest")
 add_cxxflags("/Zi /Ob2 /Oi /GL")
 set_runtimes("MD")
 
-add_requires("lz4", "semver", "wil")
+add_requires("lz4", "hopscotch-map", "semver", "wil")
 
 includes("deps/sharedpunk/xmake.lua")
 
@@ -27,7 +27,7 @@ target("New Game+")
     add_headerfiles("src/**.hpp")
     add_includedirs("src/")
     add_deps("cp2077-shared-data", "red4ext.sdk", "redlib", "archivexl", "tweakxl")
-    add_packages("lz4", "semver", "wil")
+    add_packages("lz4", "hopscotch-map", "semver", "wil")
     add_syslinks("Version", "User32")
     add_defines("WINVER=0x0601", "WIN32_LEAN_AND_MEAN", "NOMINMAX")
     set_configdir("src")

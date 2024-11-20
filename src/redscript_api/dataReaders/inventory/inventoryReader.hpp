@@ -31,7 +31,7 @@ public:
     int m_money{};
 
     InventoryReaderResults() = default;
-    InventoryReaderResults(save::InventoryNode& aInventory, ResultContext& aContext) noexcept;
+    InventoryReaderResults(modsave::InventoryNode& aInventory, ResultContext& aContext) noexcept;
 
     RTTI_IMPL_TYPEINFO(InventoryReaderResults);
     RTTI_IMPL_ALLOCATOR();

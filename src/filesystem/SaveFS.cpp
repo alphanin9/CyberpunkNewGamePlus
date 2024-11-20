@@ -6,13 +6,16 @@
 #include <RedLib.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/save/MetadataContainer.hpp>
+#include <RED4ext/Scripting/Natives/Generated/game/StatsStateMapStructure.hpp>
 
-#include "filesystem.hpp"
+#include "SaveFS.hpp"
 
 #include <context/context.hpp>
 
 #include <Shared/Raw/FileSystem/FileSystem.hpp>
+#include <Shared/Raw/Package/ScriptableSystemsPackage.hpp>
 #include <Shared/Raw/Save/Save.hpp>
+#include <Shared/RTTI/PropertyAccessor.hpp>
 
 using namespace Red;
 
@@ -649,7 +652,7 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
 
     stream->ReadWrite(&aBuffer[0], static_cast<std::uint32_t>(fileSize));
 
-    constexpr auto c_testSaveStream = false;
+    constexpr auto c_testSaveStream = true;
 
     if constexpr (c_testSaveStream)
     {
@@ -665,23 +668,86 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
         auto loadStream = shared::raw::Save::Stream::LoadStream::Create(saveStream, metadata);
         loadStream.Initialize();
 
-        shared::raw::Save::NodeAccessor sessionDesc(loadStream, "GameSessionDesc", true, false);
-
-        if (sessionDesc.IsGood())
         {
-            shared::raw::Save::NodeAccessor sessionConfig(loadStream, "game::SessionConfig", true, false);
+            shared::raw::Save::NodeAccessor sessionDesc(loadStream, "GameSessionDesc", true, false);
 
-            if (sessionConfig.IsGood()) {
-                PluginContext::Spew("Ebin");
+            if (sessionDesc.IsGood())
+            {
+                shared::raw::Save::NodeAccessor sessionConfig(loadStream, "game::SessionConfig", true, false);
 
-                Red::ResourcePath path1{};
-                Red::ResourcePath path2{};
+                if (sessionConfig.IsGood())
+                {
+                    PluginContext::Spew("Ebin");
 
-                loadStream->ReadWriteEx(&path1);
-                loadStream->ReadWriteEx(&path2);
+                    Red::ResourcePath path1{};
+                    Red::ResourcePath path2{};
 
-                PluginContext::Spew("Path 1: {}", path1.hash);
-                PluginContext::Spew("Path 2: {}", path2.hash);
+                    loadStream->ReadWriteEx(&path1);
+                    loadStream->ReadWriteEx(&path2);
+
+                    PluginContext::Spew("Path 1: {}", path1.hash);
+                    PluginContext::Spew("Path 2: {}", path2.hash);
+                }
+            }
+        }
+
+        {
+            shared::raw::Save::NodeAccessor scriptableSystemsContainer(loadStream, "ScriptableSystemsContainer", true,
+                                                                       false);
+
+            if (scriptableSystemsContainer.IsGood())
+            {
+                auto buffer = loadStream.ReadBuffer();
+
+                shared::raw::ScriptablePackage::ScriptablePackageReader reader(buffer);
+
+                PackageHeader header{};
+
+                // The game does this, don't ask
+                reader.ReadHeader(header);
+                reader.ReadHeader(header);
+
+                shared::raw::ScriptablePackage::ScriptablePackageExtractor extractor(header);
+
+                constexpr auto c_testClassName = "PlayerDevelopmentSystem";
+                auto ref = MakeScriptedHandle(GetClass<"PlayerDevelopmentSystem">());
+
+                std::uint32_t classIndex{};
+
+                for (; classIndex < reader.rootChunkTypes.size; classIndex++)
+                {
+                    if (reader.rootChunkTypes[classIndex] == c_testClassName)
+                    {
+                        break;
+                    }
+                }
+
+                extractor.GetObjectById(ref, classIndex);
+
+                auto& data = shared::rtti::GetClassProperty<DynArray<Handle<IScriptable>>, "playerData">(ref);
+
+
+                PluginContext::Spew("{}", header.size);
+                PluginContext::Spew("PDS data size: {}", data.size);
+
+                if (data.size > 0u)
+                {
+                    PluginContext::Spew("Data class name: {}", data[0]->GetType()->name.ToString());
+                }
+            }
+        }
+
+        {
+            shared::raw::Save::NodeAccessor statsSystem(loadStream, "StatsSystem", true, false);
+
+            if (statsSystem.IsGood())
+            {
+                auto stateMap = loadStream.ReadPackage(GetClass<game::StatsStateMapStructure>());
+
+                // It is what it is, should fix it sometime
+                auto& ptr = *reinterpret_cast<game::StatsStateMapStructure*>(stateMap.instance);
+
+                PluginContext::Spew("Keys: {}, values: {}", ptr.keys.size, ptr.values.size);
             }
         }
     }
