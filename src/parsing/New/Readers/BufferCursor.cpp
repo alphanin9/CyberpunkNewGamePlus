@@ -115,7 +115,7 @@ CName Cursor::ReadUnknownLengthName() noexcept
 {
     auto view = std::string_view{reinterpret_cast<char*>(GetCurrentPosition())};
 
-    m_offset += view.size();
+    m_offset += static_cast<std::uint32_t>(view.size());
 
     return CNamePool::Add(view.data());
 }
