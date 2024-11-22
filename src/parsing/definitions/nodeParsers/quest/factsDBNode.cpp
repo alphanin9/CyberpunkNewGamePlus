@@ -7,7 +7,7 @@
 
 #include <context/context.hpp>
 
-namespace save
+namespace modsave
 {
 void FactsTableNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 {

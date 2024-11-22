@@ -8,7 +8,7 @@
 #include <RED4ext/Scripting/Natives/Generated/quest/PhaseInstance.hpp>
 #include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
 
-#include <raw/questsSystem.hpp>
+#include <Shared/Raw/Quest/QuestsSystem.hpp>
 
 using namespace Red;
 
@@ -23,20 +23,20 @@ void RunQuestNode(Handle<quest::NodeDefinition>& aNode)
 {
     auto questsSystem = GetGameSystem<quest::QuestsSystem>();
 
-    auto& questMutex = raw::QuestsSystem::QuestMutex::Ref(questsSystem);
-    auto& rootPhase = raw::QuestsSystem::RootPhase::Ref(questsSystem);
+    auto& questMutex = shared::raw::QuestsSystem::QuestMutex::Ref(questsSystem);
+    auto& rootPhase = shared::raw::QuestsSystem::RootPhase::Ref(questsSystem);
 
     std::unique_lock _(questMutex);
 
-    raw::QuestsSystem::QuestContext ctx{};
-    raw::QuestsSystem::CreateQuestContext(questsSystem, &ctx, 1, 0, -1, -1);
+    shared::raw::QuestsSystem::QuestContext ctx{};
+    shared::raw::QuestsSystem::CreateQuestContext(questsSystem, &ctx, 1, 0, -1, -1);
 
     ctx.m_phaseStack.PushBack(rootPhase);
 
-    raw::QuestsSystem::QuestNodeSocket socket{};
-    DynArray<raw::QuestsSystem::QuestNodeSocket> outputSockets{};
+    shared::raw::QuestsSystem::QuestNodeSocket socket{};
+    DynArray<shared::raw::QuestsSystem::QuestNodeSocket> outputSockets{};
 
-    raw::QuestsSystem::PhaseInstance::RunQuestNode(rootPhase, aNode, ctx, socket, outputSockets);
+    shared::raw::QuestsSystem::PhaseInstance::RunQuestNode(rootPhase, aNode, ctx, socket, outputSockets);
 
     ctx.m_phaseStack.Clear();
 }

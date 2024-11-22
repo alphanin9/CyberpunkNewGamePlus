@@ -6,11 +6,16 @@
 #include <RedLib.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/save/MetadataContainer.hpp>
+#include <RED4ext/Scripting/Natives/Generated/game/StatsStateMapStructure.hpp>
 
-#include "filesystem.hpp"
+#include "SaveFS.hpp"
 
 #include <context/context.hpp>
-#include <raw/redFilesystem.hpp>
+
+#include <Shared/Raw/FileSystem/FileSystem.hpp>
+#include <Shared/Raw/Package/ScriptableSystemsPackage.hpp>
+#include <Shared/Raw/Save/Save.hpp>
+#include <Shared/RTTI/PropertyAccessor.hpp>
 
 using namespace Red;
 
@@ -18,15 +23,15 @@ namespace files
 {
 CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexcept
 {
-    static const auto& rootPath = raw::Filesystem::Path::GetSaveFolder();
+    static const auto& rootPath = shared::raw::Filesystem::Path::GetSaveFolder();
 
     CString saveFolder{};
 
-    raw::Filesystem::Path::MergeDirToPath(rootPath, &saveFolder, aSaveName);
+    shared::raw::Filesystem::Path::MergeDirToPath(rootPath, &saveFolder, aSaveName);
 
     CString filePath{};
 
-    raw::Filesystem::Path::MergeFileToPath(saveFolder, &filePath, aFileName);
+    shared::raw::Filesystem::Path::MergeFileToPath(saveFolder, &filePath, aFileName);
 
     return filePath;
 }
@@ -34,14 +39,14 @@ CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexc
 // No longer checks for PONR, needs a name change
 bool HasValidPointOfNoReturnSave() noexcept
 {
-    auto fileManager = raw::Filesystem::RedFileManager::GetInstance();
+    auto fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
 
     if (!fileManager)
     {
         return false;
     }
 
-    static const auto& c_saveFolder = raw::Filesystem::Path::GetSaveFolder();
+    static const auto& c_saveFolder = shared::raw::Filesystem::Path::GetSaveFolder();
 
     for (auto& i : fileManager->FindFilesByName(c_saveFolder, "metadata.9.json"))
     {
@@ -525,18 +530,23 @@ constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
     FNV1a64("quests/meta/09_solo/404/02b_decide_smasher"), FNV1a64("quests/meta/09_solo/404/03_get_to_access"),
     FNV1a64("quests/meta/09_solo/404/04_jack_in")};
 
-bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughHash) noexcept
+bool LoadSaveMetadata(const CString& aFilePath, save::Metadata& aMetadataObject) noexcept
 {
-    auto engineStream = raw::Filesystem::RedFileManager::GetInstance()->OpenFileStream(aSaveFullPath);
+    auto engineStream = shared::raw::Filesystem::RedFileManager::GetInstance()->OpenBufferedFileStream(aFilePath);
 
     if (!engineStream)
     {
         return false;
     }
 
+    return shared::raw::SaveMetadata::LoadSaveMetadataFromStream(engineStream, aMetadataObject);
+}
+
+bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughHash) noexcept
+{
     save::Metadata metadata{};
 
-    if (!raw::SaveMetadata::LoadSaveMetadataFromStream(engineStream, metadata))
+    if (!LoadSaveMetadata(aSaveFullPath, metadata))
     {
         return false;
     }
@@ -618,7 +628,7 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath) noexcept
 
 bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>& aBuffer) noexcept
 {
-    const auto fileManager = raw::Filesystem::RedFileManager::GetInstance();
+    const auto fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
 
     if (!fileManager)
     {
@@ -627,7 +637,7 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
 
     // Use engine reader to read file to buffer, since fstream seems to be failing...
     auto filePath = GetRedPathToSaveFile(aSaveName.c_str(), c_saveFileName);
-    auto stream = fileManager->OpenFileStream(filePath);
+    auto stream = fileManager->OpenBufferedFileStream(filePath);
 
     if (!stream)
     {
@@ -641,6 +651,107 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
     aBuffer = std::vector<std::byte>(fileSize);
 
     stream->ReadWrite(&aBuffer[0], static_cast<std::uint32_t>(fileSize));
+
+    // Tests look OK, can move to this from WKit way once we figure out FDB/persistency/inventory
+    constexpr auto c_testSaveStream = false;
+
+    if constexpr (c_testSaveStream)
+    {
+        save::Metadata metadata{};
+
+        if (!LoadSaveMetadata(GetRedPathToSaveFile(aSaveName.c_str(), c_metadataFileName), metadata)) {
+            return true;
+        }
+
+        auto saveStream = shared::raw::Filesystem::RedFileManager::GetInstance()->OpenBufferedFileStream(
+            GetRedPathToSaveFile(aSaveName.c_str(), c_saveFileName));
+
+        auto loadStream = shared::raw::Save::Stream::LoadStream::Create(saveStream, metadata);
+        loadStream.Initialize();
+
+        {
+            shared::raw::Save::NodeAccessor sessionDesc(loadStream, "GameSessionDesc", true, false);
+
+            if (sessionDesc.IsGood())
+            {
+                shared::raw::Save::NodeAccessor sessionConfig(loadStream, "game::SessionConfig", true, false);
+
+                if (sessionConfig.IsGood())
+                {
+                    PluginContext::Spew("Ebin");
+
+                    Red::ResourcePath path1{};
+                    Red::ResourcePath path2{};
+
+                    loadStream->ReadWriteEx(&path1);
+                    loadStream->ReadWriteEx(&path2);
+
+                    PluginContext::Spew("Path 1: {}", path1.hash);
+                    PluginContext::Spew("Path 2: {}", path2.hash);
+                }
+            }
+        }
+
+        {
+            shared::raw::Save::NodeAccessor scriptableSystemsContainer(loadStream, "ScriptableSystemsContainer", true,
+                                                                       false);
+
+            if (scriptableSystemsContainer.IsGood())
+            {
+                auto buffer = loadStream.ReadBuffer();
+
+                shared::raw::ScriptablePackage::ScriptablePackageReader reader(buffer);
+
+                PackageHeader header{};
+
+                // The game does this, don't ask
+                reader.ReadHeader(header);
+                reader.ReadHeader(header);
+
+                shared::raw::ScriptablePackage::ScriptablePackageExtractor extractor(header);
+
+                constexpr auto c_testClassName = "PlayerDevelopmentSystem";
+                auto ref = MakeScriptedHandle(GetClass<"PlayerDevelopmentSystem">());
+
+                std::uint32_t classIndex{};
+
+                for (; classIndex < reader.rootChunkTypes.size; classIndex++)
+                {
+                    if (reader.rootChunkTypes[classIndex] == c_testClassName)
+                    {
+                        break;
+                    }
+                }
+
+                extractor.GetObjectById(ref, classIndex);
+
+                auto& data = shared::rtti::GetClassProperty<DynArray<Handle<IScriptable>>, "playerData">(ref);
+
+
+                PluginContext::Spew("{}", header.size);
+                PluginContext::Spew("PDS data size: {}", data.size);
+
+                if (data.size > 0u)
+                {
+                    PluginContext::Spew("Data class name: {}", data[0]->GetType()->name.ToString());
+                }
+            }
+        }
+
+        {
+            shared::raw::Save::NodeAccessor statsSystem(loadStream, "StatsSystem", true, false);
+
+            if (statsSystem.IsGood())
+            {
+                auto stateMap = loadStream.ReadPackage(GetClass<game::StatsStateMapStructure>());
+
+                // It is what it is, should fix it sometime
+                auto& ptr = *reinterpret_cast<game::StatsStateMapStructure*>(stateMap.instance);
+
+                PluginContext::Spew("Keys: {}, values: {}", ptr.keys.size, ptr.values.size);
+            }
+        }
+    }
 
     return true;
 }

@@ -42,7 +42,7 @@ public class NGPlusEP1StatusListener extends ScriptableSystem {
         let ngPlusSystem = GameInstance.GetNewGamePlusSystem();
 
         // Fix: Encounter testing no longer triggers EP1 activation
-        if ngPlusSystem.IsInNewGamePlusSave() {
+        if ngPlusSystem.IsInNewGamePlusPrologue() || ngPlusSystem.IsInNewGamePlusHeistOrStandalone() {
             ngPlusSystem.Spew("EP1 installed, but not activated: loading...");
             ngPlusSystem.LoadExpansionIntoSave();
         }

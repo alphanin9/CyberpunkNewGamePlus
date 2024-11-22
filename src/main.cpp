@@ -28,6 +28,7 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReaso
 
         TypeInfoRegistrar::RegisterDiscovered();
 
+        // Create struct in shared data with necessary shims for ArchiveXL/TweakXL later
         constexpr auto c_loadDependenciesFromPluginFolder = true;
         if constexpr (c_loadDependenciesFromPluginFolder)
         {

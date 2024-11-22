@@ -114,15 +114,12 @@ public native class NGPlusProgressionData extends IScriptable {
 }
 // End aggregator
 
-enum ENewGamePlusStartType {
+enum ENGPlusType {
     StartFromQ001 = 0,
     StartFromQ101 = 1,
-    StartFromQ001_NoEP1 = 2,
-    StartFromQ101_NoEP1 = 3,
-    StartFromQ101_ProgressionBuild = 4,
-    StartFromQ101_ProgressionBuild_NoEP1 = 5,
-    Count = 6,
-    Invalid = 7
+    StartFromQ101_ProgressionBuild = 2,
+    Count = 3,
+    Invalid = 4
 }
 
 public native class NewGamePlusSystem extends IGameSystem {
@@ -130,13 +127,7 @@ public native class NewGamePlusSystem extends IGameSystem {
 
     public native func ParsePointOfNoReturnSaveData(saveName: script_ref<String>) -> Bool;
 
-    public native func GetNewGamePlusState() -> Bool;
-
-    public native func SetNewGamePlusState(newState: Bool) -> Void;
-
     public native func GetProgressionData() -> ref<NGPlusProgressionData>;
-
-    public native func SetNewGamePlusGameDefinition(startType: ENewGamePlusStartType) -> Void ;
 
     public native func IsSaveValidForNewGamePlus(saveName: script_ref<String>) -> Bool;
 
@@ -148,10 +139,16 @@ public native class NewGamePlusSystem extends IGameSystem {
     public native func Spew(str: script_ref<String>) -> Void;
     public native func Error(str: script_ref<String>) -> Void;
 
-    public native func GetStandaloneState() -> Bool;
-    public native func SetStandaloneState(aNewState: Bool) -> Void;
-
     public native func IsInNewGamePlusSave() -> Bool;
+    public native func IsInNewGamePlusPrologue() -> Bool;
+    public native func IsInNewGamePlusHeistOrStandalone() -> Bool;
+
+    // Used in place of StartNewGame, starts new session with selected game definition
+    public native func LaunchNewGamePlus(state: ref<gameuiCharacterCustomizationState>) -> Void;
+
+    // Used in place of SetNewGamePlusState() and SetStandaloneState()
+    public native func SetNewGamePlusQuest(type: ENGPlusType) -> Void;
+    public native func GetNewGamePlusQuest() -> ENGPlusType;
 }
 
 @addMethod(GameInstance)

@@ -15,10 +15,10 @@
 #include <parsing/cursorDef.hpp>
 #include <parsing/definitions/nodeEntry.hpp>
 
-using ParseNodeFn = std::unique_ptr<save::NodeDataInterface> (*)(FileCursor& cursor, save::NodeEntry& node);
+using ParseNodeFn = std::unique_ptr<modsave::NodeDataInterface> (*)(FileCursor& cursor, modsave::NodeEntry& node);
 
 template<typename NodeType>
-std::unique_ptr<save::NodeDataInterface> GetParserForNode(FileCursor& aCursor, save::NodeEntry& aNode)
+std::unique_ptr<modsave::NodeDataInterface> GetParserForNode(FileCursor& aCursor, modsave::NodeEntry& aNode)
 {
     auto dataPtr = std::make_unique<NodeType>();
 
@@ -28,14 +28,14 @@ std::unique_ptr<save::NodeDataInterface> GetParserForNode(FileCursor& aCursor, s
 }
 
 #define GET_UNIQUE_NODE_PARSER(nodeTypeName)                                                                           \
-    if (aNodeName == save::nodeTypeName::m_nodeName)                                                                   \
+    if (aNodeName == modsave::nodeTypeName::m_nodeName)                                                                   \
     {                                                                                                                  \
-        return GetParserForNode<save::nodeTypeName>;                                                                   \
+        return GetParserForNode<modsave::nodeTypeName>;                                                                   \
     }
 
 ParseNodeFn FindParser(Red::CName aNodeName)
 {
-    using namespace save;
+    using namespace modsave;
 
     GET_UNIQUE_NODE_PARSER(InventoryNode);
     GET_UNIQUE_NODE_PARSER(ItemDataNode);
@@ -49,16 +49,16 @@ ParseNodeFn FindParser(Red::CName aNodeName)
     return GetParserForNode<DefaultNodeData>;
 }
 
-void save::ParseChildren(FileCursor& cursor, std::vector<save::NodeEntry*>& nodeChildren)
+void modsave::ParseChildren(FileCursor& cursor, std::vector<modsave::NodeEntry*>& nodeChildren)
 {
     for (auto pNode : nodeChildren)
     {
-        save::ParseNode(cursor, *pNode);
+        modsave::ParseNode(cursor, *pNode);
         pNode->isReadByParent = true;
     }
 }
 
-void save::ParseNode(FileCursor& cursor, save::NodeEntry& node)
+void modsave::ParseNode(FileCursor& cursor, modsave::NodeEntry& node)
 {
     cursor.seekTo(node.offset);
     cursor.readInt(); // Node ID

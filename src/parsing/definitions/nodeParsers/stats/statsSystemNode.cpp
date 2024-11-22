@@ -13,7 +13,7 @@
 
 using namespace Red;
 
-namespace save
+namespace modsave
 {
 Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetStatModifiersInternal(Red::DataBuffer* aBuffer)
 {
@@ -114,6 +114,8 @@ Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetStatModifi
 void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 {
     const auto packageSize = static_cast<std::uint32_t>(aCursor.readInt());
+
+    // Assuming we use game stream instead of having whole save unpacked, we need to allocate every time we create subcursor
 
     m_package.Init(aCursor.CreateSubCursor(packageSize));
     m_package.ReadPackage();

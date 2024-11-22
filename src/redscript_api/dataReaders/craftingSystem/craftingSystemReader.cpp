@@ -1,6 +1,7 @@
 #include "craftingSystemReader.hpp"
 
 #include <parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/craftBook.hpp>
+#include <Shared/RTTI/PropertyAccessor.hpp>
 
 using namespace Red;
 
@@ -11,7 +12,7 @@ CraftingSystemReader::CraftingSystemResults::CraftingSystemResults(Handle<ISeria
 {
     auto& instance = *aCraftingSystem;
 
-    CraftBook craftBook = instance->GetType()->GetProperty("playerCraftBook")->GetValuePtr<Handle<IScriptable>>(instance)->GetPtr();
+    CraftBook craftBook = shared::rtti::GetClassProperty<Handle<IScriptable>, "playerCraftBook">(*aCraftingSystem).instance;
 
     if (!craftBook)
     {

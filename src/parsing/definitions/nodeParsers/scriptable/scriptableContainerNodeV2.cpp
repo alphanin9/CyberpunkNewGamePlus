@@ -2,7 +2,7 @@
 
 using namespace Red;
 
-void save::ScriptableSystemsContainerNodeV2::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
+void modsave::ScriptableSystemsContainerNodeV2::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
 {
     const auto dataSize = static_cast<std::uint32_t>(aCursor.readInt());
 
@@ -14,7 +14,7 @@ void save::ScriptableSystemsContainerNodeV2::ReadData(FileCursor& aCursor, NodeE
     m_package.ReadPackage();
 }
 
-Handle<ISerializable>* save::ScriptableSystemsContainerNodeV2::GetScriptableSystem(CName aName) noexcept
+Handle<ISerializable>* modsave::ScriptableSystemsContainerNodeV2::GetScriptableSystem(CName aName) noexcept
 {
     return m_package.GetChunkByTypeName(aName);
 }

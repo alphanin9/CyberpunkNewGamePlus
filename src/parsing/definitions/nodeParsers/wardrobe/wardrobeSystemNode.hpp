@@ -8,7 +8,7 @@
 #include "../../nodeEntry.hpp"
 #include "../interfaceNodeData.hpp"
 
-namespace save
+namespace modsave
 {
 struct WardrobeEntry
 {
@@ -30,7 +30,7 @@ public:
 };
 } // namespace save
 
-RTTI_DEFINE_CLASS(save::WardrobeEntry, {
+RTTI_DEFINE_CLASS(modsave::WardrobeEntry, {
     RTTI_PROPERTY(m_appearanceName);
     RTTI_PROPERTY(m_itemId);
 });

@@ -1,7 +1,5 @@
 module NGPlus.ExpansionNewGameAdditions
 
-import NGPlus.SpawnTags.NewGamePlusSpawnTagController
-
 @addField(ExpansionNewGame)
 private let m_ngPlusStandaloneButton: inkWidgetRef;
 
@@ -46,11 +44,8 @@ protected cb func OnIntroComplete(anim: ref<inkAnimProxy>) -> Bool {
 protected func PriorMenu() -> Void {
     // Just in case...
     let newGamePlusSystem = GameInstance.GetNewGamePlusSystem();
+    newGamePlusSystem.SetNewGamePlusQuest(ENGPlusType.Invalid);
 
-    newGamePlusSystem.SetNewGamePlusState(false);
-    newGamePlusSystem.SetStandaloneState(false);
-
-    NewGamePlusSpawnTagController.RestoreSpawnTags();
     wrappedMethod();
 }
 
@@ -69,10 +64,8 @@ protected cb func OnHoverOverNGPlusStandalone(evt: ref<inkPointerEvent>) -> Bool
 protected cb func OnPressBaseGame(evt: ref<inkPointerEvent>) -> Bool {
     let newGamePlusSystem = GameInstance.GetNewGamePlusSystem();
 
-    newGamePlusSystem.SetNewGamePlusState(false);
-    newGamePlusSystem.SetStandaloneState(false);
+    newGamePlusSystem.SetNewGamePlusQuest(ENGPlusType.Invalid);
 
-    NewGamePlusSpawnTagController.RestoreSpawnTags();
     wrappedMethod(evt);
 }
 
@@ -80,10 +73,7 @@ protected cb func OnPressBaseGame(evt: ref<inkPointerEvent>) -> Bool {
 protected cb func OnPressExpansion(evt: ref<inkPointerEvent>) -> Bool {
     let newGamePlusSystem = GameInstance.GetNewGamePlusSystem();
 
-    newGamePlusSystem.SetNewGamePlusState(false);
-    newGamePlusSystem.SetStandaloneState(false);
-
-    NewGamePlusSpawnTagController.RestoreSpawnTags();
+    newGamePlusSystem.SetNewGamePlusQuest(ENGPlusType.Invalid);
     wrappedMethod(evt);
 }
 
@@ -93,15 +83,9 @@ protected cb func OnPressNGPlusStandalone(evt: ref<inkPointerEvent>) -> Bool {
         this.PlaySound(n"Button", n"OnPress");
 
         let newGamePlusSystem = GameInstance.GetNewGamePlusSystem();
-
-        newGamePlusSystem.SetNewGamePlusState(true);
-        newGamePlusSystem.SetStandaloneState(true);
+        newGamePlusSystem.SetNewGamePlusQuest(ENGPlusType.StartFromQ101_ProgressionBuild);
 
         this.m_characterCustomizationState.SetIsExpansionStandalone(false);
-
-        newGamePlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ101_ProgressionBuild);
-
-        NewGamePlusSpawnTagController.SetSpawnTags(n"#q101_spwn_player");
 
         this.NextMenu();
     }

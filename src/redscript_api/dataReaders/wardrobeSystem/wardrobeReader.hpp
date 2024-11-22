@@ -11,7 +11,7 @@ public:
     Red::DynArray<Red::ItemID> m_wardrobe{};
 
     WardrobeResults() = default;
-    WardrobeResults(save::WardrobeSystemNode& aNode) noexcept;
+    WardrobeResults(modsave::WardrobeSystemNode& aNode) noexcept;
 
     RTTI_IMPL_TYPEINFO(WardrobeResults);
     RTTI_IMPL_ALLOCATOR();

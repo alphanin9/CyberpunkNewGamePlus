@@ -12,11 +12,11 @@ NGPlusProgressionData::NGPlusProgressionData(parser::Parser& aParser) noexcept
     ResultContext ctx{};
 
 	ctx.m_tweakDB = TweakDB::Get();
-    ctx.m_statsSystem = aParser.LookupNodeData<save::StatsSystemNode>();
+    ctx.m_statsSystem = aParser.LookupNodeData<modsave::StatsSystemNode>();
 
     m_statsSystemResults = MakeHandle<StatsSystemReader::StatsSystemResults>(ctx);
 
-	if (auto scriptableSystemsContainer = aParser.LookupNodeData<save::ScriptableSystemsContainerNodeV2>())
+	if (auto scriptableSystemsContainer = aParser.LookupNodeData<modsave::ScriptableSystemsContainerNodeV2>())
     {
         constexpr CName c_craftingSystem = "CraftingSystem";
         constexpr CName c_outfitSystem = "EquipmentEx.OutfitSystem";
@@ -51,12 +51,12 @@ NGPlusProgressionData::NGPlusProgressionData(parser::Parser& aParser) noexcept
         }
     }
 
-    if (auto inventory = aParser.LookupNodeData<save::InventoryNode>())
+    if (auto inventory = aParser.LookupNodeData<modsave::InventoryNode>())
     {
         m_playerInventory = MakeHandle<InventoryReader::InventoryReaderResults>(*inventory, ctx);
     }
 
-    if (auto persistencySystem = aParser.LookupNodeData<save::PersistencySystemNode>())
+    if (auto persistencySystem = aParser.LookupNodeData<modsave::PersistencySystemNode>())
     {
         if (auto garageComponent = persistencySystem->LookupChunk("vehicleGarageComponentPS"))
         {
@@ -67,7 +67,7 @@ NGPlusProgressionData::NGPlusProgressionData(parser::Parser& aParser) noexcept
         }
     }
 
-    if (auto wardrobeSystem = aParser.LookupNodeData<save::WardrobeSystemNode>())
+    if (auto wardrobeSystem = aParser.LookupNodeData<modsave::WardrobeSystemNode>())
     {
         m_wardrobeResults = MakeHandle<WardrobeReader::WardrobeResults>(*wardrobeSystem);
     }

@@ -8,7 +8,7 @@
 
 #include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
 
-namespace save
+namespace modsave
 {
 struct RedPersistentObject
 {

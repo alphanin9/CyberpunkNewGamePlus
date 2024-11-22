@@ -2,7 +2,7 @@
 #include <unordered_map>
 
 #include "../interfaceNodeData.hpp"
-namespace save
+namespace modsave
 {
 class FactsTableNode : public NodeDataInterface
 {

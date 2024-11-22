@@ -10,25 +10,34 @@
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType_Record.hpp>
 #include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
 #include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
+#include <RED4ext/Scripting/Natives/gameGameSessionDesc.hpp>
+#include <RED4ext/Scripting/Natives/Generated/gsm/MainQuest.hpp>
 
 #include <RED4ext/Scripting/Natives/entIPlacedComponent.hpp>
 
 #include <context/context.hpp>
 
-#include <filesystem/filesystem.hpp>
-#include <parsing/fileReader.hpp>
+#include <filesystem/SaveFS.hpp>
 
 #include <util/settings/settingsAccessor.hpp>
 
 #include "definitions/playerSaveData.hpp"
 
-#include <raw/playerSystem.hpp>
-#include <raw/questsSystem.hpp>
-#include <raw/safeAreaManager.hpp>
-#include <raw/save.hpp>
-#include <raw/world.hpp>
-
 #include <util/scopeguard.hpp>
+
+#include <Shared/Raw/GameDefinition/GameDefinition.hpp>
+#include <Shared/Raw/Ink/InkSystem.hpp>
+#include <Shared/Raw/PlayerSystem/PlayerSystem.hpp>
+#include <Shared/Raw/Quest/QuestsSystem.hpp>
+#include <Shared/Raw/Save/Save.hpp>
+#include <Shared/Raw/World/SafeAreaManager.hpp>
+#include <Shared/Raw/World/World.hpp>
+#include <Shared/Util/Core.hpp>
+#include <Shared/Util/NamePoolRegistrar.hpp>
+
+#include <RED4ext/Scripting/Natives/Generated/game/ui/CharacterCustomizationState.hpp>
+
+#include <parsing/fileReader.hpp>
 
 using namespace Red;
 
@@ -51,7 +60,9 @@ enum class ENGPlusType
 {
     StartFromQ001,
     StartFromQ101,
-    StartFromQ101_ProgressionBuild
+    StartFromQ101_ProgressionBuild,
+    Count,
+    Invalid
 };
 
 enum class ENewGamePlusSaveVersion : std::uint32_t
@@ -62,6 +73,30 @@ enum class ENewGamePlusSaveVersion : std::uint32_t
 
 class NewGamePlusSystem : public IGameSystem
 {
+private:
+#pragma region Constants
+    static constexpr ResourcePath c_ngPlusQuest = R"(mod\quest\newgameplus.quest)";
+    static constexpr ResourcePath c_ngPlusPrologueQuest = R"(mod\quest\newgameplus_q001.quest)";
+    static constexpr ResourcePath c_ngPlusStandaloneQuest = R"(mod\quest\newgameplus_standalone.quest)";
+    static constexpr ResourcePath c_encounterTestQuest =
+        R"(mod\quest\newgameplus\bossencountertest\bossencountertest.quest)";
+
+    static constexpr ResourcePath c_ep1Quest = R"(ep1\quest\ep1.quest)";
+    static constexpr ResourcePath c_ep1PreorderQuest = R"(ep1\quest\ep1_preorder.quest)";
+
+    static constexpr ResourcePath c_ngPlusQ001Path = R"(mod\quest\newgameplus_q001.gamedef)";
+    static constexpr ResourcePath c_ngPlusQ101Path = R"(mod\quest\newgameplus.gamedef)";
+    static constexpr ResourcePath c_ngPlusQ101StandalonePath = R"(mod\quest\newgameplus_standalone.gamedef)";
+    static constexpr ResourcePath c_invalidPath = {};
+
+    // Lookup table for game definition resource paths
+    static constexpr std::array<ResourcePath, static_cast<std::size_t>(ENGPlusType::Invalid) + 1u>
+        c_ngPlusGameDefinitions = {c_ngPlusQ001Path, c_ngPlusQ101Path, c_ngPlusQ101StandalonePath, c_invalidPath,
+                                   c_invalidPath};
+
+    static constexpr TweakDBID c_initialLoadingScreen = "InitLoadingScreen.DefaultInitialLoadingScreen";
+#pragma endregion
+
 public:
     Handle<NGPlusProgressionData> GetProgressionData()
     {
@@ -87,12 +122,6 @@ public:
     {
         m_isInStandalone = aNewState;
     }
-
-    static constexpr ResourcePath c_ngPlusQuest = R"(mod\quest\newgameplus.quest)";
-    static constexpr ResourcePath c_ngPlusPrologueQuest = R"(mod\quest\newgameplus_q001.quest)";
-    static constexpr ResourcePath c_ngPlusStandaloneQuest = R"(mod\quest\newgameplus_standalone.quest)";
-    static constexpr ResourcePath c_encounterTestQuest =
-        R"(mod\quest\newgameplus\bossencountertest\bossencountertest.quest)";
 
     // Only checks for NG+ and NG+ Q001 quests, not standalone
     // Encounter chicken now as well
@@ -124,9 +153,7 @@ public:
             return;
         }
 
-        // https://github.com/psiberx/cp2077-archive-xl/blob/9653e9d2eb07831941533fdff3839fc9bef80c8d/src/Red/QuestsSystem.hpp#L169
-        // Should be accessed somewhere in QuestsSystem::OnGameLoad, I think?
-        auto& questsList = raw::QuestsSystem::QuestsList::Ref(m_questsSystem);
+        auto& questsList = shared::raw::QuestsSystem::QuestsList::Ref(m_questsSystem);
 
         // We can't have multiple NG+ quests in the same game, so returning immediately is fine
         for (auto questResource : questsList)
@@ -162,9 +189,7 @@ public:
             return;
         }
 
-        constexpr ResourcePath EP1 = R"(ep1\quest\ep1.quest)";
-
-        raw::QuestsSystem::AddQuest(m_questsSystem, EP1);
+        shared::raw::QuestsSystem::AddQuest(m_questsSystem, c_ep1Quest);
     }
 
     void SetNewGamePlusGameDefinition(ENewGamePlusStartType aStartType)
@@ -208,6 +233,16 @@ public:
         }
     }
 
+    void SetNewGamePlusQuest(ENGPlusType aType)
+    {
+        m_selectedNgPlusType = aType;
+    }
+
+    ENGPlusType GetNewGamePlusQuest()
+    {
+        return m_selectedNgPlusType;
+    }
+
     bool HasPointOfNoReturnSave()
     {
         return files::HasValidPointOfNoReturnSave();
@@ -218,6 +253,7 @@ public:
         return files::IsValidForNewGamePlus(aSaveName->c_str());
     }
 
+    // TODO: async this, learn how journal gets loaded
     DynArray<int> ResolveNewGamePlusSaves(Red::ScriptRef<DynArray<CString>>& aSaves)
     {
         if (!aSaves)
@@ -257,9 +293,10 @@ public:
 
         return returnedData;
     }
-
+#pragma region Transfer
     bool ParsePointOfNoReturnSaveData(Red::ScriptRef<CString>& aSaveName)
     {
+        // This needs to be async
         if (!aSaveName)
         {
             return false;
@@ -288,12 +325,13 @@ public:
 
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-        PluginContext::Spew(std::format("Time taken: {}", duration));
+        PluginContext::Spew("Time taken: {}", duration);
 
         return true;
     }
-
-    // Some users don't have LogChannel defined :P
+#pragma endregion
+#pragma region ScriptLogging
+    // NOTE: maybe create new "final" mode that has spew logs disabled?
     void Spew(Red::ScriptRef<CString>& aStr)
     {
         PluginContext::Spew(aStr->c_str());
@@ -303,7 +341,7 @@ public:
     {
         PluginContext::Error(aStr->c_str());
     }
-
+#pragma endregion
 #pragma region InteriorDetection
     void TickInteriors()
     {
@@ -322,7 +360,7 @@ public:
         }
 
         Handle<game::Object> player{};
-        raw::cp::PlayerSystem::GetPlayerControlledGameObject(m_playerSystem, player);
+        shared::raw::PlayerSystem::GetPlayerControlledGameObject(m_playerSystem, player);
 
         if (!player || player->status != EntityStatus::Attached)
         {
@@ -332,8 +370,8 @@ public:
         auto runtimeScene = player->runtimeScene;
 
         // *(_QWORD *)(*(_QWORD *)(*(_QWORD *)(entityPtr + 0xB8) + 8LL) + 112LL) )
-        auto unk1 = util::OffsetPtr<0x8, void*>::Ref(runtimeScene);
-        auto unk2 = util::OffsetPtr<0x70, void*>::Ref(unk1);
+        auto unk1 = shared::util::OffsetPtr<0x8, void*>::Ref(runtimeScene);
+        auto unk2 = shared::util::OffsetPtr<0x70, void*>::Ref(unk1);
 
         if (!unk2)
         {
@@ -349,14 +387,16 @@ public:
 
         guard.SetEnabled(false);
 
-        m_isExterior = *raw::World::IsInInterior(unk2, &result, coordinates, false) == 0 && !raw::SafeAreaManager::IsPointInSafeArea(m_safeAreaManager, positionAsVec4);
+        m_isExterior = *shared::raw::World::IsInInterior(unk2, &result, coordinates, false) == 0 &&
+                       !shared::raw::SafeAreaManager::IsPointInSafeArea(m_safeAreaManager, positionAsVec4);
     }
 
     void TickFactsDB()
     {
         if (m_questsSystem)
         {
-            raw::QuestsSystem::FactsDB(m_questsSystem)->SetFact("ngplus_is_outside", static_cast<int>(m_isExterior));
+            shared::raw::QuestsSystem::FactsDB(m_questsSystem)
+                ->SetFact("ngplus_is_outside", static_cast<int>(m_isExterior));
         }
     }
 #pragma endregion
@@ -378,9 +418,9 @@ public:
     {
         auto stream = static_cast<BaseStream*>(aStream);
 
-        static auto s_nodeName = CNamePool::Add("NewGamePlusSystem");
+        static auto s_nodeName = shared::util::NamePoolRegistrar<"NewGamePlusSystem">::Get();
 
-        raw::Save::NodeAccessor node(stream, s_nodeName, false, false);
+        shared::raw::Save::NodeAccessor node(stream, s_nodeName, false, false);
 
         if (!node.m_nodeIsPresentInSave)
         {
@@ -417,9 +457,9 @@ public:
     {
         auto stream = static_cast<BaseStream*>(aStream);
 
-        static auto s_nodeName = CNamePool::Add("NewGamePlusSystem");
+        static auto s_nodeName = shared::util::NamePoolRegistrar<"NewGamePlusSystem">::Get();
 
-        raw::Save::NodeAccessor node(stream, s_nodeName, true, false);
+        shared::raw::Save::NodeAccessor node(stream, s_nodeName, true, false);
 
         auto version = ENewGamePlusSaveVersion::RandomEncounterChickenTestInDetection;
 
@@ -465,9 +505,89 @@ public:
         m_restoredDataFromSave = false;
     }
 #pragma endregion
-private:
-    Handle<NGPlusProgressionData> m_progressionData{};
 
+#pragma region SessionLauncher
+    void LaunchNewGamePlus(Handle<game::ui::CharacterCustomizationState> aState)
+    {
+        auto selectedGameDefinition = c_ngPlusGameDefinitions[static_cast<std::uint32_t>(m_selectedNgPlusType)];
+
+        if (selectedGameDefinition == c_invalidPath)
+        {
+            return;
+        }
+
+        // What the game does (a bit) before game definition load request
+        shared::raw::Ink::InkSystem::Get()->SetInitialLoadingScreenTDBID(c_initialLoadingScreen);
+
+        // Note: IDK if we should also update NG+ type here
+        ResourceLoader::Get()
+            ->LoadAsync(selectedGameDefinition)
+            ->OnLoaded(
+                [this, aState](Handle<CResource>& aResource)
+                {
+                    auto& asGameDef = Cast<gsm::GameDefinition>(aResource);
+                    if (!asGameDef)
+                    {
+                        return;
+                    }
+
+                    game::GameSessionDesc desc{};
+
+                    shared::raw::GameDefinition::ToWorldID(asGameDef, &desc.worldId);
+
+                    const auto hasExpansion = CGameEngine::Get()->isEP1;
+
+                    for (auto& mainQuest : asGameDef->mainQuests)
+                    {
+                        if (!hasExpansion && (mainQuest->questFile.path == c_ep1Quest || mainQuest->questFile.path == c_ep1PreorderQuest))
+                        {
+                            // Skip over EP1/EP1 preorder if user does not own expansion
+                            continue;
+                        }
+
+                        game::MainQuestData data{};
+
+                        data.questPath = mainQuest->questFile.path;
+                        data.questPathValid = data.questPath != c_invalidPath;
+                        
+                        if (mainQuest->additionalContent)
+                        {
+                            data.additionalContentId = mainQuest->additionalContentName;
+                        }
+
+                        desc.mainQuests.PushBack(data);
+                    }
+
+                    desc.characterCustomizationState = MakeScriptedHandle<game::ui::CharacterCustomizationState>(
+                        GetClass<game::ui::CharacterCustomizationState>());
+
+                    // Avoid direct handle copy, probably would be a bad idea
+                    desc.characterCustomizationState->GetType()->Assign(desc.characterCustomizationState.instance,
+                                                                        aState.instance);
+
+                    shared::raw::Ink::SessionData::Data sessionData{};
+
+                    sessionData.AddArgument("gameSessionDesc", &desc);
+                    sessionData.AddArgument("spawnTags", &asGameDef->spawnPointTags);
+
+                    auto systemRequestsHandler = shared::raw::Ink::InkSystem::Get()->m_requestsHandler.Lock();
+
+                    auto inputDeviceId =
+                        shared::raw::Ink::SystemRequestsHandler::InputDeviceId::Ref(systemRequestsHandler);
+
+                    // Why does this get set in all session transfers? IDK
+                    sessionData.AddArgument("inputDeviceID", &inputDeviceId);
+
+                    shared::raw::Ink::SystemRequestsHandler::StartSession(systemRequestsHandler, &sessionData);
+                });
+    }
+#pragma endregion
+private:
+#pragma region Progression
+    Handle<NGPlusProgressionData> m_progressionData{};
+#pragma endregion
+
+#pragma region IngameContext
     settings::ModConfig m_modConfig{};
 
     bool m_restoredDataFromSave{};
@@ -480,10 +600,17 @@ private:
     bool m_isExterior{};
     bool m_isInNewGamePlusSave{};
     bool m_isInStandalone{};
+#pragma endregion
 
+#pragma region Systems
     cp::PlayerSystem* m_playerSystem{};
     quest::QuestsSystem* m_questsSystem{};
     AI::SafeAreaManager* m_safeAreaManager{};
+#pragma endregion
+
+#pragma region Session
+    ENGPlusType m_selectedNgPlusType = ENGPlusType::Invalid;
+#pragma endregion
 
     RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
     RTTI_IMPL_ALLOCATOR();
@@ -492,22 +619,33 @@ private:
 } // namespace mod
 
 RTTI_DEFINE_ENUM(mod::ENewGamePlusStartType);
+RTTI_DEFINE_ENUM(mod::ENGPlusType);
 
 RTTI_DEFINE_CLASS(mod::NewGamePlusSystem, {
     RTTI_METHOD(ParsePointOfNoReturnSaveData);
     RTTI_METHOD(HasPointOfNoReturnSave);
     RTTI_METHOD(ResolveNewGamePlusSaves);
+
     RTTI_METHOD(GetNewGamePlusState);
     RTTI_METHOD(SetNewGamePlusState);
+
     RTTI_METHOD(GetProgressionData);
     RTTI_METHOD(SetNewGamePlusGameDefinition);
     RTTI_METHOD(IsSaveValidForNewGamePlus);
+
     RTTI_METHOD(LoadExpansionIntoSave);
+
     RTTI_METHOD(Spew);
     RTTI_METHOD(Error);
+
     RTTI_METHOD(GetStandaloneState);
     RTTI_METHOD(SetStandaloneState);
+
     RTTI_METHOD(IsInNewGamePlusSave);
     RTTI_METHOD(IsInNewGamePlusPrologue);
     RTTI_METHOD(IsInNewGamePlusHeistOrStandalone);
+
+    RTTI_METHOD(LaunchNewGamePlus);
+    RTTI_METHOD(SetNewGamePlusQuest);
+    RTTI_METHOD(GetNewGamePlusQuest);
 });

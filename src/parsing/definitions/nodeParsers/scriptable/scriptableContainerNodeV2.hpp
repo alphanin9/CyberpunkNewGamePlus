@@ -7,7 +7,7 @@
 
 #include "../../package/packageReader.hpp"
 
-namespace save
+namespace modsave
 {
     // Improved version of scriptable reader, based on common package loader
 	class ScriptableSystemsContainerNodeV2 : public NodeDataInterface {

@@ -1,5 +1,4 @@
 #include "statsSystemReader.hpp"
-#include <util/core.hpp>
 
 #include <parsing/definitions/nodeParsers/stats/statsSystemNode.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/ConstantStatModifierData_Deprecated.hpp>
@@ -72,22 +71,12 @@ StatsSystemReader::StatsSystemResults::StatsSystemResults(ResultContext& aContex
             m_technicalAbility = asConstant->value;
             break;
         case StatType::Level:
-            const auto gameEngine = CGameEngine::Get();
-
-            auto isEP1 = false;
-
-            // IsEP1() has this weird check
-            if (gameEngine)
-            {
-                isEP1 = util::OffsetPtr<724u, bool>::Ref(gameEngine);
-            }
-
             constexpr auto c_ep1MaxLevel = 50.f;
             constexpr auto c_nonEp1MaxLevel = 40.f;
 
-            // Keep the non-EP1 clamp...
-            // Oops, wrong func!
-            m_level = std::min(asConstant->value, isEP1 ? c_ep1MaxLevel : c_nonEp1MaxLevel);
+            const auto gameEngine = CGameEngine::Get();
+
+            m_level = std::min(asConstant->value, gameEngine->isEP1 ? c_ep1MaxLevel : c_nonEp1MaxLevel);
             break;
         }
     }

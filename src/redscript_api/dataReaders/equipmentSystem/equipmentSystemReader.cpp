@@ -2,6 +2,8 @@
 
 #include <parsing/definitions/nodeParsers/scriptable/helpers/classDefinitions/equipmentSystem.hpp>
 
+#include <Shared/RTTI/PropertyAccessor.hpp>
+
 using namespace Red;
 
 using scriptable::native::EquipmentSystem::EquipmentSystemPlayerData;
@@ -11,17 +13,12 @@ EquipmentSystemReader::EquipmentSystemResults::EquipmentSystemResults(Handle<ISe
 {
     auto& instance = *aEquipmentSystem;
 
-    auto prop = instance->GetType()->GetProperty("ownerData");
-
-    auto& arrayInstance = *prop->GetValuePtr<DynArray<Handle<IScriptable>>>(instance);
-
-    EquipmentSystemPlayerData data = arrayInstance[0].instance;
-
-    auto loadout = data.GetLoadout();
+    auto& ownerData = shared::rtti::GetClassProperty<DynArray<Handle<IScriptable>>, "ownerData">(instance);
+    auto& equipment = shared::rtti::GetClassProperty<SLoadout, "equipment">(ownerData[0]);
 
     using game::data::EquipmentArea;
 
-    for (auto& area : loadout->equipAreas)
+    for (auto& area : equipment.equipAreas)
     {
         switch (area.areaType)
         {
