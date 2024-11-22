@@ -652,7 +652,8 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
 
     stream->ReadWrite(&aBuffer[0], static_cast<std::uint32_t>(fileSize));
 
-    constexpr auto c_testSaveStream = true;
+    // Tests look OK, can move to this from WKit way once we figure out FDB/persistency/inventory
+    constexpr auto c_testSaveStream = false;
 
     if constexpr (c_testSaveStream)
     {

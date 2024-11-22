@@ -233,6 +233,16 @@ public:
         }
     }
 
+    void SetNewGamePlusQuest(ENGPlusType aType)
+    {
+        m_selectedNgPlusType = aType;
+    }
+
+    ENGPlusType GetNewGamePlusQuest()
+    {
+        return m_selectedNgPlusType;
+    }
+
     bool HasPointOfNoReturnSave()
     {
         return files::HasValidPointOfNoReturnSave();
@@ -243,6 +253,7 @@ public:
         return files::IsValidForNewGamePlus(aSaveName->c_str());
     }
 
+    // TODO: async this, learn how journal gets loaded
     DynArray<int> ResolveNewGamePlusSaves(Red::ScriptRef<DynArray<CString>>& aSaves)
     {
         if (!aSaves)
@@ -285,6 +296,7 @@ public:
 #pragma region Transfer
     bool ParsePointOfNoReturnSaveData(Red::ScriptRef<CString>& aSaveName)
     {
+        // This needs to be async
         if (!aSaveName)
         {
             return false;
@@ -313,7 +325,7 @@ public:
 
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-        PluginContext::Spew(std::format("Time taken: {}", duration));
+        PluginContext::Spew("Time taken: {}", duration);
 
         return true;
     }
@@ -597,7 +609,7 @@ private:
 #pragma endregion
 
 #pragma region Session
-    ENGPlusType m_selectedNgPlusType{};
+    ENGPlusType m_selectedNgPlusType = ENGPlusType::Invalid;
 #pragma endregion
 
     RTTI_IMPL_TYPEINFO(NewGamePlusSystem);
@@ -613,18 +625,27 @@ RTTI_DEFINE_CLASS(mod::NewGamePlusSystem, {
     RTTI_METHOD(ParsePointOfNoReturnSaveData);
     RTTI_METHOD(HasPointOfNoReturnSave);
     RTTI_METHOD(ResolveNewGamePlusSaves);
+
     RTTI_METHOD(GetNewGamePlusState);
     RTTI_METHOD(SetNewGamePlusState);
+
     RTTI_METHOD(GetProgressionData);
     RTTI_METHOD(SetNewGamePlusGameDefinition);
     RTTI_METHOD(IsSaveValidForNewGamePlus);
+
     RTTI_METHOD(LoadExpansionIntoSave);
+
     RTTI_METHOD(Spew);
     RTTI_METHOD(Error);
+
     RTTI_METHOD(GetStandaloneState);
     RTTI_METHOD(SetStandaloneState);
+
     RTTI_METHOD(IsInNewGamePlusSave);
     RTTI_METHOD(IsInNewGamePlusPrologue);
     RTTI_METHOD(IsInNewGamePlusHeistOrStandalone);
+
     RTTI_METHOD(LaunchNewGamePlus);
+    RTTI_METHOD(SetNewGamePlusQuest);
+    RTTI_METHOD(GetNewGamePlusQuest);
 });

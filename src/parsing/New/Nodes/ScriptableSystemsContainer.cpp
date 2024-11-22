@@ -62,7 +62,7 @@ Handle<IScriptable>& ScriptableSystemsContainerNode::GetScriptableSystem(CClass*
         return s_empty;
     }
 
-    m_handleCache.insert_or_assign(aClass, MakeScriptedHandle(aClass));
+    m_handleCache.insert_or_assign(aClass, MakeScriptedHandle<IScriptable>(aClass));
 
     auto index = m_systemIndexMap[aClass];
 

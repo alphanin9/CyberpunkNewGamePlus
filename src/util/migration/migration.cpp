@@ -14,17 +14,20 @@ namespace migration
 static std::filesystem::path m_modulePath{};
 }
 
+namespace
+{
+static constexpr std::array c_unusedFiles = {L"redscript\\DifficultyAdjustment\\NGPlusDifficultyFixes.reds",
+                                             L"redscript\\Scenario\\NGPlusStatsAdjustmentController.reds",
+                                             L"redscript\\NGPlusEP1Listener.reds",
+                                             L"redscript\\SpawnTagController.reds",
+                                             L"redscript\\NGPlusSpawnTagController.reds",
+                                             L"redscript\\DifficultyAdjustment\\NGPlusDifficultyDefaultConfig.reds",
+                                             L"tweaks\\NGPlus_BasegameFlatPatches.yaml"};
+};
+
 void migration::RemoveUnusedFiles()
 {
     // To be updated with more later on...
-    constexpr std::array c_unusedFiles = {
-        L"redscript\\DifficultyAdjustment\\NGPlusDifficultyFixes.reds",
-        L"redscript\\Scenario\\NGPlusStatsAdjustmentController.reds",
-        L"redscript\\NGPlusEP1Listener.reds",
-        L"redscript\\SpawnTagController.reds",
-        L"redscript\\DifficultyAdjustment\\NGPlusDifficultyDefaultConfig.reds",
-        L"tweaks\\NGPlus_BasegameFlatPatches.yaml",
-    };
 
     auto cleanedUpAny = false;
     auto cleanupFailed = false;

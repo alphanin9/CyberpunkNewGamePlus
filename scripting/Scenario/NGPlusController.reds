@@ -1,5 +1,3 @@
-import NGPlus.SpawnTags.NewGamePlusSpawnTagController
-
 public class NewGamePlusSelectionController extends gameuiSaveHandlingController {
     private let m_list: inkCompoundRef;
     private let m_noSavedGamesLabel: inkWidgetRef;
@@ -28,10 +26,6 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
     private let m_sourceIndex: Int32;
     private let m_ngPlusSystem: ref<NewGamePlusSystem>;
 
-    private static func GetPointOfNoReturnPrefix() -> String {
-        return "PointOfNoReturn";
-    }
-
     // WolvenKit only lets me specify *some* things, but inkwidgets generally are just enough
     private final func InitializeUninitializableWKitVariables() {
         this.m_animDelayBetweenSlots = 0.150000006;
@@ -54,7 +48,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
         
         this.m_systemHandler = this.GetSystemRequestsHandler();
         this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
-        this.m_ngPlusSystem.SetStandaloneState(false);
+        this.m_ngPlusSystem.SetNewGamePlusQuest(ENGPlusType.Invalid);
         this
             .m_systemHandler
             .RegisterToCallback(n"OnSavesForLoadReady", this, n"OnSavesForLoadReady");
@@ -76,7 +70,6 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
         this.m_isInputDisabled = false;
         this.PlayLoadingAnimation();
         this.m_isEp1Enabled = IsEP1();
-        this.m_ngPlusSystem.SetNewGamePlusState(false); // HACK, NOT SURE ABOUT THIS WORKING OUT FINE
     }
 
     protected cb func OnUninitialize() -> Bool {
@@ -85,8 +78,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
 
     protected cb func OnButtonRelease(evt: ref<inkPointerEvent>) -> Bool {
         if evt.IsAction(n"back") {
-            NewGamePlusSpawnTagController.RestoreSpawnTags();
-            this.m_ngPlusSystem.SetNewGamePlusState(false);
+            this.m_ngPlusSystem.SetNewGamePlusQuest(ENGPlusType.Invalid);
             this.m_eventDispatcher.SpawnEvent(n"OnMainMenuBack");
         }
     }
@@ -144,19 +136,13 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
 
     private final func OnSelectedSave(controller: ref<LoadListItem>) -> Void {
         let saveName = this.m_saves[controller.Index()];
-        this.m_ngPlusSystem.Spew(s"Loading save \(saveName) for player progression transfer...");
 
-        let result = this.m_ngPlusSystem.ParsePointOfNoReturnSaveData(saveName);
-
-        this.m_ngPlusSystem.Spew(s"Progression loader result: \(result)");
-
-        if !result {
+        if !this.m_ngPlusSystem.ParsePointOfNoReturnSaveData(saveName) {
             // NOTE: add localization? Better error messages?
             controller.SetInvalid("Failed to parse progression data!\nTry going into a game and saving again.");
             return;
         }
 
-        this.m_ngPlusSystem.SetNewGamePlusState(true);
         this.m_eventDispatcher.SpawnEvent(n"OnAccept");
     }
 

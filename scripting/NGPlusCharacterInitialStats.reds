@@ -47,8 +47,11 @@ private final func SetNGPlusAttributePreset() -> Void {
 protected cb func OnInitialize() -> Bool {
     let ngPlusSystem = GameInstance.GetNewGamePlusSystem();
 
-    let isNgPlusActive = ngPlusSystem.GetNewGamePlusState();
-    let isStandalone = ngPlusSystem.GetStandaloneState();
+    let ngPlusQuest = ngPlusSystem.GetNewGamePlusQuest();
+
+    let isNgPlusActive = Equals(ngPlusQuest, ENGPlusType.StartFromQ001) || Equals(ngPlusQuest, ENGPlusType.StartFromQ101);
+
+    let isStandalone = Equals(ngPlusQuest, ENGPlusType.StartFromQ101_ProgressionBuild);
 
     super.OnInitialize();
     inkWidgetRef
@@ -91,8 +94,10 @@ let m_ngPlusSaveData: ref<NGPlusProgressionData>;
 
 @wrapMethod(CharacterCreationStatsMenu)
 protected cb func OnInitialize() -> Bool {
-    this.m_isNgPlusActive = GameInstance.GetNewGamePlusSystem().GetNewGamePlusState();
-    this.m_ngPlusSaveData = GameInstance.GetNewGamePlusSystem().GetProgressionData();
+    let ngPlusSystem = GameInstance.GetNewGamePlusSystem();
+    let ngPlusQuest = ngPlusSystem.GetNewGamePlusQuest();
+    this.m_isNgPlusActive = Equals(ngPlusQuest, ENGPlusType.StartFromQ001) || Equals(ngPlusQuest, ENGPlusType.StartFromQ101);
+    this.m_ngPlusSaveData = ngPlusSystem.GetProgressionData();
 
     return wrappedMethod();
 }
@@ -127,14 +132,14 @@ private final func ResetAllBtnBackToBaseline() -> Void {
         i += 1;
     }
     if this.m_isNgPlusActive {
-        let minAttributeValue = 3.0;
+        let minAttributeValue = 3;
         let statsSystemResults = this.m_ngPlusSaveData.GetStatsSystemResults();
 
-        let bodyAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetBody() - minAttributeValue);
-        let reflexAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetReflexes() - minAttributeValue);
-        let techAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetTechnicalAbility() - minAttributeValue);
-        let intAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetIntelligence() - minAttributeValue);
-        let coolAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetCool() - minAttributeValue);
+        let bodyAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetBody()) - minAttributeValue;
+        let reflexAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetReflexes()) - minAttributeValue;
+        let techAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetTechnicalAbility()) - minAttributeValue;
+        let intAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetIntelligence()) - minAttributeValue;
+        let coolAttributeAdded: Int32 = Cast<Int32>(statsSystemResults.GetCool()) - minAttributeValue;
 
         this.m_startingAttributePoints = bodyAttributeAdded
             + reflexAttributeAdded
@@ -162,7 +167,7 @@ protected cb func OnInitialize() -> Bool {
     let attributeType: gamedataStatType;
     super.OnInitialize();
     this.RequestCameraChange(n"Summary_Preview");
-    if this.m_characterCustomizationState.IsExpansionStandalone() || GameInstance.GetNewGamePlusSystem().GetStandaloneState() {
+    if this.m_characterCustomizationState.IsExpansionStandalone() || Equals(GameInstance.GetNewGamePlusSystem().GetNewGamePlusQuest(), ENGPlusType.StartFromQ101_ProgressionBuild) {
         this.SkipStatsMenu();
     }
     attributeType = gamedataStatType.Strength;
@@ -279,7 +284,7 @@ protected cb func OnInitialize() -> Bool {
 
 @replaceMethod(characterCreationSummaryMenu)
 protected cb func OnInitialize() -> Bool {
-    let isStandalone = this.m_characterCustomizationState.IsExpansionStandalone() || GameInstance.GetNewGamePlusSystem().GetStandaloneState();
+    let isStandalone = this.m_characterCustomizationState.IsExpansionStandalone() || Equals(GameInstance.GetNewGamePlusSystem().GetNewGamePlusQuest(), ENGPlusType.StartFromQ101_ProgressionBuild);
 
     super.OnInitialize();
     this.SetUpLifePath();

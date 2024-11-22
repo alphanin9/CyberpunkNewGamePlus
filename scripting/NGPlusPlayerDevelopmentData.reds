@@ -3,6 +3,7 @@ module NGPlus.PlayerDevelopmentData
 @addField(PlayerDevelopmentData)
 let m_isInNgPlus: Bool;
 
+// TODO: make this compatible with Replay - eventually
 @replaceMethod(PlayerDevelopmentData)
 private const final func ModifyProficiencyLevel(proficiencyIndex: Int32, isDebug: Bool, opt levelIncrease: Int32) -> Void {
     let Blackboard: ref<IBlackboard>;

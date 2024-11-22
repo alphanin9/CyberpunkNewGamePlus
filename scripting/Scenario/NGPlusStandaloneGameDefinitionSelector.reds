@@ -1,5 +1,3 @@
-import NGPlus.SpawnTags.NewGamePlusSpawnTagController
-
 public class NewGamePlusStandaloneStartingPointController extends BaseCharacterCreationController {
     public let m_newGameDescription: inkTextRef;
     public let m_textureTop: inkImageRef;
@@ -63,11 +61,7 @@ public class NewGamePlusStandaloneStartingPointController extends BaseCharacterC
     protected cb func OnPressBasegame(evt: ref<inkPointerEvent>) -> Bool {
         if evt.IsAction(n"click") && !this.m_isInputLocked {
             this.PlaySound(n"Button", n"OnPress");
-            NewGamePlusSpawnTagController.RestoreSpawnTags();
-
-            this.m_ngPlusSystem.SetNewGamePlusState(false);
-            this.m_ngPlusSystem.SetStandaloneState(false);
-
+            this.m_ngPlusSystem.SetNewGamePlusQuest(ENGPlusType.Invalid);
             this.OnSelectedOption();
         }
     }
@@ -75,12 +69,7 @@ public class NewGamePlusStandaloneStartingPointController extends BaseCharacterC
     protected cb func OnPressQ101(evt: ref<inkPointerEvent>) -> Bool {
         if evt.IsAction(n"click") && !this.m_isInputLocked {
             this.PlaySound(n"Button", n"OnPress");
-
-            NewGamePlusSpawnTagController.SetSpawnTags(n"#q101_spwn_player");
-            this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ101_ProgressionBuild_NoEP1);
-            this.m_ngPlusSystem.SetNewGamePlusState(true);
-            this.m_ngPlusSystem.SetStandaloneState(true);
-
+            this.m_ngPlusSystem.SetNewGamePlusQuest(ENGPlusType.StartFromQ101_ProgressionBuild);
             this.OnSelectedOption();
         }
     }
@@ -120,10 +109,7 @@ public class NewGamePlusStandaloneStartingPointController extends BaseCharacterC
         this.GetTelemetrySystem().LogInitialChoiceSetStatege(telemetryInitalChoiceStage.None);
         this.GetCharacterCustomizationSystem().ClearState();
 
-        this.m_ngPlusSystem.SetNewGamePlusState(false);
-        this.m_ngPlusSystem.SetStandaloneState(false);
-        
-        NewGamePlusSpawnTagController.RestoreSpawnTags();
+        this.m_ngPlusSystem.SetNewGamePlusQuest(ENGPlusType.Invalid);
 
         super.PriorMenu();
     }

@@ -1,5 +1,3 @@
-import NGPlus.SpawnTags.NewGamePlusSpawnTagController
-
 public class NewGamePlusStartingPointController extends BaseCharacterCreationController {
     public let m_newGameDescription: inkTextRef;
     public let m_textureTop: inkImageRef;
@@ -72,14 +70,7 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
     protected cb func OnPressQ001(evt: ref<inkPointerEvent>) -> Bool {
         if evt.IsAction(n"click") && !this.m_isInputLocked {
             this.PlaySound(n"Button", n"OnPress");
-            NewGamePlusSpawnTagController.SetSpawnTags(n"#q000_hym_theater_start");
-
-            if this.m_ep1Enabled {
-                this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ001);
-            } else {
-                this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ001_NoEP1);
-            }
-
+            this.m_ngPlusSystem.SetNewGamePlusQuest(ENGPlusType.StartFromQ001);
             this.OnSelectedOption();
         }
     }
@@ -87,14 +78,7 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
     protected cb func OnPressQ101(evt: ref<inkPointerEvent>) -> Bool {
         if evt.IsAction(n"click") && !this.m_isInputLocked {
             this.PlaySound(n"Button", n"OnPress");
-            NewGamePlusSpawnTagController.SetSpawnTags(n"#q101_spwn_player");
-
-            if this.m_ep1Enabled {
-                this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ101);
-            } else {
-                this.m_ngPlusSystem.SetNewGamePlusGameDefinition(ENewGamePlusStartType.StartFromQ101_NoEP1);
-            }
-
+            this.m_ngPlusSystem.SetNewGamePlusQuest(ENGPlusType.StartFromQ101);
             this.OnSelectedOption();
         }
     }

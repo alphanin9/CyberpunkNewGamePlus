@@ -1,6 +1,5 @@
 module NGPlus.PlayerProgression
 
-import NGPlus.SpawnTags.NewGamePlusSpawnTagController
 import NGPlus.EP1Listener.NGPlusEP1StatusListener
 import NGPlus.Ripperdoc.NGPlusTutorialCyberwareProvider
 
@@ -69,7 +68,6 @@ class PlayerProgressionLoader {
         let playerDevelopmentData = PlayerDevelopmentSystem.GetInstance(player).GetDevelopmentData(player);
         playerDevelopmentData.ScaleNPCsToPlayerLevel();
 
-        NewGamePlusSpawnTagController.RestoreSpawnTags();
         NGPlusEP1StatusListener.ApplyRandomEncounterDisabler(questsSystem);
 
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadPlayerProgression done!");
