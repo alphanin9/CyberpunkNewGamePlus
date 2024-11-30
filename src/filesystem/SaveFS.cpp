@@ -59,6 +59,37 @@ bool HasValidPointOfNoReturnSave() noexcept
     return false;
 }
 
+void HasNewGamePlusSaveAsync(WeakHandle<IScriptable> aTarget, CName aCallback) noexcept
+{
+    static auto s_fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
+    static const auto& s_saveFolder = shared::raw::Filesystem::Path::GetSaveFolder(); 
+
+    JobQueue{}.Dispatch(
+        [aTarget, aCallback](const JobGroup& aGroup)
+        {
+            if (aTarget.Expired())
+            {
+                return;
+            }
+
+            auto ref = aTarget.Lock();
+
+            for (const auto &i : s_fileManager->FindFilesByName(s_saveFolder, c_metadataFileName))
+            {
+                // Having job for each save would likely cost a lot
+                // So, we only have one job to offset cost a little
+
+                if (IsValidForNewGamePlus(i))
+                {
+                    CallVirtual(ref, aCallback, true);
+                    return;
+                }
+            }
+
+            CallVirtual(ref, aCallback, false);
+        });
+}
+
 // Should be using saveVersion instead, but I don't know the proper save version for 2.00
 constexpr std::int64_t c_minSupportedGameVersion = 2000;
 

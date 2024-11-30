@@ -13,7 +13,12 @@
 
 #include <config/projectTemplate.hpp>
 
+#include <Shared/Raw/Assert/AssertionFailed.hpp>
+
 using namespace Red;
+
+static constexpr auto c_archiveName = "NewGamePlus.archive";
+static constexpr auto c_tweaksFolder = "tweaks";
 
 RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReason, const Sdk* aSdk)
 {
@@ -29,28 +34,24 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReaso
         TypeInfoRegistrar::RegisterDiscovered();
 
         // Create struct in shared data with necessary shims for ArchiveXL/TweakXL later
-        constexpr auto c_loadDependenciesFromPluginFolder = true;
-        if constexpr (c_loadDependenciesFromPluginFolder)
+        // Or not, it might want recursion I think
+
+        if (!aSdk->scripts->Add(aHandle, L"redscript\\"))
         {
-            if (!ArchiveXL::RegisterArchive(aHandle, L"NewGamePlus.archive"))
-            {
-                PluginContext::Error("Failed to load archive from the plugin's folder, quitting...");
-                return false;
-            }
+            PluginContext::Error("Failed to add scripts, quitting...");
+            return false;
+        }
 
-            // NOTE: this could be done better, accounting for version migration on manual installs...
-            // Would make including some crap in mod folder pointless too
-            if (!aSdk->scripts->Add(aHandle, L"redscript\\"))
-            {
-                PluginContext::Error("Failed to add scripts from the plugin's folder, quitting...");
-                return false;
-            }
+        if (!ArchiveXL::RegisterArchive(aHandle, c_archiveName))
+        {
+            PluginContext::Error("Failed to add archive, quitting...");
+            return false;
+        }
 
-            if (!TweakXL::RegisterTweaks(aHandle, "tweaks\\"))
-            {
-                PluginContext::Error("Failed to add tweaks from the plugin's folder, quitting...");
-                return false;
-            }
+        if (!TweakXL::RegisterTweaks(aHandle, c_tweaksFolder))
+        {
+            PluginContext::Error("Failed to add tweaks, quitting...");
+            return false;
         }
 
         if (!hooking::InitializeHooking())
@@ -58,12 +59,11 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReaso
             return false;
         }
 
-        PluginContext::m_rtti = Red::CRTTISystem::Get();
+        PluginContext::m_rtti = CRTTISystem::Get();
         PluginContext::m_rtti->AddPostRegisterCallback(
             []()
             {
                 PluginContext::m_rttiReady = true;
-                PluginContext::RegisterPluginChannelNames();
             });
         break;
     }
@@ -85,7 +85,10 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(PluginInfo* aInfo)
 {
     aInfo->name = L"New Game+";
     aInfo->author = L"not_alphanine";
-    aInfo->version = RED4EXT_SEMVER_EX(static_cast<std::uint8_t>(build::c_version.major), static_cast<std::uint8_t>(build::c_version.minor), static_cast<std::uint8_t>(build::c_version.patch), RED4EXT_V0_SEMVER_PRERELEASE_TYPE_NONE, 0); // Set your version here.
+    aInfo->version = RED4EXT_SEMVER_EX(static_cast<std::uint8_t>(build::c_version.major),
+                                       static_cast<std::uint8_t>(build::c_version.minor),
+                                       static_cast<std::uint8_t>(build::c_version.patch),
+                                       RED4EXT_V0_SEMVER_PRERELEASE_TYPE_NONE, 0); // Set your version here.
     aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
     aInfo->sdk = RED4EXT_SDK_LATEST;
 }

@@ -8,10 +8,10 @@
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemCategory_Record.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemType_Record.hpp>
+#include <RED4ext/Scripting/Natives/Generated/gsm/MainQuest.hpp>
 #include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
 #include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
 #include <RED4ext/Scripting/Natives/gameGameSessionDesc.hpp>
-#include <RED4ext/Scripting/Natives/Generated/gsm/MainQuest.hpp>
 
 #include <RED4ext/Scripting/Natives/entIPlacedComponent.hpp>
 
@@ -38,6 +38,8 @@
 #include <RED4ext/Scripting/Natives/Generated/game/ui/CharacterCustomizationState.hpp>
 
 #include <parsing/fileReader.hpp>
+
+#include <tsl/hopscotch_set.h>
 
 using namespace Red;
 
@@ -101,26 +103,6 @@ public:
     Handle<NGPlusProgressionData> GetProgressionData()
     {
         return m_progressionData;
-    }
-
-    bool GetNewGamePlusState() const
-    {
-        return PluginContext::m_isNewGamePlusActive;
-    }
-
-    void SetNewGamePlusState(bool aNewState)
-    {
-        PluginContext::m_isNewGamePlusActive = aNewState;
-    }
-
-    bool GetStandaloneState() const
-    {
-        return m_isInStandalone;
-    }
-
-    void SetStandaloneState(bool aNewState)
-    {
-        m_isInStandalone = aNewState;
     }
 
     // Only checks for NG+ and NG+ Q001 quests, not standalone
@@ -192,47 +174,6 @@ public:
         shared::raw::QuestsSystem::AddQuest(m_questsSystem, c_ep1Quest);
     }
 
-    void SetNewGamePlusGameDefinition(ENewGamePlusStartType aStartType)
-    {
-        constexpr auto q001Path = ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001.gamedef");
-        constexpr auto q101Path = ResourcePath::HashSanitized("mod/quest/NewGamePlus.gamedef");
-
-        // These ones do not have EP1 enabled by default, but will have it enabled via custom quest starting
-        constexpr auto q001PathNoEP1 = ResourcePath::HashSanitized("mod/quest/NewGamePlus_Q001_NoEP1.gamedef");
-        constexpr auto q101PathNoEP1 = ResourcePath::HashSanitized("mod/quest/NewGamePlus_NoEP1.gamedef");
-
-        // Bare Post-Heist starts, applying EP1 Standalone progression builds...
-        constexpr auto standalonePath = ResourcePath::HashSanitized("mod/quest/NewGamePlus_Standalone.gamedef");
-        constexpr auto standalonePathNoEP1 =
-            ResourcePath::HashSanitized("mod/quest/NewGamePlus_Standalone_NoEP1.gamedef");
-
-        // Note: I believe EP1 and non-EP1 resolving should take place here, not script-side
-        // We will not need this anyway once we have session launch
-        switch (aStartType)
-        {
-        case ENewGamePlusStartType::StartFromQ001:
-            PluginContext::m_ngPlusGameDefinitionHash = q001Path;
-            break;
-        case ENewGamePlusStartType::StartFromQ101:
-            PluginContext::m_ngPlusGameDefinitionHash = q101Path; // Should fix it being in base/ sometime
-            break;
-        case ENewGamePlusStartType::StartFromQ001_NoEP1:
-            PluginContext::m_ngPlusGameDefinitionHash = q001PathNoEP1;
-            break;
-        case ENewGamePlusStartType::StartFromQ101_NoEP1:
-            PluginContext::m_ngPlusGameDefinitionHash = q101PathNoEP1;
-            break;
-        case ENewGamePlusStartType::StartFromQ101_ProgressionBuild:
-            PluginContext::m_ngPlusGameDefinitionHash = standalonePath;
-            break;
-        case ENewGamePlusStartType::StartFromQ101_ProgressionBuild_NoEP1:
-            PluginContext::m_ngPlusGameDefinitionHash = standalonePathNoEP1;
-            break;
-        default:
-            break;
-        }
-    }
-
     void SetNewGamePlusQuest(ENGPlusType aType)
     {
         m_selectedNgPlusType = aType;
@@ -246,6 +187,11 @@ public:
     bool HasPointOfNoReturnSave()
     {
         return files::HasValidPointOfNoReturnSave();
+    }
+
+    void RequestHasValidNewGamePlusSaves(WeakHandle<IScriptable> aTarget, CName aCallback)
+    {
+        files::HasNewGamePlusSaveAsync(aTarget, aCallback);
     }
 
     bool IsSaveValidForNewGamePlus(Red::ScriptRef<CString>& aSaveName)
@@ -292,6 +238,72 @@ public:
         }
 
         return returnedData;
+    }
+
+    void AsyncResolveNewGamePlusSaves(DynArray<CString> aSaves, WeakHandle<IScriptable> aRef, CName aCallbackName)
+    {
+        struct SaveResult
+        {
+            bool m_valid{};
+            std::uint64_t m_playthroughHash{};
+        };
+
+        JobQueue{}.Dispatch(
+            [aSaves, aRef, aCallbackName](const JobGroup& aGroup)
+            {
+                // Lockless, efficient
+                // Very nice
+                // Is it more efficient than using sync method, though?
+                DynArray<SaveResult> results{};
+                results.Reserve(aSaves.size);
+                results.size = aSaves.size;
+
+                JobQueue delayQueue(aGroup);
+
+                for (auto i = 0u; i < aSaves.size; i++)
+                {
+                    JobQueue worker(aGroup);
+                    worker.Dispatch(
+                        [i, &aSaves, &results]()
+                        {
+                            auto& saveName = aSaves[i];
+
+                            auto metadataPath =
+                                files::GetRedPathToSaveFile(saveName.c_str(), files::c_metadataFileName);
+
+                            results[i].m_valid =
+                                files::IsValidForNewGamePlus(metadataPath, results[i].m_playthroughHash);
+                        });
+
+                    delayQueue.Wait(worker.Capture());
+                }
+
+                // Wait for the jobs to complete
+                WaitForQueue(delayQueue, std::chrono::milliseconds(1000));
+
+                tsl::hopscotch_set<std::uint64_t> encounteredHashes{};
+                DynArray<int> indices{};
+                for (auto i = 0u; i < results.size; i++)
+                {
+                    auto& result = results[i];
+
+                    if (result.m_valid)
+                    {
+                        if (!encounteredHashes.contains(result.m_playthroughHash))
+                        {
+                            indices.PushBack(i);
+                            encounteredHashes.emplace(result.m_playthroughHash);
+                        }
+                    }
+                }
+
+                if (!aRef.Expired())
+                {
+                    auto locked = aRef.Lock();
+
+                    CallVirtual(locked, aCallbackName, indices);
+                }
+            });
     }
 #pragma region Transfer
     bool ParsePointOfNoReturnSaveData(Red::ScriptRef<CString>& aSaveName)
@@ -342,6 +354,7 @@ public:
         PluginContext::Error(aStr->c_str());
     }
 #pragma endregion
+
 #pragma region InteriorDetection
     void TickInteriors()
     {
@@ -354,7 +367,7 @@ public:
         }
 
         if (!m_modConfig.m_enableRandomEncounters || !m_modConfig.m_useExteriorDetectionForRandomEncounters ||
-            !m_isInNewGamePlusSave)
+            !m_isGoodForRandomEncounters)
         {
             return;
         }
@@ -483,7 +496,7 @@ public:
             UpdateNewGamePlusState();
         }
 
-        m_isInNewGamePlusSave = IsGoodForRandomEncounters();
+        m_isGoodForRandomEncounters = IsGoodForRandomEncounters();
     }
 
     void OnWorldDetached(world::RuntimeScene* aScene) override
@@ -494,7 +507,7 @@ public:
         m_questsSystem = nullptr;
         m_safeAreaManager = nullptr;
 
-        m_isInNewGamePlusSave = false;
+        m_isGoodForRandomEncounters = false;
 
         m_isInNewGamePlusPrologue = false;
         m_isInNewGamePlusHeist = false;
@@ -539,7 +552,8 @@ public:
 
                     for (auto& mainQuest : asGameDef->mainQuests)
                     {
-                        if (!hasExpansion && (mainQuest->questFile.path == c_ep1Quest || mainQuest->questFile.path == c_ep1PreorderQuest))
+                        if (!hasExpansion && (mainQuest->questFile.path == c_ep1Quest ||
+                                              mainQuest->questFile.path == c_ep1PreorderQuest))
                         {
                             // Skip over EP1/EP1 preorder if user does not own expansion
                             continue;
@@ -549,7 +563,7 @@ public:
 
                         data.questPath = mainQuest->questFile.path;
                         data.questPathValid = data.questPath != c_invalidPath;
-                        
+
                         if (mainQuest->additionalContent)
                         {
                             data.additionalContentId = mainQuest->additionalContentName;
@@ -598,8 +612,7 @@ private:
     bool m_isInEncounterTest{};
 
     bool m_isExterior{};
-    bool m_isInNewGamePlusSave{};
-    bool m_isInStandalone{};
+    bool m_isGoodForRandomEncounters{};
 #pragma endregion
 
 #pragma region Systems
@@ -624,22 +637,18 @@ RTTI_DEFINE_ENUM(mod::ENGPlusType);
 RTTI_DEFINE_CLASS(mod::NewGamePlusSystem, {
     RTTI_METHOD(ParsePointOfNoReturnSaveData);
     RTTI_METHOD(HasPointOfNoReturnSave);
+
+    RTTI_METHOD(RequestHasValidNewGamePlusSaves);
+    RTTI_METHOD(AsyncResolveNewGamePlusSaves);
     RTTI_METHOD(ResolveNewGamePlusSaves);
 
-    RTTI_METHOD(GetNewGamePlusState);
-    RTTI_METHOD(SetNewGamePlusState);
-
     RTTI_METHOD(GetProgressionData);
-    RTTI_METHOD(SetNewGamePlusGameDefinition);
     RTTI_METHOD(IsSaveValidForNewGamePlus);
 
     RTTI_METHOD(LoadExpansionIntoSave);
 
     RTTI_METHOD(Spew);
     RTTI_METHOD(Error);
-
-    RTTI_METHOD(GetStandaloneState);
-    RTTI_METHOD(SetStandaloneState);
 
     RTTI_METHOD(IsInNewGamePlusSave);
     RTTI_METHOD(IsInNewGamePlusPrologue);

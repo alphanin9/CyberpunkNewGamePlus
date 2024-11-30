@@ -74,3 +74,8 @@ void migration::SetupModulePath(HMODULE aModule)
     m_modulePath = modulePath;
     m_modulePath = m_modulePath.parent_path(); // red4ext/plugins/NewGamePlus
 }
+
+const std::filesystem::path& migration::GetModulePath()
+{
+    return m_modulePath;
+}
