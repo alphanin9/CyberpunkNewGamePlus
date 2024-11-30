@@ -25,6 +25,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
     private let m_animProxy: ref<inkAnimProxy>;
     private let m_sourceIndex: Int32;
     private let m_ngPlusSystem: ref<NewGamePlusSystem>;
+    private let m_selectedLoadListItem: wref<LoadListItem>;
 
     // WolvenKit only lets me specify *some* things, but inkwidgets generally are just enough
     private final func InitializeUninitializableWKitVariables() {
@@ -134,22 +135,37 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
         }
     }
 
-    private final func OnSelectedSave(controller: ref<LoadListItem>) -> Void {
-        let saveName = this.m_saves[controller.Index()];
+    // Did we succeed at save loader?
+    private cb func OnNewGamePlusSaveLoaded(result: Bool) {
+        if !result {
+            let controller: ref<LoadListItem> = this.m_selectedLoadListItem;
 
-        if !this.m_ngPlusSystem.ParsePointOfNoReturnSaveData(saveName) {
-            // NOTE: add localization? Better error messages?
-            controller.SetInvalid("Failed to parse progression data!\nTry going into a game and saving again.");
-            return;
+            if IsDefined(controller) {
+                // NOTE: add localization? Better error messages?
+                controller.SetInvalid("Failed to parse progression data!\nTry going into a game and saving again.");
+                return;
+            }
         }
 
         this.m_eventDispatcher.SpawnEvent(n"OnAccept");
     }
 
+    private final func OnSelectedSave(controller: ref<LoadListItem>) -> Void {
+        // Store used controller for error reporting
+        // Then tell NG+ system to process the save
+        this.m_selectedLoadListItem = controller;
+        this.m_ngPlusSystem.RequestLoadSaveData(this.m_saves[controller.Index()], this, n"OnNewGamePlusSaveLoaded");
+    }
+
     protected cb func OnSavesForLoadReady(saves: [String]) -> Bool {
+        this.m_ngPlusSystem.RequestResolveNewGamePlusSaves(saves, this, n"OnNewGamePlusSaveResolveRead");
         this.m_saves = saves;
-        this.m_ngPlusSaveIndices = this.m_ngPlusSystem.ResolveNewGamePlusSaves(saves);
+    }
+
+    protected cb func OnNewGamePlusSaveResolveRead(saveIds: [Int32]) {
         this.m_saveFilesReady = true;
+        this.m_ngPlusSaveIndices = saveIds;
+
         this.UpdateSavesList();
     }
 

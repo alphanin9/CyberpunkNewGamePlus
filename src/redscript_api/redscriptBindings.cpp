@@ -100,6 +100,11 @@ private:
 #pragma endregion
 
 public:
+    void ToggleDebugMode()
+    {
+        PluginContext::m_isDebugModeEnabled = !PluginContext::m_isDebugModeEnabled;
+    }
+
     Handle<NGPlusProgressionData> GetProgressionData()
     {
         return m_progressionData;
@@ -186,7 +191,7 @@ public:
 
     bool HasPointOfNoReturnSave()
     {
-        return files::HasValidPointOfNoReturnSave();
+        return false;
     }
 
     void RequestHasValidNewGamePlusSaves(WeakHandle<IScriptable> aTarget, CName aCallback)
@@ -194,12 +199,6 @@ public:
         files::HasNewGamePlusSaveAsync(aTarget, aCallback);
     }
 
-    bool IsSaveValidForNewGamePlus(Red::ScriptRef<CString>& aSaveName)
-    {
-        return files::IsValidForNewGamePlus(aSaveName->c_str());
-    }
-
-    // TODO: async this, learn how journal gets loaded
     DynArray<int> ResolveNewGamePlusSaves(Red::ScriptRef<DynArray<CString>>& aSaves)
     {
         if (!aSaves)
@@ -240,7 +239,8 @@ public:
         return returnedData;
     }
 
-    void AsyncResolveNewGamePlusSaves(DynArray<CString> aSaves, WeakHandle<IScriptable> aRef, CName aCallbackName)
+    // TODO: learn how journal gets loaded, use that + FactsDB for save file validation
+    void RequestResolveNewGamePlusSaves(DynArray<CString> aSaves, WeakHandle<IScriptable> aRef, CName aCallbackName)
     {
         struct SaveResult
         {
@@ -306,19 +306,13 @@ public:
             });
     }
 #pragma region Transfer
-    bool ParsePointOfNoReturnSaveData(Red::ScriptRef<CString>& aSaveName)
+    bool LoadSaveData(const CString& aSaveName)
     {
-        // This needs to be async
-        if (!aSaveName)
-        {
-            return false;
-        }
-
         auto start = std::chrono::high_resolution_clock{}.now();
 
         parser::Parser parser{};
 
-        if (!parser.ParseSavegame(*aSaveName))
+        if (!parser.ParseSavegame(aSaveName))
         {
             return false;
         }
@@ -340,6 +334,22 @@ public:
         PluginContext::Spew("Time taken: {}", duration);
 
         return true;
+    }
+
+    void RequestLoadSaveData(CString aSaveName, WeakHandle<IScriptable> aTarget, CName aCallbackName)
+    {
+        JobQueue{}.Dispatch(
+            [this, aSaveName, aTarget, aCallbackName]()
+            {
+                const auto returnValue = LoadSaveData(aSaveName);
+                
+                if (!aTarget.Expired())
+                {
+                    auto ref = aTarget.Lock();
+
+                    CallVirtual(ref, aCallbackName, returnValue);
+                }
+            });
     }
 #pragma endregion
 #pragma region ScriptLogging
@@ -635,15 +645,12 @@ RTTI_DEFINE_ENUM(mod::ENewGamePlusStartType);
 RTTI_DEFINE_ENUM(mod::ENGPlusType);
 
 RTTI_DEFINE_CLASS(mod::NewGamePlusSystem, {
-    RTTI_METHOD(ParsePointOfNoReturnSaveData);
-    RTTI_METHOD(HasPointOfNoReturnSave);
-
+    RTTI_METHOD(RequestLoadSaveData);
     RTTI_METHOD(RequestHasValidNewGamePlusSaves);
-    RTTI_METHOD(AsyncResolveNewGamePlusSaves);
+    RTTI_METHOD(RequestResolveNewGamePlusSaves);
     RTTI_METHOD(ResolveNewGamePlusSaves);
 
     RTTI_METHOD(GetProgressionData);
-    RTTI_METHOD(IsSaveValidForNewGamePlus);
 
     RTTI_METHOD(LoadExpansionIntoSave);
 
@@ -657,4 +664,6 @@ RTTI_DEFINE_CLASS(mod::NewGamePlusSystem, {
     RTTI_METHOD(LaunchNewGamePlus);
     RTTI_METHOD(SetNewGamePlusQuest);
     RTTI_METHOD(GetNewGamePlusQuest);
+
+    RTTI_METHOD(ToggleDebugMode);
 });

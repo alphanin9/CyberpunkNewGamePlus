@@ -36,29 +36,6 @@ CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexc
     return filePath;
 }
 
-// No longer checks for PONR, needs a name change
-bool HasValidPointOfNoReturnSave() noexcept
-{
-    auto fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
-
-    if (!fileManager)
-    {
-        return false;
-    }
-
-    static const auto& c_saveFolder = shared::raw::Filesystem::Path::GetSaveFolder();
-
-    for (auto& i : fileManager->FindFilesByName(c_saveFolder, "metadata.9.json"))
-    {
-        if (IsValidForNewGamePlus(i))
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
-
 void HasNewGamePlusSaveAsync(WeakHandle<IScriptable> aTarget, CName aCallback) noexcept
 {
     static auto s_fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
@@ -79,12 +56,17 @@ void HasNewGamePlusSaveAsync(WeakHandle<IScriptable> aTarget, CName aCallback) n
                 // Having job for each save would likely cost a lot
                 // So, we only have one job to offset cost a little
 
+                PluginContext::DebugLog("[HasNewGamePlusSaveAsync {}] Processing save", i.c_str());
+
                 if (IsValidForNewGamePlus(i))
                 {
+                    PluginContext::DebugLog("[HasNewGamePlusSaveAsync {}] Save was OK", i.c_str());
                     CallVirtual(ref, aCallback, true);
                     return;
                 }
             }
+
+            PluginContext::DebugLog("[HasNewGamePlusSaveAsync] No OK saves found!");
 
             CallVirtual(ref, aCallback, false);
         });
@@ -579,6 +561,7 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
 
     if (!LoadSaveMetadata(aSaveFullPath, metadata))
     {
+        PluginContext::DebugLog("[IsValidForNewGamePlus {}] Failed to load save metadata", aSaveFullPath.c_str());
         return false;
     }
 
@@ -589,16 +572,19 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
 
     if (platform != c_pcPlatformName && platform != c_steamDeckPlatformName)
     {
+        PluginContext::DebugLog("[IsValidForNewGamePlus {}] Invalid platform", aSaveFullPath.c_str());
         return false;
     }
 
     if (c_minSupportedGameVersion > metadata.gameVersion)
     {
+        PluginContext::DebugLog("[IsValidForNewGamePlus {}] Game version is too old", aSaveFullPath.c_str());
         return false;
     }
 
     if (metadata.isEndGameSave)
     {
+        PluginContext::DebugLog("[IsValidForNewGamePlus {}] Ignoring end game save", aSaveFullPath.c_str());
         return false;
     }
 
@@ -606,6 +592,7 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
     // It's going to be rad, though
     if (metadata.debugString == "pre_replay_ponr_save")
     {
+        PluginContext::DebugLog("[IsValidForNewGamePlus {}] Is pre-replay PONR save", aSaveFullPath.c_str());
         return false;
     }
 
@@ -614,6 +601,7 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
     if (std::find(c_generatedPostPointOfNoReturnObjectives.begin(), c_generatedPostPointOfNoReturnObjectives.end(),
                   FNV1a64(metadata.trackedQuestEntry.c_str())) != c_generatedPostPointOfNoReturnObjectives.end())
     {
+        PluginContext::DebugLog("[IsValidForNewGamePlus {}] Bad tracked quest objective {}", aSaveFullPath.c_str(), metadata.trackedQuestEntry.c_str());
         return false;
     }
 
@@ -624,11 +612,13 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
 
     if (questsSet.contains("q104") && questsSet.contains("q110") && questsSet.contains("q112"))
     {
+        PluginContext::DebugLog("[IsValidForNewGamePlus {}] Quests are OK", aSaveFullPath.c_str());
         return true;
     }
 
     if (metadata.isPointOfNoReturn)
     {
+        PluginContext::DebugLog("[IsValidForNewGamePlus {}] PONR save", aSaveFullPath.c_str());
         return true;
     }
 
@@ -644,10 +634,12 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
 
         if (hashed == c_q307ActiveFact || hashed == c_ngplusDebugUnlocker)
         {
+            PluginContext::DebugLog("[IsValidForNewGamePlus {}] NG+ activating fact found", aSaveFullPath.c_str());
             return true;
         }
     }
 
+    PluginContext::DebugLog("[IsValidForNewGamePlus {}] Save is not good", aSaveFullPath.c_str());
     return false;
 }
 

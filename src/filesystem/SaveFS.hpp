@@ -9,7 +9,6 @@ namespace files
 inline constexpr auto c_metadataFileName = "metadata.9.json";
 inline constexpr auto c_saveFileName = "sav.dat";
 
-bool HasValidPointOfNoReturnSave() noexcept;
 void HasNewGamePlusSaveAsync(Red::WeakHandle<Red::IScriptable> aTarget, Red::CName aCallback) noexcept;
 
 Red::CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexcept;
