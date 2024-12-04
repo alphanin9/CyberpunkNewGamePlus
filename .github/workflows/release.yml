@@ -44,8 +44,8 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
           # Create the ZIP files.
-          7z a NewGamePlus_${env:NGPLUS_VERSION}.zip packaging/*
-          7z a NewGamePlus_${env:NGPLUS_VERSION}_pdb.zip packaging_pdb/*
+          7z a NewGamePlus_${env:NGPLUS_VERSION}.zip ./packaging/*
+          7z a NewGamePlus_${env:NGPLUS_VERSION}_pdb.zip ./packaging_pdb/*
   
     - name: Generate hash for .zip
       working-directory: ${{env.GITHUB_WORKSPACE}}
