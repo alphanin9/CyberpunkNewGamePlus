@@ -25,6 +25,7 @@
 
 #include <util/scopeguard.hpp>
 
+#include <Shared/Raw/CharacterCustomizationState/CharacterCustomizationState.hpp>
 #include <Shared/Raw/GameDefinition/GameDefinition.hpp>
 #include <Shared/Raw/Ink/InkSystem.hpp>
 #include <Shared/Raw/PlayerSystem/PlayerSystem.hpp>
@@ -97,6 +98,8 @@ private:
                                    c_invalidPath};
 
     static constexpr TweakDBID c_initialLoadingScreen = "InitLoadingScreen.DefaultInitialLoadingScreen";
+
+    static constexpr TweakDBID c_freshStartLifePathID = "LifePaths.NewStart";
 #pragma endregion
 
 public:
@@ -342,7 +345,7 @@ public:
             [this, aSaveName, aTarget, aCallbackName]()
             {
                 const auto returnValue = LoadSaveData(aSaveName);
-                
+
                 if (!aTarget.Expired())
                 {
                     auto ref = aTarget.Lock();
@@ -592,7 +595,29 @@ public:
                     shared::raw::Ink::SessionData::Data sessionData{};
 
                     sessionData.AddArgument("gameSessionDesc", &desc);
-                    sessionData.AddArgument("spawnTags", &asGameDef->spawnPointTags);
+
+                    TweakDBID lifePath{};
+                    shared::raw::CharacterCustomizationState::GetLifePath(aState, lifePath);
+
+                    // Fresh Start compat for spawn tags (yes, this will start the game at Q000! Enum name becomes a bit
+                    // misleading...)
+                    if (m_selectedNgPlusType == ENGPlusType::StartFromQ001 && lifePath == c_freshStartLifePathID)
+                    {
+                        const auto spawnTag =
+                            *TweakDB::Get()
+                                 ->GetFlatValue(TweakDBID(c_freshStartLifePathID, ".newGameSpawnTags"))
+                                 ->GetValue<CName>();
+
+                        red::TagList spawnTagList{};
+
+                        spawnTagList.Add(spawnTag);
+
+                        sessionData.AddArgument("spawnTags", &spawnTagList);
+                    }
+                    else
+                    {
+                        sessionData.AddArgument("spawnTags", &asGameDef->spawnPointTags);
+                    }
 
                     auto systemRequestsHandler = shared::raw::Ink::InkSystem::Get()->m_requestsHandler.Lock();
 
