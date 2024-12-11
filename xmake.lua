@@ -1,5 +1,5 @@
 set_project("New Game+")
-set_version("1.1.3", {build="%y%m%d%H"})
+set_version("1.1.4", {build="%y%m%d%H"})
 
 set_arch("x64")
 set_languages("c++latest")
@@ -64,7 +64,9 @@ target("New Game+")
     end)
     on_install(function(target)
         local target_file = target:targetfile()
-        local plugin_folder = path.join(cp2077_path, "red4ext/plugins/NewGamePlus")
+        local plugin_folder = path.join(cp2077_path, "red4ext/plugins/NewGamePlus/")
+
+        os.mkdir(plugin_folder)
 
         os.cp(target_file, plugin_folder)
         os.cp(path.join(

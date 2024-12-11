@@ -495,6 +495,7 @@ class NewGamePlusProgressionLoader extends ScriptableSystem {
     private let m_progressionLoaderListenerId: Uint32;
 
     private let m_stashEntity: ref<GameObject>;
+    private let m_owner: wref<GameObject>;
 
     private final func OnAttach() -> Void {
         this.m_questsSystem = GameInstance.GetQuestsSystem(GetGameInstance());
@@ -503,13 +504,17 @@ class NewGamePlusProgressionLoader extends ScriptableSystem {
         this.m_progressionLoaderListenerId = this.m_questsSystem.RegisterListener(n"ngplus_apply_progression", this, n"OnProgressionTransferCalled");
     }
 
+    protected cb func OnPlayerAttach(request: ref<PlayerAttachRequest>) {
+        this.m_owner = request.owner;
+    }
+
     public final func OnProgressionTransferCalled(factValue: Int32) -> Void {
         this.m_ngPlusSystem.Spew(s"NewGamePlusProgressionLoader::OnProgressionTransferCalled \(factValue)");
         if(factValue != 1) {
             return;
         }
 
-        let player = GameInstance.GetPlayerSystem(GetGameInstance()).GetLocalPlayerControlledGameObject() as PlayerPuppet;
+        let player: ref<PlayerPuppet> = this.m_owner as PlayerPuppet;
 
         if !IsDefined(player) {
             this.m_questsSystem.SetFactStr("ngplus_apply_progression", 0);
