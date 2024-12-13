@@ -1,5 +1,5 @@
 set_project("New Game+")
-set_version("1.1.4", {build="%y%m%d%H"})
+set_version("1.1.5", {build="%y%m%d%H"})
 
 set_arch("x64")
 set_languages("c++latest")
@@ -14,11 +14,11 @@ set_runtimes("MD")
 
 add_requires("lz4", "hopscotch-map", "semver", "wil")
 
-includes("deps/sharedpunk/xmake.lua")
-
 local cp2077_path = os.getenv("CP2077_PATH")
 
 target("New Game+")
+    includes("deps/sharedpunk")
+
     set_default(true)
     set_kind("shared")
     set_filename("NewGamePlus.dll")
