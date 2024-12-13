@@ -11,6 +11,7 @@ base\localization\en-us\new_game_plus\subtitles\q001\q001_restored_subtitles.jso
 base\localization\en-us\new_game_plus\subtitles\q101\q101_restored_subtitles.json
 base\localization\en-us\new_game_plus\subtitles\q116\q116_restored_subtitles.json
 base\localization\en-us\new_game_plus\subtitles\subtitles.json
+base\open_world\passenger\phases\thepassenger.questphase
 base\quest\side_quests\sq032\scenes\lipsync\en\sq032_00_sickness\johnny.anims
 base\quest\side_quests\sq032\scenes\lipsync\en\sq032_00_sickness\v.anims
 mod\quest\changedQuests\NewGamePlus_act_1.questphase

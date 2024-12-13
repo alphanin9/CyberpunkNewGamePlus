@@ -605,7 +605,7 @@ public:
                     {
                         const auto spawnTag =
                             *TweakDB::Get()
-                                 ->GetFlatValue(TweakDBID(c_freshStartLifePathID, ".newGameSpawnTags"))
+                                 ->GetFlatValue(TweakDBID(c_freshStartLifePathID, ".newGameSpawnTag"))
                                  ->GetValue<CName>();
 
                         red::TagList spawnTagList{};
