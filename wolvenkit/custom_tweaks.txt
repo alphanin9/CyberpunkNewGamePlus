@@ -28,3 +28,4 @@ DynamicSpawnSystem.NewGamePlus_WellesBossEncounter_Car3
 DynamicSpawnSystem.NewGamePlusTestSpawn
 DynamicSpawnSystem.NGPlus_FastSoloBossEncounter
 JohnnySicknessMediumQuest
+LifePaths.NewStart

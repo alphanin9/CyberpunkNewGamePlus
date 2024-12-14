@@ -16,6 +16,7 @@ base\quest\side_quests\sq032\scenes\lipsync\en\sq032_00_sickness\johnny.anims
 base\quest\side_quests\sq032\scenes\lipsync\en\sq032_00_sickness\v.anims
 mod\quest\changedQuests\NewGamePlus_act_1.questphase
 mod\quest\changedQuests\NewGamePlus_additional_game_elements.questphase
+mod\quest\changedquests\newgameplus_cyberpunk2077.questphase
 mod\quest\changedQuests\NewGamePlus_cyberpunk2077.questphase
 mod\quest\changedQuests\NewGamePlus_persistent_content.questphase
 mod\quest\changedQuests\open_world\NewGamePlus_open_world_content.questphase
@@ -34,6 +35,7 @@ mod\quest\newgameplus\bossEncounterTest\bossEncounterStressTest.quest
 mod\quest\newgameplus\bossEncounterTest\bossEncounterTest.gamedef
 mod\quest\newgameplus\bossEncounterTest\bossEncounterTest.quest
 mod\quest\newgameplus\bugfixing\ngplusBugfixing.questphase
+mod\quest\newgameplus\fasttracktoq001.questphase
 mod\quest\newgameplus\FastTrackToQ001.questphase
 mod\quest\newgameplus\FastTrackToQ101New.questphase
 mod\quest\newgameplus\FixHauntedWeaponsPreEP1.questphase
@@ -57,7 +59,9 @@ mod\quest\newgameplus\NGPlusBossEncounterRetrofix.questphase
 mod\quest\newgameplus\progressionBuildApply\SetupProgressionBuildsForStandalone.questphase
 mod\quest\newgameplus\RestoreHUD.questphase
 mod\quest\newgameplus\SetBandageOutfit.questphase
+mod\quest\newgameplus\setplayerprogression.questphase
 mod\quest\newgameplus\SetPlayerProgression.questphase
 mod\quest\newgameplus\vrTutorialHack\Q000VRTutorial.questphase
+mod\quest\newgameplus\vrtutorialhack\vrtutorialforq001start.questphase
 mod\quest\newgameplus\vrTutorialHack\VRTutorialForQ001Start.questphase
 mod\quest\ping_sq032_sickness.questphase
