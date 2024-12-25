@@ -21,6 +21,11 @@ public class UserSettings {
     public let q101StartPoint: ENGPlusQ101StartPoint = ENGPlusQ101StartPoint.Default;
 
     @runtimeProperty("ModSettings.mod", "NewGamePlus_MainMenuButton")
+    @runtimeProperty("ModSettings.displayName", "NewGamePlus_ClampPlayerLevelInTransfer_Name")
+    @runtimeProperty("ModSettings.description", "NewGamePlus_ClampPlayerLevelInTransfer_Desc")
+    public let clampPlayerLevel: Bool = true;
+
+    @runtimeProperty("ModSettings.mod", "NewGamePlus_MainMenuButton")
     @runtimeProperty("ModSettings.category", "NewGamePlus_Difficulty_Name")
     @runtimeProperty("ModSettings.category.order", "1")
     @runtimeProperty("ModSettings.displayName", "NewGamePlus_FastUpgradeChance_Name")
