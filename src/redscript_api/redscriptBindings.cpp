@@ -502,7 +502,7 @@ public:
         m_questsSystem = GetGameSystem<quest::QuestsSystem>();
         m_safeAreaManager = GetGameSystem<AI::SafeAreaManager>();
 
-        m_modConfig = settings::GetRandomEncounterSettings();
+        m_modConfig = settings::GetModSettings();
         // If we haven't restored, update NG+ config
         if (!m_restoredDataFromSave)
         {

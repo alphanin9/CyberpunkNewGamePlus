@@ -6,6 +6,7 @@ struct ModConfig
 {
     bool m_enableRandomEncounters{};
     bool m_useExteriorDetectionForRandomEncounters{};
+    bool m_clampPlayerLevel{};
 };
-ModConfig GetRandomEncounterSettings() noexcept;
+ModConfig GetModSettings() noexcept;
 } // namespace settings

@@ -1,6 +1,8 @@
 #include "statsSystemReader.hpp"
 
 #include <parsing/definitions/nodeParsers/stats/statsSystemNode.hpp>
+#include <util/settings/settingsAccessor.hpp>
+
 #include <RED4ext/Scripting/Natives/Generated/game/ConstantStatModifierData_Deprecated.hpp>
 
 using namespace Red;
@@ -71,13 +73,22 @@ StatsSystemReader::StatsSystemResults::StatsSystemResults(ResultContext& aContex
             m_technicalAbility = asConstant->value;
             break;
         case StatType::Level:
-            constexpr auto c_ep1MaxLevel = 50.f;
-            constexpr auto c_nonEp1MaxLevel = 40.f;
+        {
+            auto usedValue = asConstant->value;
 
-            const auto gameEngine = CGameEngine::Get();
+            if (settings::GetModSettings().m_clampPlayerLevel)
+            {
+                constexpr auto c_ep1MaxLevel = 50.f;
+                constexpr auto c_nonEp1MaxLevel = 40.f;
 
-            m_level = std::min(asConstant->value, gameEngine->isEP1 ? c_ep1MaxLevel : c_nonEp1MaxLevel);
+                const auto gameEngine = CGameEngine::Get();
+
+                usedValue = std::min(usedValue, gameEngine->isEP1 ? c_ep1MaxLevel : c_nonEp1MaxLevel);
+            }
+
+            m_level = usedValue;
             break;
+        }
         }
     }
 }

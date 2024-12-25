@@ -300,7 +300,9 @@ class PlayerProgressionLoader {
 
         let inventory = this.m_ngPlusProgression.GetPlayerInventory();
 
-        this.m_transactionSystem.GiveItem(this.m_player, ItemID.FromTDBID(t"Items.money"), inventory.GetMoney());
+        let moneyAmount = this.m_transactionSystem.GetItemQuantity(this.m_player, MarketSystem.Money());
+
+        this.m_transactionSystem.GiveItem(this.m_player, MarketSystem.Money(), Max(0, inventory.GetMoney() - moneyAmount));
 
         let errCount = 0;
 
@@ -493,6 +495,7 @@ class NewGamePlusProgressionLoader extends ScriptableSystem {
     private let m_ngPlusSystem: ref<NewGamePlusSystem>;
     private let m_transactionSystem: ref<TransactionSystem>;
     private let m_progressionLoaderListenerId: Uint32;
+    private let m_q000DoneListenerId: Uint32;
 
     private let m_stashEntity: ref<GameObject>;
     private let m_owner: wref<GameObject>;
@@ -502,10 +505,42 @@ class NewGamePlusProgressionLoader extends ScriptableSystem {
         this.m_ngPlusSystem = GameInstance.GetNewGamePlusSystem();
         
         this.m_progressionLoaderListenerId = this.m_questsSystem.RegisterListener(n"ngplus_apply_progression", this, n"OnProgressionTransferCalled");
+        this.m_q000DoneListenerId = this.m_questsSystem.RegisterListener(n"q000_done", this, n"OnQ000Done");
     }
 
-    protected cb func OnPlayerAttach(request: ref<PlayerAttachRequest>) {
+    private func OnPlayerAttach(request: ref<PlayerAttachRequest>) {
         this.m_owner = request.owner;
+    }
+
+    // FIX: Fresh Start Q000 resetting money, easier on our end than on mod end
+    // NOTE: This won't come alive unless we're in the same session where we started NG+
+    public final func OnQ000Done(factValue: Int32) -> Void {
+        if factValue != 1 {
+            return;
+        }
+
+        let isNGPlusActive = this.m_questsSystem.GetFactStr("ngplus_active") == 1;
+        let isFreshStart = this.m_questsSystem.GetFactStr("ngplus_fresh_start_on") == 1;
+
+        if !isNGPlusActive || !isFreshStart {
+            return;
+        }
+
+        let progressionData = this.m_ngPlusSystem.GetProgressionData();
+
+        if !IsDefined(progressionData) {
+            this.m_ngPlusSystem.Error("NewGamePlusProgressionLoader::OnQ000Done, progression data is missing");
+            return;
+        }
+
+        let transactionSystem = GameInstance.GetTransactionSystem(this.GetGameInstance());
+
+        let presentMoney = transactionSystem.GetItemQuantity(this.m_owner, MarketSystem.Money());
+        let money = progressionData.GetPlayerInventory().GetMoney();
+
+        let toBeAdded = Max(0, money - presentMoney);
+
+        transactionSystem.GiveItem(this.m_owner, MarketSystem.Money(), toBeAdded);
     }
 
     public final func OnProgressionTransferCalled(factValue: Int32) -> Void {
@@ -537,5 +572,6 @@ class NewGamePlusProgressionLoader extends ScriptableSystem {
 
     private final func OnDetach() -> Void {
         this.m_questsSystem.UnregisterListener(n"ngplus_apply_progression", this.m_progressionLoaderListenerId);
+        this.m_questsSystem.UnregisterListener(n"q000_done", this.m_q000DoneListenerId);
     }
 }

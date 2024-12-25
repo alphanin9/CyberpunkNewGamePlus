@@ -4,10 +4,10 @@
 #include <context/context.hpp>
 
 #include <Shared/Hooks/HookManager.hpp>
-#include <Shared/Raw/CharacterCustomizationState/CharacterCustomizationState.hpp>
-#include <Shared/Raw/CharacterCustomizationSystem/CharacterCustomizationSystem.hpp>
-#include <Shared/Raw/Quest/QuestsSystem.hpp>
 #include <Shared/Raw/Telemetry/Telemetry.hpp>
+#include <Shared/Raw/Quest/QuestsSystem.hpp>
+#include <Shared/Raw/CharacterCustomizationSystem/CharacterCustomizationSystem.hpp>
+#include <Shared/Raw/CharacterCustomizationState/CharacterCustomizationState.hpp>
 
 using namespace Red;
 
@@ -26,7 +26,7 @@ void OnLoadTelemetryFactMap(HashMap<std::uint32_t, CString>& aMap)
 
 namespace CharacterCustomizationSystem
 {
-void OnNewGame(Red::game::ui::CharacterCustomizationSystem* aThis, void* aRdx)
+void OnNewGame(game::ui::CharacterCustomizationSystem* aThis, void* aRdx)
 {
     // FIX: Fresh Start integration breaking things
     // Implement a more robust fix using FDB mechanics used for setting cp77_new_game
@@ -49,7 +49,7 @@ void OnNewGame(Red::game::ui::CharacterCustomizationSystem* aThis, void* aRdx)
     {
         return;
     }
-
+    
     TweakDBID lifepathId{};
 
     shared::raw::CharacterCustomizationState::GetLifePath(state, lifepathId);
@@ -61,7 +61,7 @@ void OnNewGame(Red::game::ui::CharacterCustomizationSystem* aThis, void* aRdx)
         shared::raw::QuestsSystem::FactsDB(questsSystem)->SetFact("ngplus_fresh_start_on", 1);
     }
 }
-} // namespace CharacterCustomizationSystem
+}
 
 bool InitializeHooking()
 {
@@ -77,7 +77,6 @@ bool InitializeHooking()
 
 bool DetachHooking()
 {
-    return shared::hook::Unhook<shared::raw::Telemetry::LoadFactMap>() &&
-           shared::hook::Unhook<shared::raw::CharacterCustomizationSystem::OnNewGame>();
+    return shared::hook::Unhook<shared::raw::Telemetry::LoadFactMap>() && shared::hook::Unhook<shared::raw::CharacterCustomizationSystem::OnNewGame>();
 }
 } // namespace hooking

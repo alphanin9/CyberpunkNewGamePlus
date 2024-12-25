@@ -38,6 +38,7 @@ mod\quest\newgameplus\bugfixing\ngplusBugfixing.questphase
 mod\quest\newgameplus\fasttracktoq001.questphase
 mod\quest\newgameplus\FastTrackToQ001.questphase
 mod\quest\newgameplus\FastTrackToQ101New.questphase
+mod\quest\newgameplus\fixhauntedweaponspreep1.questphase
 mod\quest\newgameplus\FixHauntedWeaponsPreEP1.questphase
 mod\quest\newgameplus\InitStreetStoriesAndFastTravel.questphase
 mod\quest\newgameplus\journal\NGPlusJournal.journal
@@ -53,6 +54,7 @@ mod\quest\newgameplus\newNpc\brightman.ent
 mod\quest\newgameplus\newNpc\burondo.ent
 mod\quest\newgameplus\newNpc\cross.ent
 mod\quest\newgameplus\newNpc\evilJackie.ent
+mod\quest\newgameplus\ngplusadditionalcontent.questphase
 mod\quest\newgameplus\NGPlusAdditionalContent.questphase
 mod\quest\newgameplus\NGPlusBossEncounterLoop.questphase
 mod\quest\newgameplus\NGPlusBossEncounterRetrofix.questphase

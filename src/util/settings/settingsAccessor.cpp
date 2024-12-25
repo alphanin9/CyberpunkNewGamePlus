@@ -7,7 +7,7 @@
 
 using namespace Red;
 
-settings::ModConfig settings::GetRandomEncounterSettings() noexcept
+settings::ModConfig settings::GetModSettings() noexcept
 {
     auto classInstance = MakeScriptedHandle("NGPlus.UserSettings");
 
@@ -21,6 +21,7 @@ settings::ModConfig settings::GetRandomEncounterSettings() noexcept
     config.m_enableRandomEncounters = shared::rtti::GetClassProperty<bool, "enableRandomEncounters">(classInstance);
     config.m_useExteriorDetectionForRandomEncounters =
         shared::rtti::GetClassProperty<bool, "spawnRandomEncountersWhileWalking">(classInstance);
+    config.m_clampPlayerLevel = shared::rtti::GetClassProperty<bool, "clampPlayerLevel">(classInstance);
 
     return config;
 }
