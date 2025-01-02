@@ -39,7 +39,7 @@ void OnNewGame(game::ui::CharacterCustomizationSystem* aThis, void* aRdx)
 
     if (!state)
     {
-        PluginContext::Error("hooking::CharacterCustomizationSystem::OnNewGame, CC state == NULL, WTF?");
+        PluginContext::Error("hooking::CharacterCustomizationSystem::OnNewGame, CC state == NULL");
         return;
     }
 
@@ -54,12 +54,27 @@ void OnNewGame(game::ui::CharacterCustomizationSystem* aThis, void* aRdx)
 
     shared::raw::CharacterCustomizationState::GetLifePath(state, lifepathId);
 
-    if (lifepathId == "LifePaths.NewStart")
-    {
-        auto questsSystem = GetGameSystem<quest::QuestsSystem>();
+    auto questsSystem = GetGameSystem<quest::QuestsSystem>();
+    auto factsDB = shared::raw::QuestsSystem::FactsDB(questsSystem);
 
-        shared::raw::QuestsSystem::FactsDB(questsSystem)->SetFact("ngplus_fresh_start_on", 1);
+    if (lifepathId == "LifePaths.Corporate")
+    {
+        factsDB->SetFact("ngplus_is_corpo", 1);
     }
+    else if (lifepathId == "LifePaths.StreetKid")
+    {
+        factsDB->SetFact("ngplus_is_streetkid", 1);
+    }
+    else if (lifepathId == "LifePaths.Nomad")
+    {
+        factsDB->SetFact("ngplus_is_nomad", 1);
+    }
+    else if (lifepathId == "LifePaths.NewStart")
+    {
+        factsDB->SetFact("ngplus_fresh_start_on", 1);
+    }
+
+    factsDB->SetFact("ngplus_cc_on_new_game_finished", 1);
 }
 }
 
