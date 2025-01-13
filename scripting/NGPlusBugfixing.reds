@@ -67,3 +67,17 @@ public class NGPlusEP1StatusListener extends ScriptableSystem {
         }
     }
 }
+
+// Fix for a bug in Q001 start where `disable_tutorials` would mess parry tracking up
+@replaceMethod(DefaultTransition)
+protected const final func TutorialAddFact(scriptInterface: ref<StateGameScriptInterface>, factName: CName, add: Int32) -> Void {
+    let val: Int32;
+    let questSystem: ref<QuestsSystem> = scriptInterface.GetQuestsSystem();
+
+    let newGamePlusSystem = GameInstance.GetNewGamePlusSystem();
+    
+    if questSystem.GetFact(n"disable_tutorials") == 0 || newGamePlusSystem.IsInNewGamePlusPrologue() {
+        val = questSystem.GetFact(factName) + add;
+        questSystem.SetFact(factName, val);
+    }
+}
