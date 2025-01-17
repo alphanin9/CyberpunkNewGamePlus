@@ -11,7 +11,7 @@ Plugin dependencies include:
 Please visit the plugin's [Nexus Mods](https://www.nexusmods.com/cyberpunk2077/mods/15043) page for more details.
 
 ## Supported game versions
-- 2.13
+- 2.2
 
 ## Credits
 - ### RED4ext plugin
