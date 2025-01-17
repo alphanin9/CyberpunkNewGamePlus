@@ -5,17 +5,18 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
-#include <RED4ext/Scripting/Natives/Generated/save/MetadataContainer.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/StatsStateMapStructure.hpp>
+#include <RED4ext/Scripting/Natives/Generated/save/MetadataContainer.hpp>
 
 #include "SaveFS.hpp"
 
 #include <context/context.hpp>
 
+#include <Shared/RTTI/PropertyAccessor.hpp>
 #include <Shared/Raw/FileSystem/FileSystem.hpp>
 #include <Shared/Raw/Package/ScriptableSystemsPackage.hpp>
 #include <Shared/Raw/Save/Save.hpp>
-#include <Shared/RTTI/PropertyAccessor.hpp>
+#include <util/settings/settingsAccessor.hpp>
 
 using namespace Red;
 
@@ -39,7 +40,7 @@ CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexc
 void HasNewGamePlusSaveAsync(WeakHandle<IScriptable> aTarget, CName aCallback) noexcept
 {
     static auto s_fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
-    static const auto& s_saveFolder = shared::raw::Filesystem::Path::GetSaveFolder(); 
+    static const auto& s_saveFolder = shared::raw::Filesystem::Path::GetSaveFolder();
 
     JobQueue{}.Dispatch(
         [aTarget, aCallback](const JobGroup& aGroup)
@@ -51,7 +52,11 @@ void HasNewGamePlusSaveAsync(WeakHandle<IScriptable> aTarget, CName aCallback) n
 
             auto ref = aTarget.Lock();
 
-            for (const auto &i : s_fileManager->FindFilesByName(s_saveFolder, c_metadataFileName))
+            auto filePaths = s_fileManager->FindFilesByName(s_saveFolder, c_metadataFileName);
+
+            PluginContext::DebugLog("[HasNewGamePlusAsync] Save count: {}", filePaths.size);
+
+            for (const auto& i : filePaths)
             {
                 // Having job for each save would likely cost a lot
                 // So, we only have one job to offset cost a little
@@ -595,13 +600,14 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
         PluginContext::DebugLog("[IsValidForNewGamePlus {}] Is pre-replay PONR save", aSaveFullPath.c_str());
         return false;
     }
-
+    
     aPlaythroughHash = FNV1a64(metadata.playthroughID.c_str());
 
     if (std::find(c_generatedPostPointOfNoReturnObjectives.begin(), c_generatedPostPointOfNoReturnObjectives.end(),
                   FNV1a64(metadata.trackedQuestEntry.c_str())) != c_generatedPostPointOfNoReturnObjectives.end())
     {
-        PluginContext::DebugLog("[IsValidForNewGamePlus {}] Bad tracked quest objective {}", aSaveFullPath.c_str(), metadata.trackedQuestEntry.c_str());
+        PluginContext::DebugLog("[IsValidForNewGamePlus {}] Bad tracked quest objective {}", aSaveFullPath.c_str(),
+                                metadata.trackedQuestEntry.c_str());
         return false;
     }
 
@@ -639,8 +645,17 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
         }
     }
 
+    // Note: sorta expensive, but we instantiate + parse RTTI class here anyway, so who cares?
+    const auto settings = settings::GetModSettings();
+
     PluginContext::DebugLog("[IsValidForNewGamePlus {}] Save is not good", aSaveFullPath.c_str());
-    return false;
+    if (settings.m_disableSaveFileValidation)
+    {
+        PluginContext::DebugLog("[IsValidForNewGamePlus {}] Save is not good, but we don't care!",
+                                aSaveFullPath.c_str());
+    }
+
+    return settings.m_disableSaveFileValidation;
 }
 
 bool IsValidForNewGamePlus(const CString& aSaveFullPath) noexcept
@@ -676,13 +691,14 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
     stream->ReadWrite(&aBuffer[0], static_cast<std::uint32_t>(fileSize));
 
     // Tests look OK, can move to this from WKit way once we figure out FDB/persistency/inventory
-    constexpr auto c_testSaveStream = false;
+    constexpr auto TestSaveStream = false;
 
-    if constexpr (c_testSaveStream)
+    if constexpr (TestSaveStream)
     {
         save::Metadata metadata{};
 
-        if (!LoadSaveMetadata(GetRedPathToSaveFile(aSaveName.c_str(), c_metadataFileName), metadata)) {
+        if (!LoadSaveMetadata(GetRedPathToSaveFile(aSaveName.c_str(), c_metadataFileName), metadata))
+        {
             return true;
         }
 
@@ -749,7 +765,6 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
                 extractor.GetObjectById(ref, classIndex);
 
                 auto& data = shared::rtti::GetClassProperty<DynArray<Handle<IScriptable>>, "playerData">(ref);
-
 
                 PluginContext::Spew("{}", header.size);
                 PluginContext::Spew("PDS data size: {}", data.size);

@@ -80,6 +80,7 @@ void OnNewGame(game::ui::CharacterCustomizationSystem* aThis, void* aRdx)
 
 bool InitializeHooking()
 {
+    // Note: OrDie here really doesn't do anything!
     shared::hook::HookAfter<shared::raw::Telemetry::LoadFactMap>(&LoadFacts::OnLoadTelemetryFactMap)
         .OrDie("Failed to hook Telemetry::LoadFacts");
 

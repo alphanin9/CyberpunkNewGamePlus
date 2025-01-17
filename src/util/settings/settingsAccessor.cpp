@@ -22,6 +22,7 @@ settings::ModConfig settings::GetModSettings() noexcept
     config.m_useExteriorDetectionForRandomEncounters =
         shared::rtti::GetClassProperty<bool, "spawnRandomEncountersWhileWalking">(classInstance);
     config.m_clampPlayerLevel = shared::rtti::GetClassProperty<bool, "clampPlayerLevel">(classInstance);
+    config.m_disableSaveFileValidation = shared::rtti::GetClassProperty<bool, "disableValidationChecks">(classInstance);
 
     return config;
 }
