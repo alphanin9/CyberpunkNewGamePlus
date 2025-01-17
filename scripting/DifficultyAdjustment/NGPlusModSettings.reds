@@ -26,6 +26,11 @@ public class UserSettings {
     public let clampPlayerLevel: Bool = true;
 
     @runtimeProperty("ModSettings.mod", "NewGamePlus_MainMenuButton")
+    @runtimeProperty("ModSettings.displayName", "NewGamePlus_DisableSaveValidation_Name")
+    @runtimeProperty("ModSettings.description", "NewGamePlus_DisableSaveValidation_Desc")
+    public let disableValidationChecks: Bool = false;
+
+    @runtimeProperty("ModSettings.mod", "NewGamePlus_MainMenuButton")
     @runtimeProperty("ModSettings.category", "NewGamePlus_Difficulty_Name")
     @runtimeProperty("ModSettings.category.order", "1")
     @runtimeProperty("ModSettings.displayName", "NewGamePlus_FastUpgradeChance_Name")
@@ -116,6 +121,7 @@ public class UserSettings {
     }
 }
 
+// Note: should be done on native side by patching DynamicSpawnSystem fields directly!
 public class DynamicSpawnSystemCustomizer extends ScriptableTweak {
     protected cb func OnApply() {
         let settings = UserSettings.Get();

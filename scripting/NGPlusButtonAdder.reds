@@ -3,6 +3,9 @@ module NGPlus.ButtonAdder
 @addField(SingleplayerMenuGameController)
 public let m_hasNewGamePlus: Bool = false;
 
+@addField(SingleplayerMenuGameController)
+public let m_actionListMutex: RWLock;
+
 @wrapMethod(SingleplayerMenuGameController)
 protected cb func OnInitialize() -> Bool {
     wrappedMethod();
@@ -26,6 +29,14 @@ protected cb func OnNewGamePlusSavesReady(hasSaves: Bool) -> Void {
     if NotEquals(hadNewGamePlus, hasSaves) {
         this.ShowActionsList();
     }
+}
+
+@wrapMethod(SingleplayerMenuGameController)
+protected func ShowActionsList() {
+    // To avoid troubles with callbacks triggering simultaneously or almost simultaneously, add locking
+    RWLock.Acquire(this.m_actionListMutex);
+    wrappedMethod();
+    RWLock.Release(this.m_actionListMutex);
 }
 
 @wrapMethod(gameuiMenuItemListGameController)
