@@ -78,7 +78,7 @@ void HasNewGamePlusSaveAsync(WeakHandle<IScriptable> aTarget, CName aCallback) n
 }
 
 // Should be using saveVersion instead, but I don't know the proper save version for 2.00
-constexpr std::int64_t c_minSupportedGameVersion = 2000;
+constexpr auto MinSupportedGameVersion = 2000u;
 
 // Hacky-ish way to get save selection to filter saves that are potentially bad (Post-epilogue, for example...)
 constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
@@ -581,7 +581,7 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
         return false;
     }
 
-    if (c_minSupportedGameVersion > metadata.gameVersion)
+    if (MinSupportedGameVersion > metadata.gameVersion)
     {
         PluginContext::DebugLog("[IsValidForNewGamePlus {}] Game version is too old", aSaveFullPath.c_str());
         return false;
@@ -629,16 +629,13 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
     }
 
     // Do we have the ~~Songbird chip~~ ahem, *neural matrix* waiting for us?
-    constexpr CName c_q307ActiveFact = "q307_blueprint_acquired=1";
-
-    // Debug thing, allows us to unlock NG+ on any save...
-    constexpr CName c_ngplusDebugUnlocker = "debug_unlock_ngplus=1";
+    constexpr CName Q307Active = "q307_blueprint_acquired=1";
 
     for (auto& i : metadata.facts)
     {
         const CName hashed = i.c_str();
 
-        if (hashed == c_q307ActiveFact || hashed == c_ngplusDebugUnlocker)
+        if (hashed == Q307Active)
         {
             PluginContext::DebugLog("[IsValidForNewGamePlus {}] NG+ activating fact found", aSaveFullPath.c_str());
             return true;
