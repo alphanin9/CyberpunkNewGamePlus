@@ -1,6 +1,3 @@
-# TODO: use this for enemy powerups?
-# Second Heart can behave... oddly?
-
 ArchetypeData.NGPlusAbilityGroup_Fast:
   $type: GameplayAbilityGroup
   abilities:
@@ -20,8 +17,6 @@ ArchetypeData.NGPlusAbilityGroup_Tanky:
     - Ability.CanCatchUpDistance
     - Ability.CanCatchUp
     - Ability.HasPainEditor
-    # Temporarily removed...
-    # - Ability.HasSubdermalArmorHigh     
     - Ability.HasBerserk
 
 ArchetypeData.NGPlusAbilityGroup_Regen:
@@ -55,5 +50,5 @@ ArchetypeData.NGPlusAbilityGroup_Dodger:
   $type: GameplayAbilityGroup
   abilities:
     - Ability.HasKerenzikov
-    - Ability.CanDodge
+    - Ability.HasDodge
     - Ability.NGPlus_SuperDodge
