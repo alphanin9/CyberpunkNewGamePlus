@@ -17,8 +17,9 @@
 
 using namespace Red;
 
-static constexpr auto c_archiveName = "NewGamePlus.archive";
-static constexpr auto c_tweaksFolder = "tweaks";
+static constexpr auto ScriptsFolder = L"redscript\\";
+static constexpr auto ArchiveName = "NewGamePlus.archive";
+static constexpr auto TweaksFolder = "tweaks";
 
 RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReason, const Sdk* aSdk)
 {
@@ -36,19 +37,19 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReaso
         // Create struct in shared data with necessary shims for ArchiveXL/TweakXL later
         // Or not, it might want recursion I think
 
-        if (!aSdk->scripts->Add(aHandle, L"redscript\\"))
+        if (!aSdk->scripts->Add(aHandle, ScriptsFolder))
         {
             PluginContext::Error("Failed to add scripts, quitting...");
             return false;
         }
 
-        if (!ArchiveXL::RegisterArchive(aHandle, c_archiveName))
+        if (!ArchiveXL::RegisterArchive(aHandle, ArchiveName))
         {
             PluginContext::Error("Failed to add archive, quitting...");
             return false;
         }
 
-        if (!TweakXL::RegisterTweaks(aHandle, c_tweaksFolder))
+        if (!TweakXL::RegisterTweaks(aHandle, TweaksFolder))
         {
             PluginContext::Error("Failed to add tweaks, quitting...");
             return false;
