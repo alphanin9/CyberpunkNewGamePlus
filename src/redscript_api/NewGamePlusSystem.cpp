@@ -1,3 +1,6 @@
+#include <RED4ext/RED4ext.hpp>
+#include <RedLib.hpp>
+
 #include <redscript_api/NewGamePlusSystem.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/gsm/MainQuest.hpp>
@@ -450,7 +453,6 @@ void mod::NewGamePlusSystem::OnGamePrepared()
         m_modConfig = settings::GetModSettings();
     }
 
-    
     // If we haven't restored, update NG+ config
     if (!m_restoredDataFromSave)
     {

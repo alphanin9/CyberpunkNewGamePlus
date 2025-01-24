@@ -9,7 +9,7 @@ add_cxxflags("/MP /GR- /EHsc")
 set_symbols("debug")
 set_strip("all")
 set_optimize("fastest")
-add_cxxflags("/Zi /Ob2 /Oi /GL")
+add_cxxflags("/Zi /Ob2 /Oi")
 set_runtimes("MD")
 
 add_requires("lz4", "hopscotch-map", "semver", "wil")

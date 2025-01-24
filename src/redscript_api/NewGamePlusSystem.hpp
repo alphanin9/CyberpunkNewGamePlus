@@ -71,7 +71,7 @@ private:
 
 #pragma region Statics
     // Note: Game systems are kept indefinitely, we can cache thisptr from OnInitialize here
-    static NewGamePlusSystem* s_this;
+    static inline NewGamePlusSystem* s_this;
 #pragma endregion
 public:
 #pragma region API
@@ -106,7 +106,6 @@ public:
     void RequestResolveNewGamePlusSaves(Red::DynArray<Red::CString> aSaves, Red::WeakHandle<IScriptable> aRef,
                                         Red::CName aCallbackName);
 
-    
     void RequestLoadSaveData(Red::CString aSaveName, Red::WeakHandle<IScriptable> aTarget, Red::CName aCallbackName);
 
     void Spew(Red::ScriptRef<Red::CString>& aStr);
