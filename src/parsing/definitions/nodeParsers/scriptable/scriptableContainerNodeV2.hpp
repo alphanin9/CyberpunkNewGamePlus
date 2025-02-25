@@ -3,9 +3,8 @@
 #include <RED4ext/Package.hpp>
 #include <RedLib.hpp>
 
-#include "../defaultNodeData.hpp"
-
-#include "../../package/packageReader.hpp"
+#include <Parsing/Definitions/NodeParsers/DefaultNodeData.hpp>
+#include <Parsing/Definitions/Package/PackageReader.hpp>
 
 namespace modsave
 {

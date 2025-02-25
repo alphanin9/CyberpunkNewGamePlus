@@ -5,18 +5,17 @@
 #include <wil/stl.h>
 #include <wil/win32_helpers.h>
 
-#include <context/context.hpp>
-
-#include "migration.hpp"
+#include <Context/Context.hpp>
+#include <Util/Migration/Migration.hpp>
 
 namespace migration
 {
-static std::filesystem::path m_modulePath{};
+static std::filesystem::path s_modulePath{};
 }
 
 namespace
 {
-static constexpr std::array c_unusedFiles = {L"redscript\\DifficultyAdjustment\\NGPlusDifficultyFixes.reds",
+static constexpr std::array UnusedFiles = {L"redscript\\DifficultyAdjustment\\NGPlusDifficultyFixes.reds",
                                              L"redscript\\Scenario\\NGPlusStatsAdjustmentController.reds",
                                              L"redscript\\NGPlusEP1Listener.reds",
                                              L"redscript\\SpawnTagController.reds",
@@ -32,9 +31,9 @@ void migration::RemoveUnusedFiles()
     auto cleanedUpAny = false;
     auto cleanupFailed = false;
 
-    for (auto relativePath : c_unusedFiles)
+    for (auto relativePath : UnusedFiles)
     {
-        auto pathToFile = m_modulePath / relativePath;
+        auto pathToFile = s_modulePath / relativePath;
         PluginContext::Spew("Cleaning up {}...", pathToFile.string());
 
         std::error_code ec{};
@@ -71,11 +70,11 @@ void migration::SetupModulePath(HMODULE aModule)
     std::wstring modulePath{};
     wil::GetModuleFileNameW(aModule, modulePath);
 
-    m_modulePath = modulePath;
-    m_modulePath = m_modulePath.parent_path(); // red4ext/plugins/NewGamePlus
+    s_modulePath = modulePath;
+    s_modulePath = s_modulePath.parent_path(); // red4ext/plugins/NewGamePlus
 }
 
 const std::filesystem::path& migration::GetModulePath()
 {
-    return m_modulePath;
+    return s_modulePath;
 }

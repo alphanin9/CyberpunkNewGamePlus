@@ -6,12 +6,12 @@
 #include <ArchiveXL.hpp>
 #include <TweakXL.hpp>
 
-#include <context/context.hpp>
+#include <Context/Context.hpp>
 
-#include <hooking/hooking.hpp>
-#include <util/migration/migration.hpp>
+#include <Hooking/Hooking.hpp>
+#include <Util/Migration/Migration.hpp>
 
-#include <config/projectTemplate.hpp>
+#include <Config/ProjectTemplate.hpp>
 
 #include <Shared/Raw/Assert/AssertionFailed.hpp>
 
@@ -86,9 +86,9 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(PluginInfo* aInfo)
 {
     aInfo->name = L"New Game+";
     aInfo->author = L"not_alphanine";
-    aInfo->version = RED4EXT_SEMVER_EX(static_cast<std::uint8_t>(build::c_version.major),
-                                       static_cast<std::uint8_t>(build::c_version.minor),
-                                       static_cast<std::uint8_t>(build::c_version.patch),
+    aInfo->version = RED4EXT_SEMVER_EX(static_cast<std::uint8_t>(build::ModVersion.major),
+                                       static_cast<std::uint8_t>(build::ModVersion.minor),
+                                       static_cast<std::uint8_t>(build::ModVersion.patch),
                                        RED4EXT_V0_SEMVER_PRERELEASE_TYPE_NONE, 0); // Set your version here.
     aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
     aInfo->sdk = RED4EXT_SDK_LATEST;

@@ -4,26 +4,25 @@
 #include <unordered_set>
 #include <vector>
 
-#include "fileReader.hpp"
-
-#include "definitions/compression/compressionHeader.hpp"
-#include "definitions/fileInfo.hpp"
-#include "definitions/nodeEntry.hpp"
-
-#include "cursorDef.hpp"
-#include "definitions/nodeParsers/parserHelper.hpp"
+#include "FileReader.hpp"
+#include "CursorDef.hpp"
+#include "Definitions/Compression/CompressionHeader.hpp"
+#include "Definitions/FileInfo.hpp"
+#include "Definitions/NodeEntry.hpp"
+#include "Definitions/NodeParsers/ParserHelper.hpp"
 
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
 #include <lz4.h>
 
-#include <context/context.hpp>
+#include <Context/Context.hpp>
 
-#include <filesystem/SaveFS.hpp>
-#include <util/threads.hpp>
+#include <Filesystem/SaveFS.hpp>
+#include <Util/Threads.hpp>
 
 // Copypasted from WolvenKit :(
+// TODO: throw this out, replace with game save reader - this is shitcode anyway
 
 using Red::CName;
 using Red::CString;
@@ -103,7 +102,7 @@ void Parser::DecompressFile() noexcept
 
     for (auto& chunkInfo : compressionHeader.dataChunkInfo)
     {
-        if (fileCursor.readUInt() == compression::COMPRESSION_BLOCK_MAGIC)
+        if (fileCursor.readUInt() == compression::CompressionBlockMagic)
         {
             JobQueue decompressionJob{};
 
@@ -116,7 +115,8 @@ void Parser::DecompressFile() noexcept
                 [subCursor, decompressedSize, endIterator]()
                 {
                     LZ4_decompress_safe(reinterpret_cast<char*>(subCursor.GetCurrentPtr()),
-                                        reinterpret_cast<char*>(endIterator), static_cast<int>(subCursor.size), decompressedSize);
+                                        reinterpret_cast<char*>(endIterator), static_cast<int>(subCursor.size),
+                                        decompressedSize);
                 });
 
             endIterator += chunkInfo.decompressedSize;
@@ -156,34 +156,34 @@ void Parser::DecompressFile() noexcept
     WaitForQueue(waiterJob, std::chrono::seconds(15));
 }
 
-void Parser::FindChildren(modsave::NodeEntry& node, int maxNextId) noexcept
+void Parser::FindChildren(modsave::NodeEntry& aNode, int aMaxNextId) noexcept
 {
-    if (node.childId > -1)
+    if (aNode.childId > -1)
     {
-        auto nextId = node.nextId;
+        auto nextId = aNode.nextId;
 
         if (nextId == -1)
         {
-            nextId = maxNextId;
+            nextId = aMaxNextId;
         }
 
-        for (auto i = node.childId; i < nextId; i++)
+        for (auto i = aNode.childId; i < nextId; i++)
         {
             auto possibleChild = std::find_if(m_flatNodes.begin(), m_flatNodes.end(),
-                                              [i](modsave::NodeEntry& node) { return node.id == i; });
+                                              [i](modsave::NodeEntry& aNode) { return aNode.id == i; });
 
             if (possibleChild != m_flatNodes.end())
             {
                 if (possibleChild->childId > -1)
                 {
                     FindChildren(*possibleChild, nextId);
-                    node.addChild(&*possibleChild);
+                    aNode.addChild(&*possibleChild);
                 }
                 else
                 {
                     if (!possibleChild->isChild)
                     {
-                        node.addChild(&*possibleChild);
+                        aNode.addChild(&*possibleChild);
                     }
                 }
             }
@@ -191,16 +191,16 @@ void Parser::FindChildren(modsave::NodeEntry& node, int maxNextId) noexcept
     }
 }
 
-void Parser::CalculateTrueSizes(std::vector<modsave::NodeEntry*>& nodes, int maxLength) noexcept
+void Parser::CalculateTrueSizes(std::vector<modsave::NodeEntry*>& aNodes, int aMaxLength) noexcept
 {
-    for (auto i = 0ull; i < nodes.size(); i++)
+    for (auto i = 0ull; i < aNodes.size(); i++)
     {
-        modsave::NodeEntry* currentNode = nodes.at(i);
+        modsave::NodeEntry* currentNode = aNodes.at(i);
         modsave::NodeEntry* nextNode = nullptr;
 
-        if ((i + 1) < nodes.size())
+        if ((i + 1) < aNodes.size())
         {
-            nextNode = nodes.at(i + 1);
+            nextNode = aNodes.at(i + 1);
         }
 
         if (currentNode->nodeChildren.size() > 0)
@@ -210,7 +210,7 @@ void Parser::CalculateTrueSizes(std::vector<modsave::NodeEntry*>& nodes, int max
             auto blobSize = nextChild->offset - currentNode->offset;
             currentNode->dataSize = blobSize;
 
-            CalculateTrueSizes(currentNode->nodeChildren, maxLength);
+            CalculateTrueSizes(currentNode->nodeChildren, aMaxLength);
         }
         else
         {
@@ -228,9 +228,9 @@ void Parser::CalculateTrueSizes(std::vector<modsave::NodeEntry*>& nodes, int max
             {
                 auto lastNodeEnd = currentNode->offset + currentNode->size;
 
-                if (lastNodeEnd < maxLength)
+                if (lastNodeEnd < aMaxLength)
                 {
-                    currentNode->trailingSize = maxLength - lastNodeEnd;
+                    currentNode->trailingSize = aMaxLength - lastNodeEnd;
                 }
 
                 continue;
@@ -243,7 +243,7 @@ void Parser::CalculateTrueSizes(std::vector<modsave::NodeEntry*>& nodes, int max
             // Something WKit does due to:
             // This is the last child on the last node. The next valid offset would be the end of the data
             // Create a virtual node for this so the code below can grab the offset
-            auto nextToParentNodeOffset = maxLength;
+            auto nextToParentNodeOffset = aMaxLength;
 
             if (nextToParentNodeIter)
             {

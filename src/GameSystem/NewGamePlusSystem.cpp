@@ -1,7 +1,7 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
-#include <redscript_api/NewGamePlusSystem.hpp>
+#include <GameSystem/NewGamePlusSystem.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/gsm/MainQuest.hpp>
 #include <RED4ext/Scripting/Natives/gameGameSessionDesc.hpp>

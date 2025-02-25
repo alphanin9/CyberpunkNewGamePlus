@@ -78,12 +78,12 @@ StatsSystemReader::StatsSystemResults::StatsSystemResults(ResultContext& aContex
 
             if (settings::GetModSettings().m_clampPlayerLevel)
             {
-                constexpr auto c_ep1MaxLevel = 50.f;
-                constexpr auto c_nonEp1MaxLevel = 40.f;
+                constexpr auto EP1MaxLevel = 50.f;
+                constexpr auto NonEp1MaxLevel = 40.f;
 
                 const auto gameEngine = CGameEngine::Get();
 
-                usedValue = std::min(usedValue, gameEngine->isEP1 ? c_ep1MaxLevel : c_nonEp1MaxLevel);
+                usedValue = std::min(usedValue, gameEngine->isEP1 ? EP1MaxLevel : NonEp1MaxLevel);
             }
 
             m_level = usedValue;

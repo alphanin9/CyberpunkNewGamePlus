@@ -16,8 +16,8 @@ namespace parser {
 		std::unique_ptr<std::byte[]> m_decompressedDataRaw;
         std::size_t m_decompressedDataSize{};
 
-		void CalculateTrueSizes(std::vector<modsave::NodeEntry*>& nodes, int maxLength) noexcept;
-        void FindChildren(modsave::NodeEntry& node, int maxNextId) noexcept;
+		void CalculateTrueSizes(std::vector<modsave::NodeEntry*>& aNodes, int aMaxLength) noexcept;
+        void FindChildren(modsave::NodeEntry& aNode, int aMaxNextId) noexcept;
 
 		void DecompressFile() noexcept;
 		bool LoadNodes() noexcept;

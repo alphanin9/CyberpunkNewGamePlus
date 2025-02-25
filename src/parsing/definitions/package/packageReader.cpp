@@ -1,4 +1,4 @@
-#include "packageReader.hpp"
+#include "PackageReader.hpp"
 
 #include <RED4ext/Scripting/Natives/Generated/game/StatIDType.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/data/StatType.hpp>
@@ -6,8 +6,9 @@
 #include <chrono>
 #include <unordered_map>
 
-#include <context/context.hpp>
+#include <Context/Context.hpp>
 
+// TODO: throw this out, replace with game impl
 namespace package
 {
 bool Package::ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t& aRet) noexcept

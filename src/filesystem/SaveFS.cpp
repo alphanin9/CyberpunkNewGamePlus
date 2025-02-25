@@ -10,13 +10,13 @@
 
 #include "SaveFS.hpp"
 
-#include <context/context.hpp>
+#include <Context/Context.hpp>
 
 #include <Shared/RTTI/PropertyAccessor.hpp>
 #include <Shared/Raw/FileSystem/FileSystem.hpp>
 #include <Shared/Raw/Package/ScriptableSystemsPackage.hpp>
 #include <Shared/Raw/Save/Save.hpp>
-#include <util/settings/settingsAccessor.hpp>
+#include <Util/Settings/SettingsAccessor.hpp>
 
 using namespace Red;
 
@@ -600,7 +600,7 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
         PluginContext::DebugLog("[IsValidForNewGamePlus {}] Is pre-replay PONR save", aSaveFullPath.c_str());
         return false;
     }
-    
+
     aPlaythroughHash = FNV1a64(metadata.playthroughID.c_str());
 
     if (std::find(c_generatedPostPointOfNoReturnObjectives.begin(), c_generatedPostPointOfNoReturnObjectives.end(),

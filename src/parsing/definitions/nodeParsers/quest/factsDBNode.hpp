@@ -1,7 +1,5 @@
 #pragma once
-#include <unordered_map>
-
-#include "../interfaceNodeData.hpp"
+#include <Parsing/Definitions/NodeParsers/DefaultNodeData.hpp>
 namespace modsave
 {
 class FactsTableNode : public NodeDataInterface

@@ -5,8 +5,8 @@
 #include "../../cursorDef.hpp"
 
 namespace compression {
-	constexpr auto COMPRESSION_HEADER_MAGIC = 0x434C5A46u;
-	constexpr auto COMPRESSION_BLOCK_MAGIC = 0x584C5A34u;
+	constexpr auto CompressionHeaderMagic = 0x434C5A46u;
+	constexpr auto CompressionBlockMagic = 0x584C5A34u;
 
 	struct DataChunkInfo {
 		int offset;
@@ -33,7 +33,7 @@ namespace compression {
 		static CompressionHeader fromCursor(FileCursor& cursor) {
 			const auto compressionHeaderBasePosition = cursor.offset;
 
-			if (cursor.readUInt() != COMPRESSION_HEADER_MAGIC) {
+			if (cursor.readUInt() != CompressionHeaderMagic) {
 				// Should probably throw an exception here
 				return {};
 			}

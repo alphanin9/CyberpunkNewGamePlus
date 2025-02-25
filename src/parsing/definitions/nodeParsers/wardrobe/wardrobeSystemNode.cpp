@@ -1,5 +1,5 @@
-#include "wardrobeSystemNode.hpp"
-#include "../inventory/inventoryNode.hpp"
+#include "WardrobeSystemNode.hpp"
+#include <Parsing/Definitions/NodeParsers/Inventory/InventoryNode.hpp>
 
 using namespace Red;
 

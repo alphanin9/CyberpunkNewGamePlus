@@ -6,8 +6,8 @@
 #include <RED4ext/Scripting/Natives/Generated/cp/PlayerSystem.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/ui/CharacterCustomizationState.hpp>
 #include <RED4ext/Scripting/Natives/Generated/quest/QuestsSystem.hpp>
-#include <redscript_api/definitions/playerSaveData.hpp>
-#include <util/settings/settingsAccessor.hpp>
+#include <GameSystem/Definitions/PlayerSaveData.hpp>
+#include <Util/Settings/SettingsAccessor.hpp>
 
 namespace mod
 {

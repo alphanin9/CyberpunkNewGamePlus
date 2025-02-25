@@ -1,4 +1,4 @@
-#include "scriptableContainerNodeV2.hpp"
+#include "ScriptableContainerNodeV2.hpp"
 
 using namespace Red;
 

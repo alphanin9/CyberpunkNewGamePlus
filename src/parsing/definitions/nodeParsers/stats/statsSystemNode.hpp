@@ -1,7 +1,7 @@
 #pragma once
-#include "../interfaceNodeData.hpp"
-#include "../../nodeEntry.hpp"
-#include "../../package/packageReader.hpp"
+#include <Parsing/Definitions/NodeEntry.hpp>
+#include <Parsing/Definitions/NodeParsers/InterfaceNodeData.hpp>
+#include <Parsing/Definitions/Package/PackageReader.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/game/SavedStatsData.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/StatModifierData_Deprecated.hpp>

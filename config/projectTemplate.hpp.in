@@ -2,5 +2,5 @@
 
 namespace build 
 {
-constexpr auto c_version = semver::from_string_noexcept("${VERSION}").value();
+constexpr auto ModVersion = semver::from_string_noexcept("${VERSION}").value();
 }

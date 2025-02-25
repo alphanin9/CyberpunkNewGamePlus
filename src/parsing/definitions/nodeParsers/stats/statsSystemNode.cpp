@@ -1,5 +1,5 @@
 // Dumb project structure strikes again...
-#include <context/context.hpp>
+#include <Context/Context.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/game/StatsStateMapStructure.hpp>
 
@@ -8,8 +8,8 @@
 #include <RED4ext/Scripting/Natives/Generated/game/CombinedStatModifierData_Deprecated.hpp>
 #include <RED4ext/Scripting/Natives/Generated/game/CurveStatModifierData_Deprecated.hpp>
 
-#include "statsSystemNode.hpp"
-#include "../../package/packageReader.hpp"
+#include "StatsSystemNode.hpp"
+#include <Parsing/Definitions/Package/PackageReader.hpp>
 
 using namespace Red;
 

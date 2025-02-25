@@ -1,11 +1,8 @@
-#include <format>
+#include "FactsDBNode.hpp"
 
-#include "factsDBNode.hpp"
-
-#include "../../nodeEntry.hpp"
-#include "../parserHelper.hpp"
-
-#include <context/context.hpp>
+#include <Context/Context.hpp>
+#include <Parsing/Definitions/NodeEntry.hpp>
+#include <Parsing/Definitions/NodeParsers/ParserHelper.hpp>
 
 namespace modsave
 {

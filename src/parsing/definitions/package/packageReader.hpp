@@ -1,12 +1,10 @@
 #pragma once
-// Later...
-#include "../../cursorDef.hpp"
+#include <Parsing/CursorDef.hpp>
 
 #include <RED4ext/RED4ext.hpp>
 #include <RED4ext/Package.hpp>
 #include <RedLib.hpp>
-
-#include "../rttiHelpers/rttiValueReaderNative.hpp"
+#include <Parsing/Definitions/RTTIHelpers/RTTIValueReaderNative.hpp>
 
 #include <unordered_map>
 

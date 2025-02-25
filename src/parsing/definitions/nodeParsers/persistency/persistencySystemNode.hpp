@@ -3,8 +3,8 @@
 #include <cassert>
 #include <vector>
 
-#include "../interfaceNodeData.hpp"
-#include "helpers/nativePersistencyReader.hpp"
+#include "Helpers/NativePersistencyReader.hpp"
+#include <Parsing/Definitions/NodeParsers/InterfaceNodeData.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/vehicle/GarageComponentPS.hpp>
 
@@ -75,7 +75,7 @@ public:
         // Could just skip ahead...
 
         m_unk1 = aCursor.readUInt();
-        
+
         persistency::native::NativePersistencyReader reader{};
 
         const auto itemCount = aCursor.readInt();
@@ -144,7 +144,7 @@ public:
 
         if (chunkIt == m_instances.end())
         {
-            PluginContext::Error(std::format("Failed to find class {} in PersistencySystem2", aChunkName));
+            PluginContext::Error("Failed to find class {} in PersistencySystem2", aChunkName);
             return nullptr;
         }
 
@@ -162,4 +162,4 @@ public:
         return chunkIt != m_instances.end();
     }
 };
-}
+} // namespace modsave

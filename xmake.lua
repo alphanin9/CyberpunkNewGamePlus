@@ -1,16 +1,14 @@
 set_project("New Game+")
-set_version("1.1.9", {build="%y%m%d%H"})
+set_version("1.1.10", {build="%y%m%d%H"})
 
 set_arch("x64")
 set_languages("c++latest")
-add_cxxflags("/MP /GR- /EHsc")
 
--- Make the binary small, optimized and not static linked
 set_symbols("debug")
 set_strip("all")
 set_optimize("fastest")
-add_cxxflags("/Zi /Ob2 /Oi")
 set_runtimes("MD")
+add_cxxflags("/GR-")
 
 add_requires("lz4", "hopscotch-map", "semver", "wil")
 
@@ -31,8 +29,8 @@ target("New Game+")
     add_syslinks("Version", "User32")
     add_defines("WINVER=0x0601", "WIN32_LEAN_AND_MEAN", "NOMINMAX")
     set_configdir("src")
-    add_configfiles("config/projectTemplate.hpp.in", {prefixdir="config"})
-    add_configfiles("config/projectMetadata.rc.in", {prefixdir="config"})
+    add_configfiles("config/ProjectTemplate.hpp.in", {prefixdir="Config"})
+    add_configfiles("config/ProjectMetadata.rc.in", {prefixdir="Config"})
     set_configvar("NAME", "New Game+")
     set_configvar("DESC", "New Game+ for Cyberpunk 2077")
     set_configvar("AUTHOR_NAME", "not_alphanine")
