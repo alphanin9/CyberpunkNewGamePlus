@@ -4,7 +4,6 @@ set_version("1.1.10", {build="%y%m%d%H"})
 set_plat("windows")
 set_arch("x64")
 set_languages("c++latest")
-set_toolchains("clang-cl")
 
 set_symbols("debug")
 set_strip("all")
