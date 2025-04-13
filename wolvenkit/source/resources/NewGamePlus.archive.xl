@@ -5,3 +5,9 @@ localization:
     en-us: base\localization\en-us\new_game_plus\subtitles\subtitles.json
 journal:
   - mod\quest\newgameplus\journal\NGPlusJournal.journal
+resource:
+  scope:
+    cyberpunk2077.quest:
+      - mod\quest\newgameplus.quest
+      - mod\quest\newgameplus_q001.quest
+      - mod\quest\newgameplus_standalone.quest
