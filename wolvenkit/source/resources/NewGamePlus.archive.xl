@@ -7,7 +7,11 @@ journal:
   - mod\quest\newgameplus\journal\NGPlusJournal.journal
 resource:
   scope:
-    cyberpunk2077.quest:
+    ngplus.quest:
       - mod\quest\newgameplus.quest
       - mod\quest\newgameplus_q001.quest
       - mod\quest\newgameplus_standalone.quest
+    cyberpunk2077_main.quest:
+      - ngplus.quest
+    cyberpunk2077_ep1.quest:
+      - ngplus.quest
