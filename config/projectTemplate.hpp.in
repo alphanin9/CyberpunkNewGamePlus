@@ -2,5 +2,10 @@
 
 namespace build 
 {
-constexpr auto ModVersion = semver::from_string_noexcept("${VERSION}").value();
+constexpr semver::version<> GetModVersion()
+{
+    semver::version ver{};
+    semver::parse("${VERSION}", ver);
+    return ver;
+}
 }

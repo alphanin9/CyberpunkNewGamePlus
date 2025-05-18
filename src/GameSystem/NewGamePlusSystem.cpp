@@ -50,7 +50,7 @@ mod::NewGamePlusSystem* mod::NewGamePlusSystem::GetInstance() noexcept
 
 settings::ModConfig mod::NewGamePlusSystem::GetConfig() noexcept
 {
-    std::unique_lock lock(m_configLock);
+    std::shared_lock lock(m_configLock);
 
     return m_modConfig;
 }
@@ -547,12 +547,7 @@ void mod::NewGamePlusSystem::LaunchNewGamePlus(Handle<game::ui::CharacterCustomi
                     desc.mainQuests.PushBack(data);
                 }
 
-                desc.characterCustomizationState = MakeScriptedHandle<game::ui::CharacterCustomizationState>(
-                    GetClass<game::ui::CharacterCustomizationState>());
-
-                // Avoid direct handle copy, probably would be a bad idea
-                desc.characterCustomizationState->GetType()->Assign(desc.characterCustomizationState.instance,
-                                                                    aState.instance);
+                desc.characterCustomizationState = aState;
 
                 shared::raw::Ink::SessionData::Data sessionData{};
 

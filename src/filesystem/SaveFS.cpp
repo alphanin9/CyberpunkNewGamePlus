@@ -16,7 +16,7 @@
 #include <Shared/Raw/FileSystem/FileSystem.hpp>
 #include <Shared/Raw/Package/ScriptableSystemsPackage.hpp>
 #include <Shared/Raw/Save/Save.hpp>
-#include <Util/Settings/SettingsAccessor.hpp>
+#include <GameSystem/NewGamePlusSystem.hpp>
 
 using namespace Red;
 
@@ -643,7 +643,8 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
     }
 
     // Note: sorta expensive, but we instantiate + parse RTTI class here anyway, so who cares?
-    const auto settings = settings::GetModSettings();
+    const auto settings = mod::NewGamePlusSystem::GetInstance()->GetConfig();
+
 
     PluginContext::DebugLog("[IsValidForNewGamePlus {}] Save is not good", aSaveFullPath.c_str());
     if (settings.m_disableSaveFileValidation)

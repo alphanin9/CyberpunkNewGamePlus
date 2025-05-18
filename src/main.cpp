@@ -61,11 +61,7 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReaso
         }
 
         PluginContext::m_rtti = CRTTISystem::Get();
-        PluginContext::m_rtti->AddPostRegisterCallback(
-            []()
-            {
-                PluginContext::m_rttiReady = true;
-            });
+        PluginContext::m_rtti->AddPostRegisterCallback([]() { PluginContext::m_rttiReady = true; });
         break;
     }
     case EMainReason::Unload:
@@ -86,10 +82,13 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(PluginInfo* aInfo)
 {
     aInfo->name = L"New Game+";
     aInfo->author = L"not_alphanine";
-    aInfo->version = RED4EXT_SEMVER_EX(static_cast<std::uint8_t>(build::ModVersion.major),
-                                       static_cast<std::uint8_t>(build::ModVersion.minor),
-                                       static_cast<std::uint8_t>(build::ModVersion.patch),
-                                       RED4EXT_V0_SEMVER_PRERELEASE_TYPE_NONE, 0); // Set your version here.
+
+    constexpr auto ModVersion = build::GetModVersion();
+
+    aInfo->version =
+        RED4EXT_SEMVER_EX(static_cast<std::uint8_t>(ModVersion.major()), static_cast<std::uint8_t>(ModVersion.minor()),
+                          static_cast<std::uint8_t>(ModVersion.patch()), RED4EXT_V0_SEMVER_PRERELEASE_TYPE_NONE,
+                          0); // Set your version here.
     aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
     aInfo->sdk = RED4EXT_SDK_LATEST;
 }
@@ -97,15 +96,4 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(PluginInfo* aInfo)
 RED4EXT_C_EXPORT uint32_t RED4EXT_CALL Supports()
 {
     return RED4EXT_API_VERSION_LATEST;
-}
-
-// Note: added to grab module ptr for migration to get NG+ path
-BOOL APIENTRY DllMain(HMODULE aModule, DWORD aReason, LPVOID)
-{
-    if (aReason == DLL_PROCESS_ATTACH)
-    {
-        migration::SetupModulePath(aModule);
-    }
-
-    return TRUE;
 }

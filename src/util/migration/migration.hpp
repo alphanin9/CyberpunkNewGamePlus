@@ -6,6 +6,6 @@
 namespace migration
 {
 void RemoveUnusedFiles();
-void SetupModulePath(HMODULE aModule);
+void SetupModulePath();
 const std::filesystem::path& GetModulePath();
-}
+} // namespace migration

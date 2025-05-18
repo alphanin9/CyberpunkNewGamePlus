@@ -34,12 +34,11 @@ void migration::RemoveUnusedFiles()
     for (auto relativePath : UnusedFiles)
     {
         auto pathToFile = s_modulePath / relativePath;
-        PluginContext::Spew("Cleaning up {}...", pathToFile.string());
-
         std::error_code ec{};
 
         if (std::filesystem::is_regular_file(pathToFile, ec))
         {
+            PluginContext::Spew("Cleaning up {}...", pathToFile.string());
             if (!std::filesystem::remove(pathToFile, ec))
             {
                 PluginContext::Error("Failed to clean up {}, error: {}", pathToFile.string(), ec.message());
@@ -65,10 +64,14 @@ void migration::RemoveUnusedFiles()
 }
 
 // Here to not pollute context.hpp too much
-void migration::SetupModulePath(HMODULE aModule)
+void migration::SetupModulePath()
 {
+    HMODULE mod{};
+
+    RtlPcToFileHeader(migration::SetupModulePath, (PVOID*)&mod);
+
     std::wstring modulePath{};
-    wil::GetModuleFileNameW(aModule, modulePath);
+    wil::GetModuleFileNameW(mod, modulePath);
 
     s_modulePath = modulePath;
     s_modulePath = s_modulePath.parent_path(); // red4ext/plugins/NewGamePlus
