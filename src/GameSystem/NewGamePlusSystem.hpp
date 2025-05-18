@@ -69,10 +69,6 @@ private:
     static constexpr Red::TweakDBID FreshStartLifePathID = "LifePaths.NewStart";
 #pragma endregion
 
-#pragma region Statics
-    // Note: Game systems are kept indefinitely, we can cache thisptr from OnInitialize here
-    static inline NewGamePlusSystem* s_this;
-#pragma endregion
 public:
 #pragma region API
     static NewGamePlusSystem* GetInstance() noexcept;

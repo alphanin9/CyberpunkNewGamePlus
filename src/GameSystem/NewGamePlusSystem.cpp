@@ -37,10 +37,15 @@
 
 using namespace Red;
 
+namespace Internal
+{
+mod::NewGamePlusSystem* s_instance{};
+}
+
 mod::NewGamePlusSystem* mod::NewGamePlusSystem::GetInstance() noexcept
 {
     // Note: maybe assert if s_this == nullptr?
-    return s_this;
+    return Internal::s_instance;
 }
 
 settings::ModConfig mod::NewGamePlusSystem::GetConfig() noexcept
@@ -484,7 +489,8 @@ void mod::NewGamePlusSystem::OnWorldDetached(world::RuntimeScene* aScene)
 void mod::NewGamePlusSystem::OnInitialize(const JobHandle& aJob)
 {
     // We only really need this to init thisptr accessor
-    s_this = this;
+    // Note that game systems do not get dtord
+    Internal::s_instance = this;
 }
 #pragma endregion
 
