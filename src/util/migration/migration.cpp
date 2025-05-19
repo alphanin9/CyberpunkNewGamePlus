@@ -27,13 +27,12 @@ static constexpr std::array UnusedFiles = {L"redscript\\DifficultyAdjustment\\NG
 void migration::RemoveUnusedFiles()
 {
     // To be updated with more later on...
-
     auto cleanedUpAny = false;
     auto cleanupFailed = false;
 
     for (auto relativePath : UnusedFiles)
     {
-        auto pathToFile = s_modulePath / relativePath;
+        auto pathToFile = GetModulePath() / relativePath;
         std::error_code ec{};
 
         if (std::filesystem::is_regular_file(pathToFile, ec))
@@ -79,5 +78,10 @@ void migration::SetupModulePath()
 
 const std::filesystem::path& migration::GetModulePath()
 {
+    if (s_modulePath.empty())
+    {
+        SetupModulePath();
+    }
+
     return s_modulePath;
 }
