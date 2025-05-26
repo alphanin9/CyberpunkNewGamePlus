@@ -357,8 +357,10 @@ void mod::NewGamePlusSystem::TickInteriors()
 
     auto& coordinates = player->transformComponent->worldTransform.Position;
 
-    Vector4 positionAsVec4{coordinates.x.Bits * 0.0000076293945f, coordinates.y.Bits * 0.0000076293945f,
-                           coordinates.z.Bits * 0.0000076293945f, 0};
+    constexpr auto ConversionConstant = 1.f / (2 << 16);
+
+    Vector4 positionAsVec4{coordinates.x.Bits * ConversionConstant, coordinates.y.Bits * ConversionConstant,
+                           coordinates.z.Bits * ConversionConstant, 0};
 
     int result{};
 
