@@ -29,17 +29,8 @@ class NGPlusVehicleAdderSystem extends ScriptableSystem {
                 return "yaiba_kusanagi_02";
             case t"Vehicle.v_sportbike3_brennan_apollo_player_02": // Vehicle.v_sportbike3_brennan_apollo_02_player  doesn't exist...
                 return "brennan_apollo_02";
-
-            // Vehicle.v_standard2_thorton_colby_pickup_player is missing...
-            // Vehicle.v_sport2_quadra_type66_nomad_03_player is missing...
-            // Vehicle.v_sportbike2_arch_03_player is missing...
-            // Vehicle.v_sportbike1_yaiba_kusanagi_03_player is missing...
-            // Vehicle.v_sportbike3_brennan_apollo_02_player is missing...
-            // Vehicle.v_sport1_quadra_sport_r7_02_player is missing...
-            // Vehicle.v_standard3_thorton_colby_pickup_kurtz_player is missing...
-            // Vehicle.v_sportbike1_yaiba_kusanagi_02_player is missing...
-            // Vehicle.v_sportbike2_arch_02_player is missing...
-            // Vehicle.v_standard2_archer_quartz_nomad_02_player is missing...
+            case t"Vehicle.v_utility4_chevalier_legatus_player": // Legatus, tweak record is missing atm...
+                return "chevalier_legatus";
             case t"Vehicle.v_standard3_mahir_supron_kurtz_player":
                 return "mahir_supron_kurtz";
             case t"Vehicle.v_standard25_thorton_colby_nomad_player_missiles":
@@ -48,6 +39,8 @@ class NGPlusVehicleAdderSystem extends ScriptableSystem {
                 return "villefort_deleon";
             case t"Vehicle.v_standard2_makigai_maimai_player":
                 return "makigai_maimai";
+            case t"Vehicle.v_standard2_thorton_galena_gt":
+                return "thorton_galena_gt";
             case t"Vehicle.v_sport1_rayfield_caliburn_player":
                 return "rayfield_caliburn";
             case t"Vehicle.v_standard25_mahir_supron_player":
@@ -58,10 +51,16 @@ class NGPlusVehicleAdderSystem extends ScriptableSystem {
                 return "yaiba_kusanagi";
             case t"Vehicle.v_standard25_thorton_merrimac_player":
                 return "thorton_merrimac";
+            case t"Vehicle.v_standard2_mizutani_hozuki_gt_player":
+                return "mizutani_hozuki_gt";
+            case t"Vehicle.v_standard2_archer_quartz_base_player":
+                return "archer_quartz_base";
             case t"Vehicle.v_sport1_herrera_riptide_player":
                 return "herrera_riptide";
             case t"Vehicle.v_sport1_herrera_outlaw_player":
                 return "herrera_outlaw";
+            case t"Vehicle.v_sport2_quadra_type66_base_player":
+                return "quadra_type66_base";
             case t"Vehicle.v_sport1_quadra_turbo_player":
                 return "quadra_turbo";
             case t"Vehicle.v_sport2_mizutani_shion_nomad_player_missiles":
@@ -76,8 +75,12 @@ class NGPlusVehicleAdderSystem extends ScriptableSystem {
                 return "thorton_galena_nomad";
             case t"Vehicle.v_standard3_makigai_tanishi_player":
                 return "makigai_tanishi";
+            case t"Vehicle.v_sport2_mizutani_shion_targa":
+                return "mizutani_shion_targa";
             case t"Vehicle.v_standard2_thorton_colby_player":
                 return "thorton_colby";
+            case t"Vehicle.v_sport2_villefort_deleon_sport_player":
+                return "villefort_deleon_sport";
             case t"Vehicle.v_sport2_quadra_type66_nomad_player":
                 return "quadra_type66_nomad";
             case t"Vehicle.v_standard25_thorton_colby_nomad_player":
@@ -86,12 +89,18 @@ class NGPlusVehicleAdderSystem extends ScriptableSystem {
                 return "villefort_cortes";
             case t"Vehicle.v_sport2_villefort_alvarado_player":
                 return "villefort_alvarado";
+            case t"Vehicle.v_sport2_mizutani_shion_base_player":
+                return "mizutani_shion_base";
             case t"Vehicle.v_standard2_archer_quartz_player":
                 return "archer_quartz";
+            case t"Vehicle.v_sport2_quadra_type66_gt_player":
+                return "quadra_type66_gt";
             case t"Vehicle.v_standard2_mizutani_hozuki_player":
                 return "mizutani_hozuki";
             case t"Vehicle.v_standard2_thorton_galena_nomad_player_missiles":
                 return "thorton_galena_nomad_missiles";
+            case t"Vehicle.v_standard2_thorton_colby_gt_player":
+                return "thorton_colby_gt";
             case t"Vehicle.v_sport2_quadra_type66_player":
                 return "quadra_type66";
             case t"Vehicle.v_standard25_villefort_columbus_player":
@@ -110,14 +119,14 @@ class NGPlusVehicleAdderSystem extends ScriptableSystem {
                 return "militech_hellhound";
             case t"Vehicle.v_sportbike3_brennan_apollo_player":
                 return "brennan_apollo";
+            case t"Vehicle.v_standard25_mahir_supron_gt_player":
+                return "mahir_supron_gt";
             case t"Vehicle.v_sport1_quadra_sport_r7_player":
                 return "quadra_sport_r7";
             case t"Vehicle.v_sport2_villefort_alvarado_hearse_player":
                 return "villefort_alvarado_hearse";
             case t"Vehicle.v_standard3_chevalier_emperor_player":
                 return "chevalier_emperor";
-            default:
-                return "";
         }
     }
 

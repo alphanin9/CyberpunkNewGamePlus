@@ -11,6 +11,8 @@ base\localization\en-us\new_game_plus\subtitles\q001\q001_restored_subtitles.jso
 base\localization\en-us\new_game_plus\subtitles\q101\q101_restored_subtitles.json
 base\localization\en-us\new_game_plus\subtitles\q116\q116_restored_subtitles.json
 base\localization\en-us\new_game_plus\subtitles\subtitles.json
+base\open_world\autodrive\autodrive.questphase
+base\open_world\delamain_taxi\phases\delamain_taxi.questphase
 ep1\quest\main_quests\q302\scenes\lipsync\en\q302_08_call\reed.anims
 ep1\quest\main_quests\q302\scenes\lipsync\en\q302_08_call\v.anims
 mod\new_ep1_requirements\journal\new_ep1_requirements.journal
