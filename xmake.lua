@@ -1,5 +1,5 @@
 set_project("New Game+")
-set_version("1.2.0", {build="%y%m%d%H"})
+set_version("1.3.0", {build="%y%m%d%H"})
 
 set_plat("windows")
 set_arch("x64")

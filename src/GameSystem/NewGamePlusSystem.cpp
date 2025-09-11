@@ -506,9 +506,6 @@ void mod::NewGamePlusSystem::LaunchNewGamePlus(Handle<game::ui::CharacterCustomi
         return;
     }
 
-    // What the game does (a bit) before game definition load request
-    shared::raw::Ink::InkSystem::Get()->SetInitialLoadingScreenTDBID(InitialLoadingScreen);
-
     // Note: IDK if we should also update NG+ type here
     ResourceLoader::Get()
         ->LoadAsync(selectedGameDefinition)
@@ -586,6 +583,9 @@ void mod::NewGamePlusSystem::LaunchNewGamePlus(Handle<game::ui::CharacterCustomi
 
                 shared::raw::Ink::SystemRequestsHandler::StartSession(systemRequestsHandler, &sessionData);
             });
+
+    // What the game does (a bit) after game definition load request
+    shared::raw::Ink::InkSystem::Get()->SetInitialLoadingScreenTDBID(InitialLoadingScreen);
 }
 
 RTTI_DEFINE_ENUM(mod::ENewGamePlusStartType);
