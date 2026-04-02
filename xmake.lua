@@ -1,5 +1,5 @@
 set_project("New Game+")
-set_version("1.3.0", {build="%y%m%d%H"})
+set_version("1.3.1", { build = "%y%m%d%H" })
 
 set_plat("windows")
 set_arch("x64")
@@ -30,15 +30,15 @@ target("New Game+")
     add_syslinks("Version", "User32")
     add_defines("WINVER=0x0601", "WIN32_LEAN_AND_MEAN", "NOMINMAX")
     set_configdir("src")
-    add_configfiles("config/ProjectTemplate.hpp.in", {prefixdir="Config"})
-    add_configfiles("config/ProjectMetadata.rc.in", {prefixdir="Config"})
+    add_configfiles("config/ProjectTemplate.hpp.in", { prefixdir = "Config" })
+    add_configfiles("config/ProjectMetadata.rc.in", { prefixdir = "Config" })
     set_configvar("NAME", "New Game+")
     set_configvar("DESC", "New Game+ for Cyberpunk 2077")
     set_configvar("AUTHOR_NAME", "not_alphanine")
     add_cxxflags("/Oi", "/Os", "/GL")
     add_ldflags("/LTCG")
     set_rundir(path.join(cp2077_path, "bin", "x64"))
-    on_package(function(target)
+    on_package( function (target)
         os.rm("packaging/*")
         os.rm("packaging_pdb/*")
 
@@ -52,7 +52,7 @@ target("New Game+")
         os.cp("wolvenkit/packed/archive/pc/mod/*", "packaging/red4ext/plugins/NewGamePlus")
         os.cp("scripting/*", "packaging/red4ext/plugins/NewGamePlus/redscript")
         os.cp("tweaks/*", "packaging/red4ext/plugins/NewGamePlus/tweaks")
-        
+
         local target_file = target:targetfile()
 
         os.cp(target_file, "packaging/red4ext/plugins/NewGamePlus")
@@ -60,10 +60,10 @@ target("New Game+")
 
         os.cp(path.join(
             path.directory(target_file),
-            path.basename(target_file)..".pdb" -- Evil hack
+            path.basename(target_file) .. ".pdb" -- Evil hack
         ), "packaging_pdb/red4ext/plugins/NewGamePlus")
     end)
-    on_install(function(target)
+    on_install( function (target)
         local target_file = target:targetfile()
         local plugin_folder = path.join(cp2077_path, "red4ext/plugins/NewGamePlus/")
 
@@ -72,12 +72,12 @@ target("New Game+")
         os.cp(target_file, plugin_folder)
         os.cp(path.join(
             path.directory(target_file),
-            path.basename(target_file)..".pdb" -- Evil hack #2
+            path.basename(target_file) .. ".pdb" -- Evil hack #2
         ), plugin_folder)
 
-        cprint("${bright green}Installed plugin to "..plugin_folder)
+        cprint("${bright green}Installed plugin to " .. plugin_folder)
     end)
-    on_run(function(target)
+    on_run( function (target)
         os.run(path.join(cp2077_path, "bin", "x64", "Cyberpunk2077.exe"))
     end)
 
