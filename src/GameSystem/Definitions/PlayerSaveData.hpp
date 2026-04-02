@@ -26,7 +26,7 @@ public:
     Red::Handle<StatsSystemReader::StatsSystemResults> m_statsSystemResults{};
     Red::Handle<VehicleGarageReader::VehicleGarageResults> m_vehicleGarageResults{};
     Red::Handle<WardrobeReader::WardrobeResults> m_wardrobeResults{};
-    
+
     NGPlusProgressionData() = default;
     NGPlusProgressionData(parser::Parser& aParser) noexcept;
     void PostProcess() noexcept;
@@ -45,4 +45,14 @@ RTTI_DEFINE_CLASS(NGPlusProgressionData, {
     RTTI_GETTER(m_statsSystemResults);
     RTTI_GETTER(m_vehicleGarageResults);
     RTTI_GETTER(m_wardrobeResults);
+
+    RTTI_PROPERTY(m_craftingSystemResults);
+    RTTI_PROPERTY(m_equipmentExOutfitSystemResults);
+    RTTI_PROPERTY(m_equipmentExViewManagerResults);
+    RTTI_PROPERTY(m_equipmentSystemResults);
+    RTTI_PROPERTY(m_playerInventory);
+    RTTI_PROPERTY(m_playerDevelopmentSystemResults);
+    RTTI_PROPERTY(m_statsSystemResults);
+    RTTI_PROPERTY(m_vehicleGarageResults);
+    RTTI_PROPERTY(m_wardrobeResults);
 });

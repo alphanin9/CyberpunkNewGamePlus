@@ -3,6 +3,7 @@
 #include <RedLib.hpp>
 
 #include "../resultContext.hpp"
+#include "Red/TypeInfo/Macros/Definition.hpp"
 
 namespace EquipmentSystemReader
 {
@@ -30,4 +31,10 @@ RTTI_DEFINE_CLASS(EquipmentSystemReader::EquipmentSystemResults, {
     RTTI_GETTER(m_playerEquippedLegCyberware);
     RTTI_GETTER(m_playerEquippedArmCyberware);
     RTTI_GETTER(m_playerEquippedCardiacSystemCW);
+
+    RTTI_PROPERTY(m_playerEquippedOperatingSystem);
+    RTTI_PROPERTY(m_playerEquippedKiroshis);
+    RTTI_PROPERTY(m_playerEquippedLegCyberware);
+    RTTI_PROPERTY(m_playerEquippedArmCyberware);
+    RTTI_PROPERTY(m_playerEquippedCardiacSystemCW);
 });

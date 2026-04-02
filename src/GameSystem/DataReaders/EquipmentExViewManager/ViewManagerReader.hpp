@@ -17,5 +17,5 @@ public:
 };
 }
 
-RTTI_DEFINE_CLASS(ViewManagerReader::ViewManagerResults, { RTTI_GETTER(m_source); });
+RTTI_DEFINE_CLASS(ViewManagerReader::ViewManagerResults, { RTTI_GETTER(m_source); RTTI_PROPERTY(m_source); });
 

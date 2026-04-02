@@ -25,6 +25,7 @@
 #include <Shared/Raw/World/World.hpp>
 #include <Shared/Util/Core.hpp>
 #include <Shared/Util/NamePoolRegistrar.hpp>
+#include <Shared/Raw/JSON/JSON.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/game/ui/CharacterCustomizationState.hpp>
 
@@ -279,6 +280,35 @@ bool mod::NewGamePlusSystem::LoadSaveData(const CString& aSaveName)
     // Constructor also runs all the progression logic
     m_progressionData = MakeHandle<NGPlusProgressionData>(parser);
     m_progressionData->PostProcess();
+
+    constexpr auto DumpProgressionDataToJson = false;
+    
+    // NOTE: Actually bad as this takes a real while
+    if constexpr (DumpProgressionDataToJson)
+    {
+        shared::raw::JSON::Serializer serializer{m_progressionData};
+
+        CString jsonStr{};
+
+        if (serializer.Serialize(jsonStr))
+        {
+            auto filename = std::format(".\\ProgressionData_{}.json", aSaveName.c_str());
+
+            auto fileHandle =
+                CreateFileA(filename.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS,
+                                          FILE_ATTRIBUTE_NORMAL, nullptr);
+
+            if (fileHandle != INVALID_HANDLE_VALUE)
+            {
+                WriteFile(fileHandle, jsonStr.c_str(), jsonStr.Length(), nullptr, nullptr);
+                CloseHandle(fileHandle);
+            }
+        }
+        else
+        {
+            PluginContext::Error("Failed to serialize progression data to JSON");
+        }
+    }
 
     auto end = std::chrono::high_resolution_clock{}.now();
 

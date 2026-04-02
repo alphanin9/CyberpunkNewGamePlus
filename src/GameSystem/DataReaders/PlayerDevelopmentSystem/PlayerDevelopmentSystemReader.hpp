@@ -24,4 +24,8 @@ RTTI_DEFINE_CLASS(PlayerDevelopmentSystemReader::PlayerDevelopmentSystemResults,
     RTTI_GETTER(m_perkPoints);
     RTTI_GETTER(m_relicPoints);
     RTTI_GETTER(m_attributePoints);
+
+    RTTI_PROPERTY(m_perkPoints);
+    RTTI_PROPERTY(m_relicPoints);
+    RTTI_PROPERTY(m_attributePoints);
 });

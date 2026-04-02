@@ -3,6 +3,7 @@
 #include <RedLib.hpp>
 
 #include "../resultContext.hpp"
+#include "Red/TypeInfo/Macros/Definition.hpp"
 
 namespace StatsSystemReader
 {
@@ -13,7 +14,7 @@ public:
 
     float m_level{};
     float m_streetCred{};
-    
+
     float m_reflexes{};
     float m_body{};
     float m_technicalAbility{};
@@ -48,4 +49,18 @@ RTTI_DEFINE_CLASS(StatsSystemReader::StatsSystemResults, {
     RTTI_GETTER(m_technicalAbilitySkill);
     RTTI_GETTER(m_intelligenceSkill);
     RTTI_GETTER(m_coolSkill);
+
+    RTTI_PROPERTY(m_cyberwareCapacity);
+    RTTI_PROPERTY(m_level);
+    RTTI_PROPERTY(m_streetCred);
+    RTTI_PROPERTY(m_reflexes);
+    RTTI_PROPERTY(m_body);
+    RTTI_PROPERTY(m_technicalAbility);
+    RTTI_PROPERTY(m_intelligence);
+    RTTI_PROPERTY(m_cool);
+    RTTI_PROPERTY(m_reflexesSkill);
+    RTTI_PROPERTY(m_bodySkill);
+    RTTI_PROPERTY(m_technicalAbilitySkill);
+    RTTI_PROPERTY(m_intelligenceSkill);
+    RTTI_PROPERTY(m_coolSkill);
 });

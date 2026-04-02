@@ -385,3 +385,6 @@ src/config/*
 
 # VS Code
 .vscode/
+
+# Compile commands
+compile_commands.json

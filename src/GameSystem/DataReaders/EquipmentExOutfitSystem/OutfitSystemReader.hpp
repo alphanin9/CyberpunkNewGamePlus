@@ -1,4 +1,5 @@
 #pragma once
+#include "Red/TypeInfo/Macros/Definition.hpp"
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
@@ -29,7 +30,7 @@ class OutfitSystemResults : public Red::IScriptable
 {
 public:
     Red::DynArray<Red::Handle<NGPlusOutfitSet>> m_data;
-    
+
     OutfitSystemResults() = default;
     OutfitSystemResults(Red::Handle<Red::ISerializable>* aOutfitSystem) noexcept;
 
@@ -41,11 +42,21 @@ public:
 RTTI_DEFINE_CLASS(OutfitSystemReader::NGPlusOutfitPart, {
     RTTI_GETTER(m_slotID);
     RTTI_GETTER(m_itemID);
+
+    RTTI_PROPERTY(m_slotID);
+    RTTI_PROPERTY(m_itemID);
 });
 
 RTTI_DEFINE_CLASS(OutfitSystemReader::NGPlusOutfitSet, {
     RTTI_GETTER(m_outfitParts);
     RTTI_GETTER(m_name);
+
+    RTTI_PROPERTY(m_outfitParts);
+    RTTI_PROPERTY(m_name);
 });
 
-RTTI_DEFINE_CLASS(OutfitSystemReader::OutfitSystemResults, { RTTI_GETTER(m_data); });
+RTTI_DEFINE_CLASS(OutfitSystemReader::OutfitSystemResults, {
+    RTTI_GETTER(m_data);
+
+    RTTI_PROPERTY(m_data);
+});

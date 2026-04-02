@@ -43,10 +43,19 @@ RTTI_DEFINE_CLASS(InventoryReader::NGPlusItemData, {
     RTTI_GETTER(m_itemQuantity);
     RTTI_GETTER(m_attachments);
     RTTI_GETTER(m_statModifiers);
+
+    RTTI_PROPERTY(m_itemId);
+    RTTI_PROPERTY(m_itemQuantity);
+    RTTI_PROPERTY(m_attachments);
+    RTTI_PROPERTY(m_statModifiers);
 });
 
 RTTI_DEFINE_CLASS(InventoryReader::InventoryReaderResults, {
     RTTI_GETTER(m_inventory);
     RTTI_GETTER(m_stash);
     RTTI_GETTER(m_money);
+
+    RTTI_PROPERTY(m_inventory);
+    RTTI_PROPERTY(m_stash);
+    RTTI_PROPERTY(m_money);
 });

@@ -46,6 +46,14 @@ RTTI_DEFINE_CLASS(CraftingSystemReader::NGPlusCraftingInfo, {
     RTTI_GETTER(m_targetItem);
     RTTI_GETTER(m_amount);
     RTTI_GETTER(m_hideOnItemsAdded);
+
+    RTTI_PROPERTY(m_targetItem);
+    RTTI_PROPERTY(m_amount);
+    RTTI_PROPERTY(m_hideOnItemsAdded);
 });
 
-RTTI_DEFINE_CLASS(CraftingSystemReader::CraftingSystemResults, { RTTI_GETTER(m_data); });
+RTTI_DEFINE_CLASS(CraftingSystemReader::CraftingSystemResults, {
+    RTTI_GETTER(m_data);
+
+    RTTI_PROPERTY(m_data);
+});
