@@ -1,3 +1,4 @@
+#include <Shared/Raw/StatsSystem/StatsSystem.hpp>
 #include <Shared/Util/NamePoolRegistrar.hpp>
 #include "StatsSystem.hpp"
 
@@ -44,6 +45,30 @@ game::SavedStatsData* StatsSystemNode::GetSavedStatsData(std::uint64_t aEntityHa
     }
 
     return it->second;
+}
+
+DynArray<Handle<ISerializable>> StatsSystemNode::GetStatModifiers(std::uint64_t aEntityHash) noexcept
+{
+    auto* data = GetSavedStatsData(aEntityHash);
+
+    if (!data)
+    {
+        return {};
+    }
+
+    return shared::raw::StatsSystem::ReadSavedModifiers(data->modifiersBuffer);
+}
+
+DynArray<Handle<ISerializable>> StatsSystemNode::GetForcedModifiers(std::uint64_t aEntityHash) noexcept
+{
+    auto* data = GetSavedStatsData(aEntityHash);
+
+    if (!data)
+    {
+        return {};
+    }
+
+    return shared::raw::StatsSystem::ReadSavedModifiers(data->forcedModifiersBuffer);
 }
 
 CName StatsSystemNode::GetName() noexcept

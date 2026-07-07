@@ -29,6 +29,12 @@ public:
     // game::StatsSystem::OnGameLoad (saveVersion >= 0xA5 path).
     Red::game::SavedStatsData* GetSavedStatsData(std::uint64_t aEntityHash) noexcept;
 
+    // Deserializes the saved / forced stat modifiers for an entity by replaying the game's own
+    // per-modifier serializer over the SavedStatsData buffers. Cast each handle to the concrete
+    // gameStatModifierData_Deprecated subclass (Constant/Combined/Curve) as needed.
+    Red::DynArray<Red::Handle<Red::ISerializable>> GetStatModifiers(std::uint64_t aEntityHash) noexcept;
+    Red::DynArray<Red::Handle<Red::ISerializable>> GetForcedModifiers(std::uint64_t aEntityHash) noexcept;
+
     RTTI_IMPL_TYPEINFO(StatsSystemNode);
     RTTI_IMPL_ALLOCATOR();
 };
