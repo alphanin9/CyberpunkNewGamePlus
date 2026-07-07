@@ -34,9 +34,24 @@ bool StatsSystemNode::OnRead(Save::Stream::LoadStream& aStream) noexcept
     return aStream.IsGood();
 }
 
+game::SavedStatsData* StatsSystemNode::GetSavedStatsData(std::uint64_t aEntityHash) noexcept
+{
+    const auto it = m_idToStatsMap.find(aEntityHash);
+
+    if (it == m_idToStatsMap.end())
+    {
+        return nullptr;
+    }
+
+    return it->second;
+}
+
 CName StatsSystemNode::GetName() noexcept
 {
-    return NamePoolRegistrar<"ScriptableSystemsContainer">::Get();
+    // The game opens the "StatsSystem" save node (GetStatsSystemSaveNodeName @ 0x1418C44E8,
+    // verified against game::StatsSystem::OnGameLoad on 2.31). The previous "ScriptableSystemsContainer"
+    // literal was a copy-paste from ScriptableSystemsContainerNode and seeked the wrong node.
+    return NamePoolRegistrar<"StatsSystem">::Get();
 }
 
 RTTI_DEFINE_CLASS(parser::node::StatsSystemNode, { RTTI_PARENT(parser::node::SaveNodeData); });

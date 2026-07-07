@@ -59,10 +59,17 @@ struct ItemRepresentation : Red::ISerializable
 class InventoryNode : public SaveNodeData
 {
 private:
-    
+    std::uint32_t m_ownerBucketCount{};
+
 public:
     bool OnRead(shared::raw::Save::Stream::LoadStream& aStream) noexcept override;
     Red::CName GetName() noexcept override;
+
+    // Number of per-owner inventory buckets read from the "inventory" node header.
+    std::uint32_t GetOwnerBucketCount() const noexcept
+    {
+        return m_ownerBucketCount;
+    }
 
     RTTI_IMPL_TYPEINFO(InventoryNode);
     RTTI_IMPL_ALLOCATOR();

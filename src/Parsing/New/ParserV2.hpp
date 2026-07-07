@@ -10,6 +10,10 @@
 
 #include <RED4ext/Scripting/Natives/Generated/save/MetadataContainer.hpp>
 
+#include <parsing/New/Nodes/Inventory.hpp>
+#include <parsing/New/Nodes/ScriptableSystemsContainer.hpp>
+#include <parsing/New/Nodes/StatsSystem.hpp>
+
 namespace parser
 {
 struct LoadStreamContainer
@@ -22,11 +26,46 @@ struct LoadStreamContainer
     bool Setup(Red::StringView& aSaveName) noexcept;
 };
 
-// Parser using native save stream
+// Parser using the native game save stream.
+//
+// Replacement for parser::Parser (src/Parsing/FileReader.cpp), which is a WolvenKit-derived
+// re-implementation of the file format. Instead of decompressing the whole save and rebuilding
+// the node tree by hand, this drives the game's own LoadStream + SaveNodeAccessor: each node
+// seeks itself by name and deserializes through native reads (ReadPackage / ReadBuffer).
+//
+// Migration tracked in issue #4. Consumer rewiring (NGPlusProgressionData / LoadSaveData) and the
+// remaining nodes (persistency/vehicle garage, wardrobe) are follow-up phases.
 class ParserV2
 {
     LoadStreamContainer m_container{};
-public:
 
+    node::ScriptableSystemsContainerNode m_scriptableSystems{};
+    node::StatsSystemNode m_statsSystem{};
+    node::InventoryNode m_inventory{};
+
+    bool m_isValid{};
+
+public:
+    bool ParseSavegame(Red::StringView aSaveName) noexcept;
+
+    node::ScriptableSystemsContainerNode& GetScriptableSystems() noexcept
+    {
+        return m_scriptableSystems;
+    }
+
+    node::StatsSystemNode& GetStatsSystem() noexcept
+    {
+        return m_statsSystem;
+    }
+
+    node::InventoryNode& GetInventory() noexcept
+    {
+        return m_inventory;
+    }
+
+    explicit operator bool() const noexcept
+    {
+        return m_isValid;
+    }
 };
-}
+} // namespace parser

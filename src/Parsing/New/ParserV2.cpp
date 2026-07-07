@@ -33,3 +33,23 @@ bool parser::LoadStreamContainer::Setup(StringView& aName) noexcept
 
     return m_loadStream.Initialize();
 }
+
+bool parser::ParserV2::ParseSavegame(StringView aSaveName) noexcept
+{
+    if (!m_container.Setup(aSaveName))
+    {
+        return false;
+    }
+
+    // Each node opens its own Save::NodeAccessor, which seeks to the node by name. NodeAccessor is
+    // random-access by name, so read order is not load-bearing for correctness; this ordering just
+    // mirrors the game for readability. A later phase can parallelize independent nodes if the
+    // native LoadStream proves safe for concurrent NodeAccessor reads (needs confirmation before
+    // wiring into LoadSaveData).
+    m_statsSystem.OnRead(m_container.m_loadStream);
+    m_scriptableSystems.OnRead(m_container.m_loadStream);
+    m_inventory.OnRead(m_container.m_loadStream);
+
+    m_isValid = true;
+    return true;
+}
