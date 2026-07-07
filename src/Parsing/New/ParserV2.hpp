@@ -11,6 +11,7 @@
 #include <RED4ext/Scripting/Natives/Generated/save/MetadataContainer.hpp>
 
 #include <parsing/New/Nodes/Inventory.hpp>
+#include <parsing/New/Nodes/PersistencySystem.hpp>
 #include <parsing/New/Nodes/ScriptableSystemsContainer.hpp>
 #include <parsing/New/Nodes/StatsSystem.hpp>
 
@@ -42,6 +43,7 @@ class ParserV2
     node::ScriptableSystemsContainerNode m_scriptableSystems{};
     node::StatsSystemNode m_statsSystem{};
     node::InventoryNode m_inventory{};
+    node::PersistencySystemNode m_persistency{};
 
     bool m_isValid{};
 
@@ -61,6 +63,11 @@ public:
     node::InventoryNode& GetInventory() noexcept
     {
         return m_inventory;
+    }
+
+    node::PersistencySystemNode& GetPersistency() noexcept
+    {
+        return m_persistency;
     }
 
     explicit operator bool() const noexcept

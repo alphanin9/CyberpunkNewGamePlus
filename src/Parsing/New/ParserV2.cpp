@@ -49,6 +49,7 @@ bool parser::ParserV2::ParseSavegame(StringView aSaveName) noexcept
     m_statsSystem.OnRead(m_container.m_loadStream);
     m_scriptableSystems.OnRead(m_container.m_loadStream);
     m_inventory.OnRead(m_container.m_loadStream);
+    m_persistency.OnRead(m_container.m_loadStream);
 
     m_isValid = true;
     return true;
