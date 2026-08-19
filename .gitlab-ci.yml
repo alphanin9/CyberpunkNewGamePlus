@@ -8,9 +8,16 @@
 
 stages:
   - build
+  - release
 
 build:
   stage: build
+  # Tags are handled by package:release below; without this a release tag would
+  # pay for two Windows builds.
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - when: always
   tags:
     - saas-windows-medium-amd64
   before_script:
@@ -31,3 +38,66 @@ build:
     paths:
       - packaging/
       - packaging_pdb/
+
+# --- Release, mirroring .github/workflows/release.yml -------------------------
+#
+# GitHub attaches files directly to a release. GitLab release assets are links, so
+# the zips go to this project's Generic Package Registry first and the release then
+# points at them. Uploading is a plain authenticated PUT, which avoids needing any
+# extra tooling on the Windows runner.
+
+.release_rules:
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/
+
+package:release:
+  extends: .release_rules
+  stage: build
+  tags:
+    - saas-windows-medium-amd64
+  before_script:
+    # The install script appends its install dir to $env:Path for this session.
+    - irm https://xmake.io/psget.text | iex
+    - xmake --version
+  script:
+    - $version = $env:CI_COMMIT_TAG -replace '^v', ''
+    - xmake repo --update
+    - xmake config --yes
+    - xmake package
+    # Compress-Archive is built in; the GitHub job uses 7z, which is not guaranteed here.
+    - Compress-Archive -Path packaging/* -DestinationPath "NewGamePlus_$version.zip" -Force
+    - Compress-Archive -Path packaging_pdb/* -DestinationPath "NewGamePlus_${version}_pdb.zip" -Force
+    - $sha = (Get-FileHash -Algorithm SHA256 "NewGamePlus_$version.zip").Hash
+    - Write-Host "SHA256 $sha"
+    - $base = "$env:CI_API_V4_URL/projects/$env:CI_PROJECT_ID/packages/generic/newgameplus/$version"
+    - $hdr = @{ "JOB-TOKEN" = $env:CI_JOB_TOKEN }
+    - Invoke-RestMethod -Method Put -Headers $hdr -InFile "NewGamePlus_$version.zip" -Uri "$base/NewGamePlus_$version.zip"
+    - Invoke-RestMethod -Method Put -Headers $hdr -InFile "NewGamePlus_${version}_pdb.zip" -Uri "$base/NewGamePlus_${version}_pdb.zip"
+    # Hand the version and hash to the release job. ascii avoids a BOM, which the
+    # dotenv report parser does not tolerate.
+    - Set-Content -Path release.env -Encoding ascii -Value "NGPLUS_VERSION=$version"
+    - Add-Content -Path release.env -Encoding ascii -Value "NGPLUS_SHA256=$sha"
+    - Add-Content -Path release.env -Encoding ascii -Value "NGPLUS_PKG_BASE=$base"
+  artifacts:
+    reports:
+      dotenv: release.env
+
+create:release:
+  extends: .release_rules
+  stage: release
+  needs:
+    - package:release
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  script:
+    - echo "Releasing $NGPLUS_VERSION"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    description: |
+      ### SHA256 of release:
+      - $NGPLUS_SHA256
+    assets:
+      links:
+        - name: NewGamePlus_$NGPLUS_VERSION.zip
+          url: $NGPLUS_PKG_BASE/NewGamePlus_$NGPLUS_VERSION.zip
+        - name: NewGamePlus_${NGPLUS_VERSION}_pdb.zip
+          url: $NGPLUS_PKG_BASE/NewGamePlus_${NGPLUS_VERSION}_pdb.zip
