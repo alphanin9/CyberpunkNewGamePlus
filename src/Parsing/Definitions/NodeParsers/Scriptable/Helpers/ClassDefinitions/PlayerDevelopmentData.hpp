@@ -8,7 +8,7 @@
 
 namespace scriptable::native::PlayerDevelopment
 {
-using RawPointerToValue = std::remove_pointer_t<Red::ScriptInstance>;
+using RawPointerToValue = std::remove_pointer_t<void*>;
 
 using ScriptableEnum = std::uint32_t;
 
@@ -33,10 +33,10 @@ enum class EspionageMilestonePerks : ScriptableEnum
 
 struct SNewPerk
 {
-    Red::ScriptInstance m_instance;
+    void* m_instance;
     inline static Red::CClass* s_type;
 
-    inline SNewPerk(Red::ScriptInstance aInstance)
+    inline SNewPerk(void* aInstance)
         : m_instance(aInstance)
     {
         s_type = Red::GetClass<SNewPerk>();
@@ -64,10 +64,10 @@ struct SNewPerk
 
 struct SAttributeData
 {
-    Red::ScriptInstance m_instance;
+    void* m_instance;
     inline static Red::CClass* s_type;
 
-    inline SAttributeData(Red::ScriptInstance aInstance)
+    inline SAttributeData(void* aInstance)
         : m_instance(aInstance)
     {
         s_type = Red::GetClass<SAttributeData>();
@@ -95,10 +95,10 @@ struct SAttributeData
 
 struct SAttribute
 {
-    Red::ScriptInstance m_instance;
+    void* m_instance;
     inline static Red::CClass* s_type;
     
-    inline SAttribute(Red::ScriptInstance aInstance)
+    inline SAttribute(void* aInstance)
         : m_instance(aInstance)
     {
         s_type = Red::GetClass<SAttribute>();
@@ -122,10 +122,10 @@ struct SAttribute
 
 struct SDevelopmentPoints
 {
-    Red::ScriptInstance m_instance;
+    void* m_instance;
     inline static Red::CClass* s_type;
 
-    inline SDevelopmentPoints(Red::ScriptInstance aInstance)
+    inline SDevelopmentPoints(void* aInstance)
         : m_instance(aInstance)
     {
         s_type = Red::GetClass<SDevelopmentPoints>();
@@ -149,10 +149,10 @@ struct SDevelopmentPoints
 
 struct SProficiency
 {
-    Red::ScriptInstance m_instance;
+    void* m_instance;
     inline static Red::CClass* s_type;
 
-    inline SProficiency(Red::ScriptInstance aInstance)
+    inline SProficiency(void* aInstance)
         : m_instance(aInstance)
     {
         s_type = Red::GetClass<SProficiency>();
@@ -170,10 +170,10 @@ struct SProficiency
 };
 
 class PlayerDevelopmentData {
-    Red::ScriptInstance m_instance;
+    void* m_instance;
     inline static Red::CClass* s_type;
 public:
-    inline PlayerDevelopmentData(Red::ScriptInstance aInstance)
+    inline PlayerDevelopmentData(void* aInstance)
         : m_instance(aInstance)
     {
         s_type = Red::GetClass<PlayerDevelopmentData>();

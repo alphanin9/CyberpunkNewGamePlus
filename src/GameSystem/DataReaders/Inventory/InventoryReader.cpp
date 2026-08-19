@@ -175,7 +175,7 @@ void ProcessStatModifiers(Handle<NGPlusItemData>& aItemData, ResultContext& aCon
     const auto statsObjectId = aContext.m_statsSystem->GetEntityHashFromItemId(aItemData->m_itemId);
     auto modifiers = aContext.m_statsSystem->GetStatModifiers(statsObjectId);
 
-    aItemData->m_statModifiers.Reserve(modifiers.size);
+    aItemData->m_statModifiers.Reserve(modifiers.size());
 
     for (auto& modifier : modifiers)
     {

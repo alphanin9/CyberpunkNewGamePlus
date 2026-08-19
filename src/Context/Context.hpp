@@ -8,8 +8,8 @@
 
 namespace PluginContext
 {
-inline Red::PluginHandle m_redPlugin;
-inline const Red::Sdk* m_redSdk;
+inline Red::v1::PluginHandle m_redPlugin;
+inline const Red::v1::Sdk* m_redSdk;
 
 inline Red::CRTTISystem* m_rtti;
 

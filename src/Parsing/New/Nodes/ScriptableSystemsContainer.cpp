@@ -35,7 +35,7 @@ bool ScriptableSystemsContainerNode::OnRead(Save::Stream::LoadStream& aStream) n
 
     ScriptablePackage::ScriptablePackageExtractor::InitFromHeader(&m_packageExtractor, m_packageHeader);
 
-    for (auto i = 0u; i < reader.rootChunkTypes.size; i++)
+    for (auto i = 0u; i < reader.rootChunkTypes.size(); i++)
     {
         m_systemIndexMap.insert_or_assign(GetClass(reader.rootChunkTypes[i]), i);
     }

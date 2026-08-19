@@ -10,9 +10,9 @@ namespace scriptable::native::EquipmentSystem
 struct EquipmentSystemPlayerData
 {
     inline static Red::CClass* s_type;
-    Red::ScriptInstance m_instance;
+    void* m_instance;
     
-    EquipmentSystemPlayerData(Red::ScriptInstance aInstance)
+    EquipmentSystemPlayerData(void* aInstance)
         : m_instance(aInstance)
     {
         if (!s_type)

@@ -73,7 +73,7 @@ EquipmentSystemReader::EquipmentSystemResults::EquipmentSystemResults(Handle<ISe
             }
             break;
         case EquipmentArea::CardiovascularSystemCW:
-            if (m_playerEquippedCardiacSystemCW.size > 0)
+            if (m_playerEquippedCardiacSystemCW.size() > 0)
             {
                 break;
             }

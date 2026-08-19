@@ -78,14 +78,14 @@ private:
     std::unordered_map<std::size_t, Red::Handle<Red::ISerializable>> m_objects;
 
     Red::CName ReadCNameInternal(FileCursor& aCursor) noexcept;
-    virtual void ReadCName(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept final;
-    virtual void ReadNodeRef(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept final;
-    virtual void ReadEnum(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept final;
-    virtual bool TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept final;
-    virtual bool TryReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept final;
-    virtual bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept final;
+    virtual void ReadCName(FileCursor& aCursor, void* aOut) noexcept final;
+    virtual void ReadNodeRef(FileCursor& aCursor, void* aOut) noexcept final;
+    virtual void ReadEnum(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aPropType) noexcept final;
+    virtual bool TryReadHandle(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aPropType) noexcept final;
+    virtual bool TryReadWeakHandle(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aPropType) noexcept final;
+    virtual bool TryReadClass(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aType) noexcept final;
 
-    bool TryReadRootClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept;
+    bool TryReadRootClass(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aType) noexcept;
 
     Red::Handle<Red::ISerializable> ReadChunkById(std::size_t aId, bool aRoot) noexcept;
 

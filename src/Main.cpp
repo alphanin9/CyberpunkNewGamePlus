@@ -3,8 +3,8 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
-#include <ArchiveXL.hpp>
-#include <TweakXL.hpp>
+#include <RED4ext/ArchiveXL.hpp>
+#include <RED4ext/TweakXL.hpp>
 
 #include <Context/Context.hpp>
 
@@ -21,11 +21,11 @@ static constexpr auto ScriptsFolder = L"redscript\\";
 static constexpr auto ArchiveName = "NewGamePlus.archive";
 static constexpr auto TweaksFolder = "tweaks";
 
-RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReason, const Sdk* aSdk)
+RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::v1::PluginHandle aHandle, RED4ext::v1::EMainReason aReason, const RED4ext::v1::Sdk* aSdk)
 {
     switch (aReason)
     {
-    case EMainReason::Load:
+    case RED4ext::v1::EMainReason::Load:
     {
         PluginContext::m_redPlugin = aHandle;
         PluginContext::m_redSdk = aSdk;
@@ -64,7 +64,7 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReaso
         PluginContext::m_rtti->AddPostRegisterCallback([]() { PluginContext::m_rttiReady = true; });
         break;
     }
-    case EMainReason::Unload:
+    case RED4ext::v1::EMainReason::Unload:
     {
         if (!hooking::DetachHooking())
         {
@@ -78,7 +78,7 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(PluginHandle aHandle, EMainReason aReaso
     return true;
 }
 
-RED4EXT_C_EXPORT void RED4EXT_CALL Query(PluginInfo* aInfo)
+RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::v1::PluginInfo* aInfo)
 {
     aInfo->name = L"New Game+";
     aInfo->author = L"not_alphanine";
@@ -86,14 +86,14 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(PluginInfo* aInfo)
     constexpr auto ModVersion = build::GetModVersion();
 
     aInfo->version =
-        RED4EXT_SEMVER_EX(static_cast<std::uint8_t>(ModVersion.major()), static_cast<std::uint8_t>(ModVersion.minor()),
-                          static_cast<std::uint8_t>(ModVersion.patch()), RED4EXT_V0_SEMVER_PRERELEASE_TYPE_NONE,
+        RED4EXT_V1_SEMVER_EX(static_cast<std::uint8_t>(ModVersion.major()), static_cast<std::uint8_t>(ModVersion.minor()),
+                          static_cast<std::uint8_t>(ModVersion.patch()), RED4EXT_V1_SEMVER_PRERELEASE_TYPE_NONE,
                           0); // Set your version here.
-    aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
-    aInfo->sdk = RED4EXT_SDK_LATEST;
+    aInfo->runtime = RED4EXT_V1_RUNTIME_VERSION_INDEPENDENT;
+    aInfo->sdk = RED4EXT_V1_SDK_VERSION_CURRENT;
 }
 
 RED4EXT_C_EXPORT uint32_t RED4EXT_CALL Supports()
 {
-    return RED4EXT_API_VERSION_LATEST;
+    return RED4EXT_API_VERSION_1;
 }

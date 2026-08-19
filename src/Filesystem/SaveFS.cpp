@@ -54,7 +54,7 @@ void HasNewGamePlusSaveAsync(WeakHandle<IScriptable> aTarget, CName aCallback) n
 
             auto filePaths = s_fileManager->FindFilesByName(s_saveFolder, c_metadataFileName);
 
-            PluginContext::DebugLog("[HasNewGamePlusAsync] Save count: {}", filePaths.size);
+            PluginContext::DebugLog("[HasNewGamePlusAsync] Save count: {}", filePaths.size());
 
             for (const auto& i : filePaths)
             {
@@ -752,7 +752,7 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
 
                 std::uint32_t classIndex{};
 
-                for (; classIndex < reader.rootChunkTypes.size; classIndex++)
+                for (; classIndex < reader.rootChunkTypes.size(); classIndex++)
                 {
                     if (reader.rootChunkTypes[classIndex] == c_testClassName)
                     {
@@ -765,9 +765,9 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
                 auto& data = shared::rtti::GetClassProperty<DynArray<Handle<IScriptable>>, "playerData">(ref);
 
                 PluginContext::Spew("{}", header.size);
-                PluginContext::Spew("PDS data size: {}", data.size);
+                PluginContext::Spew("PDS data size: {}", data.size());
 
-                if (data.size > 0u)
+                if (data.size() > 0u)
                 {
                     PluginContext::Spew("Data class name: {}", data[0]->GetType()->name.ToString());
                 }
@@ -784,7 +784,7 @@ bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>&
                 // It is what it is, should fix it sometime
                 auto& ptr = *reinterpret_cast<game::StatsStateMapStructure*>(stateMap.instance);
 
-                PluginContext::Spew("Keys: {}, values: {}", ptr.keys.size, ptr.values.size);
+                PluginContext::Spew("Keys: {}, values: {}", ptr.keys.size(), ptr.values.size());
             }
         }
     }

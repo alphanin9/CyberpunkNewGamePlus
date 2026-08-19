@@ -24,9 +24,9 @@ bool StatsSystemNode::OnRead(Save::Stream::LoadStream& aStream) noexcept
     }
 
     m_statsStruct = reinterpret_cast<game::StatsStateMapStructure*>(m_handle.instance);
-    m_idToStatsMap.reserve(m_statsStruct->keys.size);
+    m_idToStatsMap.reserve(m_statsStruct->keys.size());
 
-    for (auto i = 0u; i < m_statsStruct->keys.size; i++)
+    for (auto i = 0u; i < m_statsStruct->keys.size(); i++)
     {
         m_idToStatsMap.insert_or_assign(m_statsStruct->keys[i].entityHash, &m_statsStruct->values[i]);
     }

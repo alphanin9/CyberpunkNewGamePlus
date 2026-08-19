@@ -22,7 +22,7 @@ bool Package::ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t
 
     aRet = aEnum->valueList.Back();
 
-    for (auto i = 0u; i < aEnum->hashList.size; i++)
+    for (auto i = 0u; i < aEnum->hashList.size(); i++)
     {
         if (aEnum->hashList[i] == aName)
         {
@@ -36,7 +36,7 @@ bool Package::ResolveEnumValue(Red::CEnum* aEnum, Red::CName aName, std::int64_t
 
 const char* Package::GetEnumString(Red::CEnum* aEnum, std::int64_t aValue) noexcept
 {
-    for (auto i = 0u; i < aEnum->valueList.size; i++)
+    for (auto i = 0u; i < aEnum->valueList.size(); i++)
     {
         if (aEnum->valueList[i] == aValue)
         {
@@ -95,12 +95,12 @@ EnumCache::EnumCache() noexcept
 {
     static const auto statTypes = Red::GetEnum<Red::game::data::StatType>();
 
-    for (auto i = 0u; i < statTypes->hashList.size; i++)
+    for (auto i = 0u; i < statTypes->hashList.size(); i++)
     {
         m_map.insert_or_assign(statTypes->hashList[i], statTypes->valueList[i]);
     }
 
-    for (auto i = 0u; i < statTypes->aliasList.size; i++)
+    for (auto i = 0u; i < statTypes->aliasList.size(); i++)
     {
         m_map.insert_or_assign(statTypes->aliasList[i], statTypes->aliasValueList[i]);
     }
@@ -118,12 +118,12 @@ Red::CName Package::ReadCNameInternal(FileCursor& aCursor) noexcept
     return m_names[index];
 }
 
-void Package::ReadCName(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept
+void Package::ReadCName(FileCursor& aCursor, void* aOut) noexcept
 {
     *reinterpret_cast<Red::CName*>(aOut) = ReadCNameInternal(aCursor);
 }
 
-void Package::ReadNodeRef(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept
+void Package::ReadNodeRef(FileCursor& aCursor, void* aOut) noexcept
 {
     const auto size = aCursor.readUShort();
     const auto name = aCursor.readString(size);
@@ -131,7 +131,7 @@ void Package::ReadNodeRef(FileCursor& aCursor, Red::ScriptInstance aOut) noexcep
     *reinterpret_cast<Red::NodeRef*>(aOut) = Red::NodeRef{name.c_str()};
 }
 
-void Package::ReadEnum(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
+void Package::ReadEnum(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aPropType) noexcept
 {
     auto enumValueName = ReadCNameInternal(aCursor);
     auto enumType = static_cast<Red::CEnum*>(aPropType);
@@ -151,7 +151,7 @@ void Package::ReadEnum(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBase
     memcpy(aOut, &enumValue, enumType->actualSize);
 }
 
-bool Package::TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
+bool Package::TryReadHandle(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aPropType) noexcept
 {
     const auto chunkId = aCursor.readInt();
     const auto cursorOffset = aCursor.offset;
@@ -167,7 +167,7 @@ bool Package::TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::
     return true;
 }
 
-bool Package::TryReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
+bool Package::TryReadWeakHandle(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aPropType) noexcept
 {
     const auto chunkId = aCursor.readInt();
     // Don't bother with whandles, they're not used anywhere important I don't think
@@ -187,7 +187,7 @@ RED4EXT_ASSERT_OFFSET(PackageFieldDescriptor, m_nameId, 0);
 RED4EXT_ASSERT_OFFSET(PackageFieldDescriptor, m_typeId, 2);
 RED4EXT_ASSERT_OFFSET(PackageFieldDescriptor, m_offset, 4);
 
-bool Package::TryReadRootClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept
+bool Package::TryReadRootClass(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aType) noexcept
 {
     auto classType = static_cast<Red::CClass*>(aType);
 
@@ -252,7 +252,7 @@ bool Package::TryReadRootClass(FileCursor& aCursor, Red::ScriptInstance aOut, Re
     return true;
 }
 
-bool Package::TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept
+bool Package::TryReadClass(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aType) noexcept
 {
     // NOTE:
     // I do not believe this can be multi-threaded with any luck

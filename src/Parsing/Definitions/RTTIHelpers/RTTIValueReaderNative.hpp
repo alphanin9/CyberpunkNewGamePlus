@@ -14,29 +14,29 @@ namespace redRTTI::native
 class NativeReader
 {
 protected:
-    virtual void ReadTDBID(FileCursor& aCursor, Red::ScriptInstance aOut)
+    virtual void ReadTDBID(FileCursor& aCursor, void* aOut)
     {
         *reinterpret_cast<Red::TweakDBID*>(aOut) = aCursor.readTdbId();
     }
 
     // Those are a little more class-defined
-    virtual void ReadNodeRef(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept
+    virtual void ReadNodeRef(FileCursor& aCursor, void* aOut) noexcept
     {
     
     }
 
-    virtual void ReadCName(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept
+    virtual void ReadCName(FileCursor& aCursor, void* aOut) noexcept
     {
     
     }
 
     // These need a bit of info about the inner RTTI type...
-    virtual void ReadEnum(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
+    virtual void ReadEnum(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aPropType) noexcept
     {
     
     }
 
-    bool TryReadArray(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
+    bool TryReadArray(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aPropType) noexcept
     {
         const auto arraySize = aCursor.readInt();
         const auto arrayType = static_cast<Red::CRTTIBaseArrayType*>(aPropType); // Oops, had ArrayType even on static arrs...
@@ -66,7 +66,7 @@ protected:
         return true;
     }
 
-    void ReadDataBuffer(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept
+    void ReadDataBuffer(FileCursor& aCursor, void* aOut) noexcept
     {
         // NOTE: this is necessary because, unlike SDK RawBuffer dtor, game RawBuffer dtor does not check if buf allocator is valid
         // Since we already manage the memory of decompressed save data and we don't use classes after parser gets destructed, it should be fine
@@ -109,18 +109,18 @@ protected:
         aCursor.offset += bufferSize;
     }
 
-    virtual bool TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
+    virtual bool TryReadHandle(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aPropType) noexcept
     {
         return false;
     }
 
-    virtual bool TryReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut,
+    virtual bool TryReadWeakHandle(FileCursor& aCursor, void* aOut,
                                    Red::CBaseRTTIType* aPropType) noexcept
     {
         return false;
     }
 
-    bool TryReadValue(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aPropType) noexcept
+    bool TryReadValue(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aPropType) noexcept
     {
         const auto rttiType = aPropType->GetType();
         const auto typeName = aPropType->GetName();
@@ -201,7 +201,7 @@ public:
     virtual ~NativeReader()
     {
     }
-    virtual bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aClass) noexcept
+    virtual bool TryReadClass(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aClass) noexcept
     {
         return false;
     }

@@ -8,7 +8,7 @@
 using namespace parser::reader;
 using namespace Red;
 
-bool BaseNativeReader::ReadProperty(CBaseRTTIType* aType, ScriptInstance aInstance, Cursor& aCursor) noexcept
+bool BaseNativeReader::ReadProperty(CBaseRTTIType* aType, void* aInstance, Cursor& aCursor) noexcept
 {
     const auto typeId = aType->GetType();
     const auto typeName = aType->GetName();
@@ -55,7 +55,7 @@ bool BaseNativeReader::ReadProperty(CBaseRTTIType* aType, ScriptInstance aInstan
     return true;
 }
 
-bool BaseNativeReader::ReadArray(CRTTIBaseArrayType* aType, ScriptInstance aInstance, Cursor& aCursor) noexcept
+bool BaseNativeReader::ReadArray(CRTTIBaseArrayType* aType, void* aInstance, Cursor& aCursor) noexcept
 {
     const auto arraySize = aCursor.ReadPrimitive<std::uint32_t>();
     const auto innerType = aType->GetInnerType();
@@ -90,7 +90,7 @@ bool BaseNativeReader::ReadWeakHandle(WeakHandle<ISerializable>& aHandle, Cursor
     return false;
 }
 
-void BaseNativeReader::ReadEnum(CEnum* aType, ScriptInstance aInstance, Cursor& aCursor) noexcept
+void BaseNativeReader::ReadEnum(CEnum* aType, void* aInstance, Cursor& aCursor) noexcept
 {
     shared::raw::Assert::RaiseAssert(std::source_location::current(), "BaseNativeReader::ReadEnum is not valid");
 }
@@ -128,7 +128,7 @@ bool BaseNativeReader::ReadHandle(Handle<ISerializable>& aHandle, Cursor& aCurso
     return false;
 }
 
-bool BaseNativeReader::ReadClass(CClass* aType, ScriptInstance aInstance, Cursor& aCursor) noexcept
+bool BaseNativeReader::ReadClass(CClass* aType, void* aInstance, Cursor& aCursor) noexcept
 {
     shared::raw::Assert::RaiseAssert(std::source_location::current(), "BaseNativeReader::ReadClass is not valid");
     return false;

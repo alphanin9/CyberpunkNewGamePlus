@@ -10,17 +10,17 @@ namespace persistency::native
 class NativePersistencyReader : public redRTTI::native::NativeReader
 {
 protected:
-    virtual void ReadCName(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept final
+    virtual void ReadCName(FileCursor& aCursor, void* aOut) noexcept final
     {
         *reinterpret_cast<Red::CName*>(aOut) = aCursor.ReadCNameHash();
     }
 
-    virtual void ReadNodeRef(FileCursor& aCursor, Red::ScriptInstance aOut) noexcept final
+    virtual void ReadNodeRef(FileCursor& aCursor, void* aOut) noexcept final
     {
         *reinterpret_cast<Red::NodeRef*>(aOut) = aCursor.readUInt64();
     }
 
-    virtual void ReadEnum(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept final
+    virtual void ReadEnum(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aType) noexcept final
     {
         auto enumType = static_cast<RED4ext::CEnum*>(aType);
 
@@ -32,7 +32,7 @@ protected:
         aCursor.CopyTo(aOut, enumType->actualSize);
     }
 
-    virtual bool TryReadHandle(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aType) noexcept final
+    virtual bool TryReadHandle(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aType) noexcept final
     {
         const auto handleType = static_cast<Red::CRTTIHandleType*>(aType);
         auto innerType = handleType->GetInnerType();
@@ -57,7 +57,7 @@ protected:
         return true;
     }
 
-    virtual bool TryReadWeakHandle(FileCursor& aCursor, Red::ScriptInstance aOut,
+    virtual bool TryReadWeakHandle(FileCursor& aCursor, void* aOut,
                                    Red::CBaseRTTIType* aType) noexcept final
     {
         aCursor.readInt();
@@ -65,7 +65,7 @@ protected:
     }
 
 public:
-    virtual bool TryReadClass(FileCursor& aCursor, Red::ScriptInstance aOut, Red::CBaseRTTIType* aClass) noexcept final
+    virtual bool TryReadClass(FileCursor& aCursor, void* aOut, Red::CBaseRTTIType* aClass) noexcept final
     {
         auto classType = static_cast<Red::CClass*>(aClass);
 
@@ -99,7 +99,7 @@ public:
                 
             }
 
-            auto valuePtr = prop->GetValuePtr<std::remove_pointer_t<Red::ScriptInstance>>(aOut);
+            auto valuePtr = prop->GetValuePtr<std::remove_pointer_t<void*>>(aOut);
 
             if (!TryReadValue(aCursor, valuePtr, expectedType))
             {

@@ -4,14 +4,14 @@
 
 namespace scriptable::native::CraftBook
 {
-using RawPointerToValue = std::remove_pointer_t<Red::ScriptInstance>;
+using RawPointerToValue = std::remove_pointer_t<void*>;
 
 struct ItemRecipe
 {
     inline static Red::CClass* s_type;
-    Red::ScriptInstance m_instance;
+    void* m_instance;
 
-    ItemRecipe(Red::ScriptInstance aInstance)
+    ItemRecipe(void* aInstance)
         : m_instance(aInstance)
     {
         if (!s_type)
@@ -57,9 +57,9 @@ struct ItemRecipe
 struct CraftBook
 {
     inline static Red::CClass* s_type;
-    Red::ScriptInstance m_instance;
+    void* m_instance;
 
-    CraftBook(Red::ScriptInstance aInstance)
+    CraftBook(void* aInstance)
         : m_instance(aInstance)
     {
         if (!s_type)

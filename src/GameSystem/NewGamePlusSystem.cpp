@@ -165,12 +165,12 @@ DynArray<int> mod::NewGamePlusSystem::ResolveNewGamePlusSaves(Red::ScriptRef<Dyn
     std::unordered_set<std::uint64_t> playthroughIds{};
 
     DynArray<int> returnedData{};
-    returnedData.Reserve(aSaves->size);
+    returnedData.Reserve(aSaves->size());
     // Technically a signed/unsigned mismatch, but I have doubts about people having 2 billion+ saves
-    for (auto i = 0u; i < aSaves->size; i++)
+    for (auto i = 0u; i < aSaves->size(); i++)
     {
         // We need the save index for this...
-        auto& saveName = aSaves->entries[i];
+        auto& saveName = (*aSaves)[i];
 
         auto savePath = files::GetRedPathToSaveFile(saveName.c_str(), files::c_metadataFileName);
 
@@ -211,12 +211,11 @@ void mod::NewGamePlusSystem::RequestResolveNewGamePlusSaves(DynArray<CString> aS
             // Very nice
             // Is it more efficient than using sync method, though?
             DynArray<SaveResult> results{};
-            results.Reserve(aSaves.size);
-            results.size = aSaves.size;
+            results.Resize(aSaves.size());
 
             Red::JobQueue delayQueue(aGroup);
 
-            for (auto i = 0u; i < aSaves.size; i++)
+            for (auto i = 0u; i < aSaves.size(); i++)
             {
                 Red::JobQueue worker(aGroup);
                 worker.Dispatch(
@@ -237,7 +236,7 @@ void mod::NewGamePlusSystem::RequestResolveNewGamePlusSaves(DynArray<CString> aS
 
             tsl::hopscotch_set<std::uint64_t> encounteredHashes{};
             DynArray<int> indices{};
-            for (auto i = 0u; i < results.size; i++)
+            for (auto i = 0u; i < results.size(); i++)
             {
                 auto& result = results[i];
 

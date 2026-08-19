@@ -133,8 +133,8 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     auto asStatsStateMap = reinterpret_cast<game::StatsStateMapStructure*>(handlePtr->GetPtr());
 
     // Will this help?
-    m_statsMap.reserve(asStatsStateMap->keys.size);
-    for (auto i = 0u; i < asStatsStateMap->keys.size; i++)
+    m_statsMap.reserve(asStatsStateMap->keys.size());
+    for (auto i = 0u; i < asStatsStateMap->keys.size(); i++)
     {
         m_statsMap.try_emplace(asStatsStateMap->keys[i].entityHash, &asStatsStateMap->values[i]); 
     }

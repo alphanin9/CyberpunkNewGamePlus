@@ -18,12 +18,12 @@ struct RedPersistentObject
 
     Red::ISerializable* m_ptr;
 
-    RedPersistentObject(Red::ScriptInstance aInstance)
+    RedPersistentObject(void* aInstance)
         : m_ptr(reinterpret_cast<Red::ISerializable*>(aInstance))
     {
     }
 
-    void SetInstance(Red::ScriptInstance aInstance)
+    void SetInstance(void* aInstance)
     {
         m_ptr = reinterpret_cast<Red::ISerializable*>(aInstance);
     }
