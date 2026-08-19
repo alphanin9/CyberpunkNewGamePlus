@@ -21,12 +21,22 @@ build:
   tags:
     - saas-windows-medium-amd64
   before_script:
-    # GitLab's Windows image ships CMake 3.27.8, and xmake prefers a system cmake when
-    # it finds one. safetyhook needs >= 3.28, so put a newer one ahead of it on PATH.
+    # GitLab's Windows image ships CMake 3.27.8; safetyhook needs >= 3.28.
+    #
+    # xmake's find_cmake seeds its search with the registry install dir
+    # (HKLM\SOFTWARE\Kitware\CMake;InstallDir) and returns the first hit, and its
+    # system-PATH branch is commented out, so prepending to PATH does nothing. Point
+    # the registry key at the CMake we unpack, and keep the PATH entry for the
+    # last-resort bare-name lookup.
     - $cmakeVer = "3.31.7"
     - Invoke-WebRequest "https://github.com/Kitware/CMake/releases/download/v$cmakeVer/cmake-$cmakeVer-windows-x86_64.zip" -OutFile cmake.zip -UseBasicParsing
     - Expand-Archive cmake.zip -DestinationPath "$env:CI_PROJECT_DIR\.cmake" -Force
-    - $env:PATH = "$env:CI_PROJECT_DIR\.cmake\cmake-$cmakeVer-windows-x86_64\bin;$env:PATH"
+    - $cmakeDir = "$env:CI_PROJECT_DIR\.cmake\cmake-$cmakeVer-windows-x86_64"
+    - $env:PATH = "$cmakeDir\bin;$env:PATH"
+    - Write-Host "running as $(whoami)"
+    - New-Item -Path 'HKLM:\SOFTWARE\Kitware\CMake' -Force | Out-Null
+    - Set-ItemProperty -Path 'HKLM:\SOFTWARE\Kitware\CMake' -Name 'InstallDir' -Value $cmakeDir
+    - Write-Host "registry InstallDir -> $((Get-ItemProperty 'HKLM:\SOFTWARE\Kitware\CMake').InstallDir)"
     - cmake --version
     # The install script appends its install dir to $env:Path for this session.
     - irm https://xmake.io/psget.text | iex
@@ -63,12 +73,22 @@ package:release:
   tags:
     - saas-windows-medium-amd64
   before_script:
-    # GitLab's Windows image ships CMake 3.27.8, and xmake prefers a system cmake when
-    # it finds one. safetyhook needs >= 3.28, so put a newer one ahead of it on PATH.
+    # GitLab's Windows image ships CMake 3.27.8; safetyhook needs >= 3.28.
+    #
+    # xmake's find_cmake seeds its search with the registry install dir
+    # (HKLM\SOFTWARE\Kitware\CMake;InstallDir) and returns the first hit, and its
+    # system-PATH branch is commented out, so prepending to PATH does nothing. Point
+    # the registry key at the CMake we unpack, and keep the PATH entry for the
+    # last-resort bare-name lookup.
     - $cmakeVer = "3.31.7"
     - Invoke-WebRequest "https://github.com/Kitware/CMake/releases/download/v$cmakeVer/cmake-$cmakeVer-windows-x86_64.zip" -OutFile cmake.zip -UseBasicParsing
     - Expand-Archive cmake.zip -DestinationPath "$env:CI_PROJECT_DIR\.cmake" -Force
-    - $env:PATH = "$env:CI_PROJECT_DIR\.cmake\cmake-$cmakeVer-windows-x86_64\bin;$env:PATH"
+    - $cmakeDir = "$env:CI_PROJECT_DIR\.cmake\cmake-$cmakeVer-windows-x86_64"
+    - $env:PATH = "$cmakeDir\bin;$env:PATH"
+    - Write-Host "running as $(whoami)"
+    - New-Item -Path 'HKLM:\SOFTWARE\Kitware\CMake' -Force | Out-Null
+    - Set-ItemProperty -Path 'HKLM:\SOFTWARE\Kitware\CMake' -Name 'InstallDir' -Value $cmakeDir
+    - Write-Host "registry InstallDir -> $((Get-ItemProperty 'HKLM:\SOFTWARE\Kitware\CMake').InstallDir)"
     - cmake --version
     # The install script appends its install dir to $env:Path for this session.
     - irm https://xmake.io/psget.text | iex
