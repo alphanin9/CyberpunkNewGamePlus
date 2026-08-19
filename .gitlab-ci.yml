@@ -1,0 +1,33 @@
+# Mirrors .github/workflows/build.yml.
+#
+# Runs on GitLab-hosted Windows runners (beta). They have no Docker executor, so
+# there is no `image:` and every script line is PowerShell. Windows runners bill at a
+# higher rate than Linux against the namespace's compute minutes.
+#
+# To use your own runner instead, swap the tag below for whatever you registered.
+
+stages:
+  - build
+
+build:
+  stage: build
+  tags:
+    - saas-windows-medium-amd64
+  before_script:
+    # The install script appends its install dir to $env:Path for this session.
+    - irm https://xmake.io/psget.text | iex
+    - xmake --version
+  script:
+    - xmake repo --update
+    - xmake config --yes
+    - xmake package
+    # GitLab only warns on empty artifact paths; GitHub's if-no-files-found: error
+    # fails the job, so check explicitly to keep the behaviour the same.
+    - if (-not (Test-Path packaging)) { Write-Error "packaging/ was not produced"; exit 1 }
+    - if (-not (Test-Path packaging_pdb)) { Write-Error "packaging_pdb/ was not produced"; exit 1 }
+  artifacts:
+    name: "newgameplus_$CI_COMMIT_SHORT_SHA"
+    expire_in: 30 days
+    paths:
+      - packaging/
+      - packaging_pdb/
