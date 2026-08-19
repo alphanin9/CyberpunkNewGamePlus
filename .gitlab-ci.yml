@@ -21,6 +21,13 @@ build:
   tags:
     - saas-windows-medium-amd64
   before_script:
+    # GitLab's Windows image ships CMake 3.27.8, and xmake prefers a system cmake when
+    # it finds one. safetyhook needs >= 3.28, so put a newer one ahead of it on PATH.
+    - $cmakeVer = "3.31.7"
+    - Invoke-WebRequest "https://github.com/Kitware/CMake/releases/download/v$cmakeVer/cmake-$cmakeVer-windows-x86_64.zip" -OutFile cmake.zip -UseBasicParsing
+    - Expand-Archive cmake.zip -DestinationPath "$env:CI_PROJECT_DIR\.cmake" -Force
+    - $env:PATH = "$env:CI_PROJECT_DIR\.cmake\cmake-$cmakeVer-windows-x86_64\bin;$env:PATH"
+    - cmake --version
     # The install script appends its install dir to $env:Path for this session.
     - irm https://xmake.io/psget.text | iex
     - xmake --version
@@ -56,6 +63,13 @@ package:release:
   tags:
     - saas-windows-medium-amd64
   before_script:
+    # GitLab's Windows image ships CMake 3.27.8, and xmake prefers a system cmake when
+    # it finds one. safetyhook needs >= 3.28, so put a newer one ahead of it on PATH.
+    - $cmakeVer = "3.31.7"
+    - Invoke-WebRequest "https://github.com/Kitware/CMake/releases/download/v$cmakeVer/cmake-$cmakeVer-windows-x86_64.zip" -OutFile cmake.zip -UseBasicParsing
+    - Expand-Archive cmake.zip -DestinationPath "$env:CI_PROJECT_DIR\.cmake" -Force
+    - $env:PATH = "$env:CI_PROJECT_DIR\.cmake\cmake-$cmakeVer-windows-x86_64\bin;$env:PATH"
+    - cmake --version
     # The install script appends its install dir to $env:Path for this session.
     - irm https://xmake.io/psget.text | iex
     - xmake --version
