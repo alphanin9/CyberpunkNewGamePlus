@@ -9,10 +9,40 @@
 #include <Shared/Raw/CharacterCustomizationSystem/CharacterCustomizationSystem.hpp>
 #include <Shared/Raw/CharacterCustomizationState/CharacterCustomizationState.hpp>
 
+#include <tsl/hopscotch_set.h>
+
 using namespace Red;
 
 namespace hooking
 {
+namespace QuestsSystem
+{
+// This should be in Sharedpunk but lazy
+constexpr auto HashLoadQuestResources = 407969320u;
+constexpr auto LoadQuestResources =
+    shared::util::RawFunc<HashLoadQuestResources, void (*)(quest::QuestsSystem*, JobQueue&, bool&)>();
+
+void OnLoadQuestResources(quest::QuestsSystem* aQuestsSystem, JobQueue& aQueue, bool& aSuccess) {
+    // Dedupe quests list - maybe this works for bugfix of 9999 root quests? Not sure
+    // No need for mutex here I think
+    tsl::hopscotch_set<ResourcePath> quests{};
+    DynArray<ResourcePath> dedupedQuestList{};
+
+    auto& questsList = shared::raw::QuestsSystem::QuestsList::Ref(aQuestsSystem);
+
+    for (auto i : questsList)
+    {
+        if (!quests.contains(i))
+        {
+            dedupedQuestList.PushBack(i);
+            quests.insert(i);
+        }
+    }
+
+    questsList = dedupedQuestList;
+}
+}
+
 namespace LoadFacts
 {
 void OnLoadTelemetryFactMap(HashMap<std::uint32_t, CString>& aMap)
@@ -87,6 +117,9 @@ bool InitializeHooking()
     shared::hook::HookAfter<shared::raw::CharacterCustomizationSystem::OnNewGame>(
         &CharacterCustomizationSystem::OnNewGame)
         .OrDie("Failed to hook CharacterCustomizationSystem::OnNewGame");
+
+    shared::hook::HookBefore<QuestsSystem::LoadQuestResources>(&QuestsSystem::OnLoadQuestResources)
+        .OrDie("Failed to hook QuestsSystem::LoadQuestResources");
 
     return true;
 }

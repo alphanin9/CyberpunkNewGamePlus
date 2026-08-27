@@ -95,6 +95,10 @@ void mod::NewGamePlusSystem::UpdateNewGamePlusState()
         return;
     }
 
+    auto& questsMutex = shared::raw::QuestsSystem::QuestMutex::Ref(m_questsSystem);
+
+    std::unique_lock lock(questsMutex);
+
     auto& questsList = shared::raw::QuestsSystem::QuestsList::Ref(m_questsSystem);
 
     // We can't have multiple NG+ quests in the same game, so returning immediately is fine
@@ -129,6 +133,19 @@ void mod::NewGamePlusSystem::LoadExpansionIntoSave()
     {
         PluginContext::Error("[LoadExpansionIntoSave] m_questsSystem == NULL");
         return;
+    }
+
+    {
+        auto& questsMutex = shared::raw::QuestsSystem::QuestMutex::Ref(m_questsSystem);
+        auto& questsList = shared::raw::QuestsSystem::QuestsList::Ref(m_questsSystem);
+
+        std::unique_lock lock(questsMutex); // Wrong lock I think but doesn't matter, play it safe
+
+        if (questsList.Contains(Ep1Quest))
+        {
+            PluginContext::Error("[LoadExpansionIntoSave] Ep1 present but load requested again... this shouldn't be happening.");
+            return;
+        }
     }
 
     shared::raw::QuestsSystem::AddQuest(m_questsSystem, Ep1Quest);
