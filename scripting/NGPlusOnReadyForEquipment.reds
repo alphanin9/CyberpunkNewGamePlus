@@ -285,14 +285,35 @@ class PlayerProgressionLoader {
                 );
         }
 
-        // Order matters: the retrofix modifiers are ordered snapshots, and curve modifiers
-        // re-derive lazily against whatever the earlier ones left behind.
+        // Mirror sub_141CBA160's order exactly: saved modifiers, then the inactive-stat
+        // removals, then the forced modifiers. Within each, original order matters - the
+        // retrofix modifiers are ordered snapshots and curve modifiers re-derive lazily
+        // against whatever the earlier ones left behind.
         for modifier in item.GetStatModifiers() {
             if !this.ReapplyStatModifier(modifier, objId) {
                 this
                     .m_ngPlusSystem
                     .Error(
                         s"ApplyStatModifiers: failed to re-apply stat \(EnumInt(modifier.statType))"
+                    );
+            }
+        }
+
+        // The game passes removeSavedModifiers = false here, so this suppresses the
+        // record-driven modifiers only and leaves what we just replayed standing.
+        for statType in item.GetInactiveStats() {
+            this.m_statsSystem.RemoveAllModifiers(objId, statType, false);
+        }
+
+        // Forced modifiers live in a separate store on the stats object that no script API
+        // writes, so they go back as saved modifiers. Different bookkeeping, same contribution
+        // to the stat value.
+        for modifier in item.GetForcedModifiers() {
+            if !this.ReapplyStatModifier(modifier, objId) {
+                this
+                    .m_ngPlusSystem
+                    .Error(
+                        s"ApplyStatModifiers: failed to re-apply forced stat \(EnumInt(modifier.statType))"
                     );
             }
         }

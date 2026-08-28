@@ -173,24 +173,35 @@ struct ExtendedItemData
 void ProcessStatModifiers(Handle<NGPlusItemData>& aItemData, ResultContext& aContext) noexcept
 {
     const auto statsObjectId = aContext.m_statsSystem->GetEntityHashFromItemId(aItemData->m_itemId);
-    auto modifiers = aContext.m_statsSystem->GetStatModifiers(statsObjectId);
 
-    aItemData->m_statModifiers.Reserve(modifiers.size());
-
-    for (auto& modifier : modifiers)
+    const auto collect =
+        [](DynArray<Handle<game::StatModifierData_Deprecated>>& aTarget,
+           DynArray<Handle<game::StatModifierData_Deprecated>>& aSource)
     {
-        if (!modifier)
-        {
-            continue;
-        }
+        aTarget.Reserve(aSource.size());
 
-        if (modifier->statType == game::data::StatType::Invalid)
+        for (auto& modifier : aSource)
         {
-            continue;
-        }
+            if (!modifier || modifier->statType == game::data::StatType::Invalid)
+            {
+                continue;
+            }
 
-        aItemData->m_statModifiers.PushBack(std::move(modifier));
-    }
+            aTarget.PushBack(std::move(modifier));
+        }
+    };
+
+    auto modifiers = aContext.m_statsSystem->GetStatModifiers(statsObjectId);
+    collect(aItemData->m_statModifiers, modifiers);
+
+    // SavedStatsData has three channels, not one. sub_141CBA160 applies the saved modifiers,
+    // then removes the inactive stats, then applies the forced modifiers - so an item whose
+    // Quality is suppressed and re-supplied by the latter two ends up carrying only the
+    // leftover negative delta if we take m_statModifiers alone.
+    auto forcedModifiers = aContext.m_statsSystem->GetForcedModifiers(statsObjectId);
+    collect(aItemData->m_forcedModifiers, forcedModifiers);
+
+    aItemData->m_inactiveStats = aContext.m_statsSystem->GetDisabledModifiers(statsObjectId);
 }
 
 void ProcessAttachments(const modsave::ItemSlotPart& aSlotPart, Handle<NGPlusItemData>* aRootItemData,

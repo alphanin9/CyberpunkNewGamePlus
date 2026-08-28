@@ -3,6 +3,7 @@
 #include <RedLib.hpp>
 
 #include <RED4ext/Scripting/Natives/Generated/game/ConstantStatModifierData_Deprecated.hpp>
+#include <RED4ext/Scripting/Natives/Generated/game/data/StatType.hpp>
 
 #include "../resultContext.hpp"
 #include <parsing/definitions/nodeParsers/inventory/inventoryNode.hpp>
@@ -17,6 +18,12 @@ public:
 
     Red::DynArray<Red::ItemID> m_attachments;
     Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> m_statModifiers;
+
+    // The other two channels SavedStatsData carries. The game applies all three on load
+    // (sub_141CBA160): saved modifiers, then the inactive-stat removals, then the forced
+    // modifiers. Carrying only m_statModifiers loses whatever the last two contribute.
+    Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> m_forcedModifiers;
+    Red::DynArray<Red::game::data::StatType> m_inactiveStats;
 
     RTTI_IMPL_TYPEINFO(NGPlusItemData);
     RTTI_IMPL_ALLOCATOR();
@@ -43,11 +50,15 @@ RTTI_DEFINE_CLASS(InventoryReader::NGPlusItemData, {
     RTTI_GETTER(m_itemQuantity);
     RTTI_GETTER(m_attachments);
     RTTI_GETTER(m_statModifiers);
+    RTTI_GETTER(m_forcedModifiers);
+    RTTI_GETTER(m_inactiveStats);
 
     RTTI_PROPERTY(m_itemId);
     RTTI_PROPERTY(m_itemQuantity);
     RTTI_PROPERTY(m_attachments);
     RTTI_PROPERTY(m_statModifiers);
+    RTTI_PROPERTY(m_forcedModifiers);
+    RTTI_PROPERTY(m_inactiveStats);
 });
 
 RTTI_DEFINE_CLASS(InventoryReader::InventoryReaderResults, {

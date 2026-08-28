@@ -79,6 +79,35 @@ public class NGPlusItemStatDebug {
                 );
             i += 1;
         }
+
+        let forced = item.GetForcedModifiers();
+
+        sys.Spew("[tier] " + label + " forced modifiers: " + ToString(ArraySize(forced)));
+
+        i = 0;
+
+        while i < ArraySize(forced) {
+            sys
+                .Spew(
+                    "[tier]   forced["
+                    + ToString(i)
+                    + "] "
+                    + NGPlusItemStatDebug.DescribeModifier(forced[i])
+                );
+            i += 1;
+        }
+
+        let inactive = item.GetInactiveStats();
+        let inactiveLine = "[tier] " + label + " inactive stats: " + ToString(ArraySize(inactive));
+
+        i = 0;
+
+        while i < ArraySize(inactive) {
+            inactiveLine = inactiveLine + " " + NGPlusItemStatDebug.StatName(inactive[i]);
+            i += 1;
+        }
+
+        sys.Spew(inactiveLine);
     }
 
     public final static func DumpLiveTierStats(
