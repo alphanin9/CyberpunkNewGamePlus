@@ -479,6 +479,17 @@ NG+:     Items.Boots_07_rich_02   IsItemPlus=0   uiQuality=8.000000   (T5)
 ```
 
 Its transfer dump reads `saved modifiers: 1`, `forced modifiers: 0`, `inactive stats: 1
-PowerLevel` — no `IsItemPlus` in any of the three channels. So clothing `+` tiers come from
-somewhere none of them cover; `InnerItemData` stat data attached to installed clothing mods is
-the obvious next place to look, and NGP+ does not carry `InnerItemData` at all.
+PowerLevel`, and pre-apply `IsItemPlus=0` — so the `+2` is in none of the three channels and was
+never something the replay could drop.
+
+**Closed as won't-fix.** `UIItemsHelper.ShouldDisplayTier` returns false for every `Clo_*` item
+type, so clothing tiers are never rendered, and clothing carries no stats in 2.x. The difference
+is invisible and inert.
+
+Where the `+2` actually lives was not established. `InnerItemData` is the plausible candidate,
+since `InventoryUtils.GetInnerItemStatValueByType(itemData, slotID, statType)` reads per-slot
+stat data and NGP+ carries attachments only as a flat `DynArray<ItemID>`
+(`m_attachments` → `customPartsToInstall`), never the per-slot payload —
+`InnerItemDataRepresentation` exists in `src/Parsing/New/Nodes/Inventory.hpp` but the active
+`InventoryReader` does not use it. Carrying it would mean a fourth channel with its own
+serialization, to restore a number the UI does not draw.
