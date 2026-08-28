@@ -266,11 +266,31 @@ V1 narrows this aggressively — `PersistencySystemNode.hpp:111` has
 `if constexpr (m_onlyDoVehicleGarage)`. Keep that narrowing in V2; do not try to read the whole
 node.
 
-### WardrobeSystem
+### WardrobeSystem — strategy C, two nodes
 
-`"WardrobeSystem"` appears at `sub_14102429C` and `sub_1412E532C`, but the latter is the RTTI
-class registration, not a loader — **I did not locate its `OnGameLoad`**, so its strategy is
-unconfirmed. V1's `WardrobeSystemNode` is the reference until someone traces it.
+`gameWardrobeSystem::OnGameLoad` is `sub_141023D64`, found via the vtable rather than by string
+search: `IGameSystem` puts `OnGameLoad` at **slot 328**, so
+`qword[gameWardrobeSystem::vtbl + 328]` gives it directly. (`gameWardrobeSystem::GetType`
+`0x1418F4790` → vtable `0x142CE6CF8`; slot 312, `sub_1424E8360`, is the matching save writer.)
+This trick works for any `IGameSystem` and is much faster than chasing name strings, which land on
+RTTI registration as often as on loaders.
+
+It reads **two** nodes, each with its own gate:
+
+| # | node | `CName` hash | gate |
+| --- | --- | --- | --- |
+| 1 | `WardrobeSystem` (`sub_14102429C`) | `0x382B2E922F6B119C` | `saveVersion >= 0xDF` |
+| 2 | `WardrobeSystem_ClothingSets` (`sub_1410240FC`) | `0x8CB44C425716E0B4` | `saveVersion >= 0xE0` |
+
+Both are field-by-field. Node 1 reads the stored wardrobe items; node 2 reads clothing sets as
+96-byte entries, then a trailing `u32` into `this+240`. The version is passed as the accessor's
+`aIsOptional` argument, so on an old save the node is skipped rather than failed.
+
+> **V1 only reads node 1.** `WardrobeSystemNode::m_nodeName` is `"WardrobeSystem"`, and
+> `WardrobeSystem_ClothingSets` has no parser, so it falls through to `DefaultNodeData` and is
+> ignored. `WardrobeReader` correspondingly exposes only `m_wardrobe` (a `DynArray<ItemID>`) and
+> no sets. Whether that is a gap depends on whether NG+ should carry wardrobe outfit sets — it is
+> a product decision, not a parser bug.
 
 ## 4. Version gates seen
 
