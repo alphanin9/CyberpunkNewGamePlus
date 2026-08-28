@@ -2,6 +2,7 @@ module NGPlus.PlayerProgression
 
 import NGPlus.EP1Listener.NGPlusEP1StatusListener
 import NGPlus.Ripperdoc.NGPlusTutorialCyberwareProvider
+import NGPlus.Debug.NGPlusItemStatDebug
 
 @if(ModuleExists("EquipmentEx"))
 import EquipmentEx.*
@@ -268,6 +269,10 @@ class PlayerProgressionLoader {
     //    ForceQualityHelper silently dropped the base tier on every upgraded iconic while the
     //    plus suffix still came through. Replay the whole buffer, in order - the game does.
     public final func ApplyStatModifiers(item: ref<NGPlusItemData>, objId: StatsObjectID) {
+        if NGPlusItemStatDebug.Enabled() {
+            NGPlusItemStatDebug.DumpSavedModifiers(this.m_ngPlusSystem, item);
+        }
+
         // Order matters: the retrofix modifiers are ordered snapshots, and curve modifiers
         // re-derive lazily against whatever the earlier ones left behind.
         for modifier in item.GetStatModifiers() {
@@ -294,6 +299,17 @@ class PlayerProgressionLoader {
                     )
             ) {
             this.m_ngPlusSystem.Error("ApplyStatModifiers: failed to block item scaling");
+        }
+
+        if NGPlusItemStatDebug.Enabled() {
+            NGPlusItemStatDebug
+                .DumpLiveTierStats(
+                    this.m_ngPlusSystem,
+                    this.m_statsSystem,
+                    objId,
+                    TDBID.ToStringDEBUG(ItemID.GetTDBID(item.GetItemId())),
+                    "after-apply"
+                );
         }
     }
 
