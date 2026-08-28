@@ -195,17 +195,38 @@ Because it goes through `AddSavedModifierKey` → `SavedModifierStore`, the roll
 
 ## 4. Consequences for NGP+
 
-### 4.1 The item already has a quality by the time we touch it
+### 4.1 Saved modifiers are deltas over the record base — do not clear first
 
-`TransactionSystem.GiveItem` / `GiveItemByItemData` runs `StatsBundle::InitializeStats`, which
-applies the record-driven (or rolled) `Quality` modifier. Adding another **Additive** `Quality`
-modifier on top **sums** with it — it does not replace it. That is the root of the
-"quality/upgrade system is completely fucked" workaround in
-`scripting/NGPlusOnReadyForEquipment.reds`.
+This is the single most important thing on this page, and it is easy to get backwards.
 
-### 4.2 Vanilla's own recipe is remove-then-add
+Re-read §2.3. When the game restores an item, `sub_141CBA160` does, in order:
 
-Every vanilla site that forces a quality does this, never add-on-top:
+1. `StatsBundle::MakeHandle` — a **fresh** bundle
+2. `sub_1411330F4(bundle, …, savedStatsData->recordID, &savedStatsData->seed, …)` — initialise
+   it from the **item record and the saved RNG seed**
+3. `sub_14099875C` — apply `modifiersBuffer` **on top**, removing nothing
+4. `inactiveStats` — the *only* removal, an explicit per-stat suppression list
+
+So the buffer holds **deltas layered over a record-driven base**, not a self-contained
+description of the item. For an item whose record has a fixed `Quality`, the base is not in the
+buffer at all — only the deltas (the retrofix's negative `Quality` term, upgrade counts, …) are.
+
+`TransactionSystem.GiveItem` / `GiveItemByItemData` reproduces step 2, and because `ItemID`
+carries its `rngSeed`, a random-quality item re-rolls to the same value it originally had. So
+after `GiveItem` the item already holds the correct base, and the saved modifiers should simply
+be added on top — exactly as the game itself would.
+
+Calling `RemoveAllModifiers` first strips that base and leaves only the deltas. For a
+retrofixed item that means the negative `Quality` term survives alone and **every item lands on
+Tier 1**. Observed in testing; do not reintroduce it.
+
+If you ever do need to suppress a record-driven modifier, `inactiveStats`
+(`SavedStatsData +0x88`, already parsed as `StatsSystemNode::GetDisabledModifiers`) is the
+channel the game uses. It is not currently exposed on `NGPlusItemData`.
+
+### 4.2 …but vanilla's *runtime* forcing recipe is remove-then-add
+
+Do not confuse the two. Sites that **assert** a quality at runtime do remove-then-add:
 
 ```swift
 SS.RemoveAllModifiers(itemData.GetStatsObjectID(), gamedataStatType.Quality, true);
@@ -217,8 +238,12 @@ See `RPGManager.SetDroppedWeaponQuality` (`rpgManager.swift:763`), `RPGManager.F
 (`:787`), `PlayerPuppet.RetroFixItemQuality` (`player.swift:2430`),
 `PlayerPuppet.RetroRescaleNonIconicWeapons` (`:2485`).
 
-`RemoveAllModifiers` also releases the saved-modifier keys (`sub_140997A50` → `sub_140654ACC`).
-Add-on-top does not, so it leaks keys — see §4.3.
+That pattern is correct when you are overwriting a value you computed yourself. It is **wrong**
+for replaying a save, which is §4.1's job. NGP+ is replaying a save.
+
+`RemoveAllModifiers` does also release saved-modifier keys (`sub_140997A50` →
+`sub_140654ACC`), which add-on-top does not — but restricting *which* stats get carried at all
+(§4.5) is the right lever for the key pressure in §4.3, not blanket clearing.
 
 ### 4.3 Likely cause of the crashes: saved-modifier key exhaustion
 
@@ -318,25 +343,24 @@ Reconstructing a single quality number offline means re-implementing that graph,
 curve evaluation against `quality_curves`. Two workable options:
 
 **Option A — carry the cluster verbatim (implemented).** Do not collapse anything to one number.
-For each item, re-apply *only* the stats in the table above plus `ScalingBlocked`, keeping the
-original modifier kind (constant / combined / curve) and original order, each preceded by
-`RemoveAllModifiers(objId, <statType>, true)` once. Curve modifiers stay curve modifiers, so
-they re-derive correctly against the re-applied `WasItemUpgraded` / `ForceQualityHelper`. Drop
-every other stat type. This keeps the graph internally consistent without evaluating anything,
-and cuts the saved-modifier key churn that §4.3 implicates.
+For each item, re-apply *only* the stats in the table above, keeping the original modifier kind
+(constant / combined / curve) and original order, **adding on top of the base `GiveItem` already
+established** (§4.1) rather than clearing anything. Curve modifiers stay curve modifiers, so they
+re-derive correctly against the replayed `WasItemUpgraded` / `ForceQualityHelper`. Drop every
+other stat type — that is what cuts the saved-modifier key churn §4.3 implicates, without
+touching the base.
 
 **Option B — evaluate offline.** All inputs are available: constants from `modifiersBuffer`,
 curves from TweakDB `quality_curves`. Compute the effective `Quality` and `IsItemPlus`, then
-`RemoveAllModifiers` + one constant each. More code, but a clean two-modifier result.
+remove-then-add one constant each. Only viable if you also reproduce the record base, since the
+buffer alone does not contain it.
 
 Either way:
 
-- `RemoveAllModifiers(objId, <stat>, true)` **before** adding, so the record-driven modifier
-  applied by `GiveItem` is replaced rather than summed with — and so its key is released.
+- Mirror the load path: record base first, saved deltas on top, no clearing. See §4.1.
 - If nothing was saved for a stat, leave it alone; do not force `0.0`.
 - Check `AddSavedModifier`'s `Bool` return, as vanilla does at `player.swift:2434`.
-- Round the final `Quality` to an integer — see the truncate/round mismatch in §1.
-
-> Note on §4.2: vanilla is *not* uniformly remove-then-add. The retrofix paths add-on-top on
-> purpose, because they are computing deltas against the current effective value. Remove-then-add
-> is correct when you are *asserting* a value, which is NGP+'s case.
+- `ScalingBlocked` stays add-only, matching `PlayerPuppet.BlockScaling` — a record-driven block
+  should not be cleared, and stacking to `2.0` still reads as blocked.
+- If you go with Option B, round the final `Quality` to an integer — see the truncate/round
+  mismatch in §1.

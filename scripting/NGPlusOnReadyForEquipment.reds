@@ -270,32 +270,25 @@ class PlayerProgressionLoader {
 
     public final func ApplyStatModifiers(item: ref<NGPlusItemData>, objId: StatsObjectID) {
         let carriedModifiers: array<ref<gameStatModifierData>>;
-        let statTypesToClear: array<gamedataStatType>;
 
         for modifier in item.GetStatModifiers() {
-            if !PlayerProgressionLoader.IsCarriedStatType(modifier.statType) {
-                continue;
-            }
-
-            ArrayPush(carriedModifiers, modifier);
-
-            if !ArrayContains(statTypesToClear, modifier.statType) {
-                ArrayPush(statTypesToClear, modifier.statType);
+            if PlayerProgressionLoader.IsCarriedStatType(modifier.statType) {
+                ArrayPush(carriedModifiers, modifier);
             }
         }
 
-        // The item already exists by now - GiveItem ran StatsBundle::InitializeStats, which
-        // applied the record-driven (or randomly rolled) modifiers. Adding on top of those
-        // would sum with them rather than replace them, so clear every stat we are about to
-        // assert. This also releases the superseded saved-modifier keys instead of leaking
-        // them into the registry's fixed 65535-entry pool.
+        // Do NOT clear these stats first. Saved modifiers are deltas layered over the
+        // record-driven base, not a replacement for it: on a normal load the game builds a
+        // fresh StatsBundle from the item record and seed, then applies the saved buffer on
+        // top without removing anything. The only suppression channel is the separate
+        // inactiveStats list, which we do not carry.
         //
-        // Only stats we actually have a replacement for are cleared - wiping a stat we have
-        // nothing to put back would leave the item worse off than not touching it.
-        for statType in statTypesToClear {
-            this.m_statsSystem.RemoveAllModifiers(objId, statType, true);
-        }
-
+        // Clearing here strips the record base and leaves only the retrofix's negative
+        // Quality delta behind, which lands every item on Tier 1.
+        //
+        // The record base reproduces correctly because ItemID carries its rngSeed, so
+        // GiveItem re-rolls random-quality items to the same value they had.
+        //
         // Original order matters: the retrofix modifiers are ordered snapshots, and curve
         // modifiers re-derive against whatever the earlier ones left behind.
         for modifier in carriedModifiers {
