@@ -140,26 +140,65 @@ public class NGPlusItemStatDebug {
 
         sys.Spew(line);
     }
-}
 
-// Console command. Run after the transfer has fully settled - the apply-time dump happens
-// before the game's own retrofix passes get a look at the items, so this is the one that says
-// where they actually ended up.
-public static exec func NGPlusDumpItemTiers(gameInstance: GameInstance) {
-    let itemList: array<wref<gameItemData>>;
-    let sys = GameInstance.GetNewGamePlusSystem();
-    let statsSystem = GameInstance.GetStatsSystem(gameInstance);
+    // Console command. Run after the transfer has fully settled - the apply-time dump happens
+    // before the game's own retrofix passes get a look at the items, so this is the one that says
+    // where they actually ended up.
+    public static func DumpItemTiers() {
+        let gameInstance = GetGameInstance();
 
-    GameInstance.GetTransactionSystem(gameInstance).GetItemList(GetPlayer(gameInstance), itemList);
+        let itemList: array<wref<gameItemData>>;
+        let sys = GameInstance.GetNewGamePlusSystem();
+        let statsSystem = GameInstance.GetStatsSystem(gameInstance);
 
-    for itemData in itemList {
-        NGPlusItemStatDebug
-            .DumpLiveTierStats(
-                sys,
-                statsSystem,
-                itemData.GetStatsObjectID(),
-                TDBID.ToStringDEBUG(ItemID.GetTDBID(itemData.GetID())),
-                "console"
-            );
+        GameInstance.GetTransactionSystem(gameInstance).GetItemList(GetPlayer(gameInstance), itemList);
+
+        for itemData in itemList {
+            NGPlusItemStatDebug
+                .DumpLiveTierStats(
+                    sys,
+                    statsSystem,
+                    itemData.GetStatsObjectID(),
+                    TDBID.ToStringDEBUG(ItemID.GetTDBID(itemData.GetID())),
+                    "console"
+                );
+        }
+
+        NGPlusItemStatDebug.DumpStashItemTiers(gameInstance, sys, statsSystem);
+    }
+
+    // The stash is a separate inventory owner, resolved the same way LoadPlayerStash does it,
+    // and it is where every item that still transfers wrong ends up living.
+    private static func DumpStashItemTiers(
+        gameInstance: GameInstance,
+        sys: ref<NewGamePlusSystem>,
+        statsSystem: ref<StatsSystem>
+    ) {
+        let stashList: array<wref<gameItemData>>;
+        let stashId = Cast<EntityID>(
+            ResolveNodeRef(
+                CreateNodeRef("#v_room_stash"),
+                Cast<GlobalNodeRef>(GlobalNodeID.GetRoot())
+            )
+        );
+        let stashEntity = GameInstance.FindEntityByID(gameInstance, stashId) as GameObject;
+
+        if !IsDefined(stashEntity) {
+            sys.Spew("[tier] stash entity not resolvable, skipping stash dump");
+            return;
+        }
+
+        GameInstance.GetTransactionSystem(gameInstance).GetItemList(stashEntity, stashList);
+
+        for itemData in stashList {
+            NGPlusItemStatDebug
+                .DumpLiveTierStats(
+                    sys,
+                    statsSystem,
+                    itemData.GetStatsObjectID(),
+                    TDBID.ToStringDEBUG(ItemID.GetTDBID(itemData.GetID())),
+                    "console-stash"
+                );
+        }
     }
 }
