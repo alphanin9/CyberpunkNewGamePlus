@@ -236,6 +236,28 @@ unconfirmed. V1's `WardrobeSystemNode` is the reference until someone traces it.
 says so itself: *"Should be using saveVersion instead, but I don't know the proper save version
 for 2.00"*.
 
+The two counters are asymmetric, which is worth knowing before hunting for a constant that does
+not exist:
+
+- **gameVersion is an RTTI-reflected enum.** `RED4ext::game::GameVersion` names every build, and
+  carries a `Current` member updated per release:
+
+  ```
+  CP77_Patch_2_0 = 2000,   // == MinSupportedGameVersion
+  CP77_Patch_2_1 = 2100,
+  CP77_Patch_2_2 = 2200,
+  CP77_Patch_2_3 = 2300,
+  Current        = 2310,   // this build, and what current saves carry
+  ```
+
+  So `MinSupportedGameVersion` could be `game::GameVersion::CP77_Patch_2_0` rather than a magic
+  number, and `GameVersion::Current` is available if "save from exactly this build" is ever needed.
+
+- **saveVersion has no enum.** Nothing in the RTTI dump contains 269, the IDB has no such local
+  type, and no symbol mentions it. It exists only as immediates in the decompiled gates. If the
+  game has an internal C++ enum for it, it is unreflected and stripped, so it cannot be recovered
+  by name — only the values are observable.
+
 Two consequences:
 
 - On saves at `saveVersion 269` every gate in the table is **below** the save's version, so all of
