@@ -104,7 +104,7 @@ fits:
 | 1 | `LoadStream::ReadPackage(CClass*)` | the node is a package of the given type | yes |
 | 2 | `ObjectSerializer_ReadFromStrean(&handle, stream, CClass*)` `0x1404946F4` | the node is a package holding exactly **one** object | **no** |
 | 3 | `ScriptablePackageReader` + `ScriptablePackageExtractor::GetObjectById` | the node holds **many** objects addressed by index | yes |
-| 4 | `ISerializable` vfunc **+48** — `Serialize(BaseStream*, uint32* version)` | a single object *inside* a `DataBuffer`, once you know its class | **no** |
+| 4 | `ISerializable` vfunc **`0x30`** — `bool(BaseStream*, uint32_t* aVersion)` | a single object *inside* a `DataBuffer`, once you know its class | in the SDK, mis-declared |
 | 5 | `BaseNativeReader` / `BufferCursor` | none of the above apply | n/a, ours |
 
 **(2)** is what `StatsSystem`'s legacy path uses:
@@ -130,8 +130,29 @@ the object, and let it read itself. `Parsing/Definitions/.../StatsSystemNode.cpp
 `GetStatModifiersInternal` is the V1 hand-rolled version of exactly this, and is the kind of code
 V2 should be deleting rather than porting.
 
-Neither (2) nor (4) is exposed by sharedpunk today; both are small `util::RawFunc` / `RawVFunc`
-additions (`0x1404946F4`, and vfunc slot `0x30` on `ISerializable`).
+**(4) is already in RED4ext.SDK**, just not usable as declared. `RED4ext::ISerializable` has the
+slot, but with the wrong arity:
+
+```cpp
+virtual bool sub_30();                       // 30  <- the serializer, declared nullary
+virtual bool sub_40(BaseStream* aStream);    // 40  <- this one did get a stream
+```
+
+Decimal `48` in the decompiler is byte offset `0x30`, so `sub_30` *is* the function. Both call
+sites pass two arguments and agree on the shape, in both directions:
+
+```c
+// reader sub_14099875C:  (vtable + 0x30)(obj, stream, &version)
+// writer sub_1425226C0:  (vtable + 0x30)(obj, stream, &version)   // version = 269
+```
+
+Same slot for read and write makes it a bidirectional `ReadWrite`-style serializer, so the real
+signature is `bool sub_30(BaseStream* aStream, uint32_t* aVersion)`. Correcting and naming it
+upstream in RED4ext.SDK is the right fix — it is a one-line signature change and every consumer
+benefits. Until then, either re-declare it locally or go through a `util::RawVFunc<0x30, …>`.
+
+**(2)** has no SDK equivalent — it is a plain function, so it needs a `util::RawFunc` at
+`0x1404946F4`, ideally in sharedpunk next to the other save raws.
 
 ## 3. Per-node recipes
 
