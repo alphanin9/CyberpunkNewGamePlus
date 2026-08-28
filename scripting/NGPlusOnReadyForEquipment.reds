@@ -271,6 +271,18 @@ class PlayerProgressionLoader {
     public final func ApplyStatModifiers(item: ref<NGPlusItemData>, objId: StatsObjectID) {
         if NGPlusItemStatDebug.Enabled() {
             NGPlusItemStatDebug.DumpSavedModifiers(this.m_ngPlusSystem, item);
+
+            // The record-driven base GiveItem established, before we touch anything. The saved
+            // Quality modifiers are snapshot deltas layered on this, so it is the number that
+            // decides whether they reconstruct to the right value.
+            NGPlusItemStatDebug
+                .DumpLiveTierStats(
+                    this.m_ngPlusSystem,
+                    this.m_statsSystem,
+                    objId,
+                    TDBID.ToStringDEBUG(ItemID.GetTDBID(item.GetItemId())),
+                    "pre-apply"
+                );
         }
 
         // Order matters: the retrofix modifiers are ordered snapshots, and curve modifiers
