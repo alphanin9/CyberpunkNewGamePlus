@@ -178,7 +178,7 @@ protected cb func OnInitialize() -> Bool {
     this.m_hoverArea = gamedataEquipmentArea.Invalid;
     this.m_dollHoverArea = gamedataEquipmentArea.Invalid;
     this.m_ripperdocHoverState = RipperdocHoverState.None;
-    this.m_defaultTooltipsMargin = new inkMargin(60.0, 60.0, 0.0, 0.0);
+    this.m_defaultTooltipsMargin = inkMargin(60.0, 60.0, 0.0, 0.0);
     super.OnInitialize();
     this.m_hasEquipEventTriggered = true;
     this.m_hasUnequipEventTriggered = true;

@@ -14,7 +14,7 @@ class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
     }
 
     private final func GetWidgetEntry(widgetName: CName, widgetPath: String) -> inkMenuEntry {
-        let widget = new ResourceRef();
+        let widget = ResourceRef();
         ResourceRef.LoadPath(widget, ResRef.FromString(widgetPath));
 
         let menuEntry: inkMenuEntry;
