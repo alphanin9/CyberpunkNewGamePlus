@@ -458,3 +458,27 @@ Two further notes on measuring:
   `qualityInt + (isIconic ? 0.05 : 0) + plusValue * 0.10`, with `QualityToInt(Legendary) = 8`. So
   `8.05` is T5, `8.15` is T5+, `8.25` is T5++, and `0.05` is T1 on an iconic. Reading that number
   directly beats inferring tiers from stat values.
+
+### 5.2 Result
+
+Measured against the source save, item by item, after the gates were marked:
+
+| | matched | real mismatches |
+| --- | --- | --- |
+| stash | 19/19 | 0 |
+| inventory | 264/265 | 1 |
+
+Stash iconics land on `Quality=4, IsItemPlus=1, WasItemUpgraded=9, EffectiveTier=9,
+uiQuality=8.15` — identical to source.
+
+The single residual is unrelated to the retrofix chain:
+
+```
+source:  Items.Boots_07_rich_02   IsItemPlus=2   uiQuality=8.200000   (T5++)
+NG+:     Items.Boots_07_rich_02   IsItemPlus=0   uiQuality=8.000000   (T5)
+```
+
+Its transfer dump reads `saved modifiers: 1`, `forced modifiers: 0`, `inactive stats: 1
+PowerLevel` — no `IsItemPlus` in any of the three channels. So clothing `+` tiers come from
+somewhere none of them cover; `InnerItemData` stat data attached to installed clothing mods is
+the obvious next place to look, and NGP+ does not carry `InnerItemData` at all.
