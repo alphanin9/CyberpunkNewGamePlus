@@ -159,8 +159,12 @@ to rebind stat relations.
 
 Each element is `CName className` then the modifier's own `Serialize(stream, version)`. Both
 the reader (`sub_14099875C`) and the writer (`sub_1425226C0`) pass a **hardcoded version of
-269** (`0x10D`), independent of the save version — so the element layout is fixed for a given
-game build.
+269** (`0x10D`) — a literal in the code, not a value read from the stream — so the element layout
+is fixed for a given game build.
+
+That literal equals this build's `saveVersion` (also 269), which is unlikely to be coincidence:
+it most likely tracks the save version per build rather than being an arbitrary constant. Worth
+re-checking after a game patch.
 
 `gameConstantStatModifier::Serialize` `0x140998CAC`, `gameCurveStatModifier::Serialize`
 `0x1409970B4`, `gameCombinedStatModifier::Serialize` `0x142529858` all branch on that version:

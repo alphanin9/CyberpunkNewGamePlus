@@ -224,9 +224,26 @@ unconfirmed. V1's `WardrobeSystemNode` is the reference until someone traces it.
 | QuestsSystem | `>= 0x8B` | else legacy quest-list path |
 | PersistencySystem | `>= 205` | else nothing is read |
 
-The mod only accepts `>= 2.00` saves (`MinSupportedGameVersion` in `Filesystem/SaveFS.cpp`), which
-removes the deep-legacy branches but **not** the recent ones — `0xE3` and `0xF8` era gates are
-live for saves we do accept.
+**Save version and game version are different counters.** The save header
+(`Parsing/Definitions/FileInfo.hpp`) carries both:
+
+| field | value on a current save | note |
+| --- | --- | --- |
+| `saveVersion` | `269` (`0x10D`) | what every gate above compares against |
+| `gameVersion` | `2310` | flat build number, not packed, not semver |
+
+`MinSupportedGameVersion = 2000` in `Filesystem/SaveFS.cpp` gates on **gameVersion**, and the code
+says so itself: *"Should be using saveVersion instead, but I don't know the proper save version
+for 2.00"*.
+
+Two consequences:
+
+- On saves at `saveVersion 269` every gate in the table is **below** the save's version, so all of
+  them are unconditionally taken. None of them branch.
+- Whether any gate branches across the *accepted* range depends on the `saveVersion` of a
+  gameVersion-2000 save, which is **not established**. Reading the header of a genuine 2.00-era
+  save would settle it; until then, do not assume a gate is dead just because current saves clear
+  it.
 
 ## 5. Gotchas
 
