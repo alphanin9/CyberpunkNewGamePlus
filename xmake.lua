@@ -97,6 +97,9 @@ target("New Game+")
                 os.cp(path.absolute("scripting"), redscript_folder)
                 cprint("${bright yellow}Could not symlink the redscript dir (needs Developer Mode), copied it instead")
             end
+        elseif not os.islink(redscript_folder) then
+            cprint("${bright yellow}" .. redscript_folder .. " is a plain directory, so scripts are not being linked. " ..
+                   "Delete it and re-run xmake install to replace it with a link to scripting/")
         end
 
         cprint("${bright green}Installed plugin to " .. plugin_folder)
