@@ -110,6 +110,44 @@ public class NGPlusItemStatDebug {
         sys.Spew(inactiveLine);
     }
 
+    // The UI reads item quality through RPGManager.GetItemQuality, which is
+    // itemData.GetStatValueByType - the item's own StatsBundle. That is a different path from
+    // statsSystem.GetStatValue(objId, ...), which looks the object up in the stats system map.
+    // Natively GetItemDataQuality goes through the bundle and never touches the map, so the two
+    // can disagree. Print both: "bundle/system".
+    public final static func DumpItemDataTierStats(
+        sys: ref<NewGamePlusSystem>,
+        statsSystem: ref<StatsSystem>,
+        itemData: wref<gameItemData>,
+        label: String,
+        phase: String
+    ) {
+        let watched: array<gamedataStatType>;
+
+        ArrayPush(watched, gamedataStatType.Quality);
+        ArrayPush(watched, gamedataStatType.IsItemPlus);
+        ArrayPush(watched, gamedataStatType.WasItemUpgraded);
+        ArrayPush(watched, gamedataStatType.EffectiveTier);
+        ArrayPush(watched, gamedataStatType.IsItemIconic);
+
+        let objId = itemData.GetStatsObjectID();
+        let line = "[tier] " + label + " (" + phase + ")";
+        let i = 0;
+
+        while i < ArraySize(watched) {
+            line = line
+                + " "
+                + NGPlusItemStatDebug.StatName(watched[i])
+                + "="
+                + ToString(itemData.GetStatValueByType(watched[i]))
+                + "/"
+                + ToString(statsSystem.GetStatValue(objId, watched[i]));
+            i += 1;
+        }
+
+        sys.Spew(line + " uiQuality=" + ToString(UIItemsHelper.GetQualityF(itemData)));
+    }
+
     public final static func DumpLiveTierStats(
         sys: ref<NewGamePlusSystem>,
         statsSystem: ref<StatsSystem>,
@@ -155,10 +193,10 @@ public class NGPlusItemStatDebug {
 
         for itemData in itemList {
             NGPlusItemStatDebug
-                .DumpLiveTierStats(
+                .DumpItemDataTierStats(
                     sys,
                     statsSystem,
-                    itemData.GetStatsObjectID(),
+                    itemData,
                     TDBID.ToStringDEBUG(ItemID.GetTDBID(itemData.GetID())),
                     "console"
                 );
@@ -192,10 +230,10 @@ public class NGPlusItemStatDebug {
 
         for itemData in stashList {
             NGPlusItemStatDebug
-                .DumpLiveTierStats(
+                .DumpItemDataTierStats(
                     sys,
                     statsSystem,
-                    itemData.GetStatsObjectID(),
+                    itemData,
                     TDBID.ToStringDEBUG(ItemID.GetTDBID(itemData.GetID())),
                     "console-stash"
                 );
