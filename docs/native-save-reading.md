@@ -89,10 +89,49 @@ The double `ReadHeader` is not a typo and is not optional — it mirrors
 
 The node is hand-serialized: counts, then loops, then primitives. No shortcut exists; you
 re-implement the game's read order exactly, using `ReadWriteEx` and the stream's typed helpers.
-`Readers/BaseNativeReader` + `BufferCursor` exist for the sub-case where a field is an opaque
-blob holding RTTI data.
 
 Version gates matter most here — a branch you skip silently shifts every subsequent read.
+
+## 2.4 Prefer the game's readers over our own
+
+`Readers/BaseNativeReader` decodes RTTI data out of a blob by hand. That is a re-implementation of
+work the game already does, so it should be the **last** option, not the default — the whole point
+of V2 is to stop re-deriving the format. Work down this ladder and stop at the first one that
+fits:
+
+| # | reader | use when | wrapped in sharedpunk? |
+| --- | --- | --- | --- |
+| 1 | `LoadStream::ReadPackage(CClass*)` | the node is a package of the given type | yes |
+| 2 | `ObjectSerializer_ReadFromStrean(&handle, stream, CClass*)` `0x1404946F4` | the node is a package holding exactly **one** object | **no** |
+| 3 | `ScriptablePackageReader` + `ScriptablePackageExtractor::GetObjectById` | the node holds **many** objects addressed by index | yes |
+| 4 | `ISerializable` vfunc **+48** — `Serialize(BaseStream*, uint32* version)` | a single object *inside* a `DataBuffer`, once you know its class | **no** |
+| 5 | `BaseNativeReader` / `BufferCursor` | none of the above apply | n/a, ours |
+
+**(2)** is what `StatsSystem`'s legacy path uses:
+`ObjectSerializer_ReadFromStrean(out, stream, gameStatsSystemSave::RTTI)`. Internally it does
+`ReadRawBuffer` → `BasePackageReader_ReadHeader` → extractor → `CreateObject` →
+`ReadObjByIndex(0)`, so it is strategy B collapsed into one call for the single-root case.
+
+**(4)** is the one that matters most for buffers, and is exactly how the game decodes
+`SavedStatsData::modifiersBuffer` (`sub_14099875C`):
+
+```cpp
+// per element, inside the buffer:
+CName className;                          // length-prefixed
+stream.Read(&className);
+auto* cls = CRTTISystem::Get()->GetClass(className);
+auto* obj = cls->CreateObject();
+std::uint32_t version = 269;
+(*(vtable + 48))(obj, stream, &version);  // the object deserializes itself
+```
+
+So a `DataBuffer` of serialized objects does **not** need hand-parsing: read the class name, make
+the object, and let it read itself. `Parsing/Definitions/.../StatsSystemNode.cpp`'s
+`GetStatModifiersInternal` is the V1 hand-rolled version of exactly this, and is the kind of code
+V2 should be deleting rather than porting.
+
+Neither (2) nor (4) is exposed by sharedpunk today; both are small `util::RawFunc` / `RawVFunc`
+additions (`0x1404946F4`, and vfunc slot `0x30` on `ISerializable`).
 
 ## 3. Per-node recipes
 

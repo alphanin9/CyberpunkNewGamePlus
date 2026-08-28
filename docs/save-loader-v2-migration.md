@@ -97,7 +97,13 @@ Two quirks the PoC already documents, both worth carrying forward:
   This is the V2 equivalent of `modsave::NodeDataInterface`.
 - **`Readers/BaseNativeReader` + `BufferCursor`** — a generic RTTI-driven blob reader
   (`ReadClass`, `ReadHandle`, `ReadProperty`, `ReadArray`, `ReadEnum`, `ReadDataBuffer`,
-  `ReadTDBID`, `ReadCName`, `ReadNodeRef`). For blobs the stream will not decode for you.
+  `ReadTDBID`, `ReadCName`, `ReadNodeRef`).
+
+  **Treat this as a fallback, not a design goal.** It is itself a re-implementation of decoding
+  the game already does, which is the exact thing V2 exists to stop doing. Reach for a game
+  reader first — see the ladder in
+  [native-save-reading.md](native-save-reading.md) §2.4 — and only fall back here when no game
+  reader covers the shape.
 
 ### 2.3 Ported node status
 
