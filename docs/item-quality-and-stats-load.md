@@ -342,13 +342,37 @@ This is why the accumulation loop in `ApplyStatModifiers` exists. It is not inci
 Reconstructing a single quality number offline means re-implementing that graph, including
 curve evaluation against `quality_curves`. Two workable options:
 
-**Option A — carry the cluster verbatim (implemented).** Do not collapse anything to one number.
-For each item, re-apply *only* the stats in the table above, keeping the original modifier kind
-(constant / combined / curve) and original order, **adding on top of the base `GiveItem` already
-established** (§4.1) rather than clearing anything. Curve modifiers stay curve modifiers, so they
-re-derive correctly against the replayed `WasItemUpgraded` / `ForceQualityHelper`. Drop every
-other stat type — that is what cuts the saved-modifier key churn §4.3 implicates, without
-touching the base.
+**Option A — replay the whole buffer verbatim (implemented).** Do not collapse anything to one
+number, do not clear, and **do not filter by stat type**. Re-apply every saved modifier in its
+original order with its original kind (constant / combined / curve), on top of the base
+`GiveItem` already established (§4.1). Curve modifiers stay curve modifiers and re-derive
+against whatever the earlier ones left behind.
+
+Filtering to the §4.4 cluster looks reasonable and is not. Measured on a test save:
+
+| item | before | after | `IsItemPlus` | `Quality` |
+| --- | --- | --- | --- | --- |
+| Erebus | t5++ | t5++ ✓ | 2 ✓ | 4 ✓ |
+| Majesty | t5++ | t1++ | 2 ✓ | 0 ✗ |
+| Mal | t5+ | t1+ | 1 ✓ | 0 ✗ |
+| Crusher | t5+ | t1+ | 1 ✓ | 0 ✗ |
+| Fang | t5+ | t1+ | 1 ✓ | 0 ✗ |
+| Errata | t5+ | t1+ | 1 ✓ | 0 ✗ |
+
+The `+` suffix survived everywhere, so `IsItemPlus` and its curve driver were being restored
+correctly. Only the base `Quality` was lost — on five items out of six.
+
+**Why Erebus survived is not established.** It is not a fixed-max-tier item, so the obvious
+explanation does not hold, and the difference has not been traced to a specific stat. What the
+result does establish is that the whitelist is lossy: some of the `Quality` contribution for
+these items rides on stats outside the §4.4 cluster. Plausible carriers are `EffectiveTier` and
+`QualityToMaxQualityRatio`, since `UnifyIconicsUpgradeCountWithEffectiveTier`
+(`player.swift:2763`) drives `WasItemUpgraded` off `EffectiveTier` and `ForceItemTier` clears
+`QualityToMaxQualityRatio` alongside `Quality` — but that is inference, not measurement.
+
+Rather than keep guessing at the boundary of the graph, replay all of it, as the game does. If a
+narrower set is ever wanted, dump the buffer for Erebus and Majesty side by side
+(`StatsSystemNode::DumpStatModifiersToConsole`) and let the diff decide it.
 
 **Option B — evaluate offline.** All inputs are available: constants from `modifiersBuffer`,
 curves from TweakDB `quality_curves`. Compute the effective `Quality` and `IsItemPlus`, then

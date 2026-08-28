@@ -188,24 +188,6 @@ class PlayerProgressionLoader {
         return 1000;
     }
 
-    // Stat types that carry an item's tier across the NG+ boundary.
-    //
-    // They are one dependency graph, not independent values. The 2.0 iconic retrofix
-    // (PlayerPuppet.SetIconicWeaponsTier / RescaleOwnedIconicsToPlayerLevel and the stash
-    // mirrors) writes ordered snapshot constants that cancel Quality down to ~0 and move the
-    // tier into WasItemUpgraded, and RPGManager.ForceItemTier writes Quality as a *curve*
-    // modifier driven by ForceQualityHelper whose contribution is never stored anywhere.
-    // Collapsing that to a single quality number means re-implementing CDPR's graph, curve
-    // evaluation included, so we replay the cluster verbatim and let the curves re-derive.
-    //
-    // See docs/item-quality-and-stats-load.md for the full write-up.
-    private final static func IsCarriedStatType(statType: gamedataStatType) -> Bool {
-        return Equals(statType, gamedataStatType.Quality)
-            || Equals(statType, gamedataStatType.WasItemUpgraded)
-            || Equals(statType, gamedataStatType.IsItemPlus)
-            || Equals(statType, gamedataStatType.ForceQualityHelper);
-    }
-
     // Recreates a saved modifier with its original kind intact. A curve modifier rebuilt as a
     // constant would lose the value entirely, since curve modifiers evaluate lazily.
     private final func ReapplyStatModifier(
@@ -268,30 +250,27 @@ class PlayerProgressionLoader {
         return false;
     }
 
+    // Replays an item's saved stat modifiers, mirroring what the game does on a normal load.
+    //
+    // Two rules, both learned the hard way - see docs/item-quality-and-stats-load.md:
+    //
+    // 1. Do not clear anything first. Saved modifiers are deltas layered over a record-driven
+    //    base, not a replacement for it. sub_141CBA160 builds a fresh StatsBundle from the item
+    //    record and seed, then applies the buffer on top, removing nothing; the only
+    //    suppression channel is the separate inactiveStats list, which we do not carry.
+    //    GiveItem reproduces that base, and ItemID carries its rngSeed, so random-quality items
+    //    re-roll to the value they originally had. Clearing strips the base and leaves the 2.0
+    //    retrofix's negative Quality delta standing alone, flooring every item at Tier 1.
+    //
+    // 2. Do not filter by stat type. An item's tier is not a self-contained cluster: upgraded
+    //    iconics carry their Quality through stats like EffectiveTier and QualityToMaxQualityRatio
+    //    that feed curve modifiers, so whitelisting Quality / WasItemUpgraded / IsItemPlus /
+    //    ForceQualityHelper silently dropped the base tier on every upgraded iconic while the
+    //    plus suffix still came through. Replay the whole buffer, in order - the game does.
     public final func ApplyStatModifiers(item: ref<NGPlusItemData>, objId: StatsObjectID) {
-        let carriedModifiers: array<ref<gameStatModifierData>>;
-
+        // Order matters: the retrofix modifiers are ordered snapshots, and curve modifiers
+        // re-derive lazily against whatever the earlier ones left behind.
         for modifier in item.GetStatModifiers() {
-            if PlayerProgressionLoader.IsCarriedStatType(modifier.statType) {
-                ArrayPush(carriedModifiers, modifier);
-            }
-        }
-
-        // Do NOT clear these stats first. Saved modifiers are deltas layered over the
-        // record-driven base, not a replacement for it: on a normal load the game builds a
-        // fresh StatsBundle from the item record and seed, then applies the saved buffer on
-        // top without removing anything. The only suppression channel is the separate
-        // inactiveStats list, which we do not carry.
-        //
-        // Clearing here strips the record base and leaves only the retrofix's negative
-        // Quality delta behind, which lands every item on Tier 1.
-        //
-        // The record base reproduces correctly because ItemID carries its rngSeed, so
-        // GiveItem re-rolls random-quality items to the same value they had.
-        //
-        // Original order matters: the retrofix modifiers are ordered snapshots, and curve
-        // modifiers re-derive against whatever the earlier ones left behind.
-        for modifier in carriedModifiers {
             if !this.ReapplyStatModifier(modifier, objId) {
                 this
                     .m_ngPlusSystem
