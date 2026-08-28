@@ -388,3 +388,73 @@ Either way:
   should not be cleared, and stacking to `2.0` still reads as blocked.
 - If you go with Option B, round the final `Quality` to an integer — see the truncate/round
   mismatch in §1.
+
+---
+
+## 5. The stash retrofix chain (measured root cause)
+
+Transferred stash items dropped to Tier 1 while inventory items came through correctly. The
+cause is not in what NGP+ carries — it is that the game re-runs its 2.x migrations over them.
+
+`Stash.OnOpenStash` calls `Stash.ProcessStashRetroFixes`, which is a chain of ~17 one-shot
+migrations, each gated only by its own fact:
+
+```swift
+factVal = GetFact(game, n"IconicReworkCompletedInStash");
+if factVal <= 0 && true {
+    Stash.IconicsReworkCompensateInStash(stashObj);
+    SetFactValue(game, n"IconicReworkCompletedInStash", 1);
+};
+```
+
+A fresh NG+ game has every one of those facts at 0, so the whole chain fires the first time the
+player opens the stash — over items that came from an already-post-2.0 save.
+
+The destructive one is `Stash.RescaleStashedIconicsToPlayerLevel` (`stash.swift:491`):
+
+```swift
+zeroUpgradeMod = CreateStatModifier(WasItemUpgraded, Additive, GetStatValueByType(WasItemUpgraded) * -1.00);
+...
+qualityToUpgradeMod = WasItemUpgraded += Quality * 2.00;
+upgradeToQualityMod = Quality         += WasItemUpgraded * -0.50;
+RemoveAllModifiers(IsItemPlus);
+upgradeToPlusMod    = IsItemPlus       = curve(WasItemUpgraded);
+```
+
+It zeroes `WasItemUpgraded` and rebuilds it from `Quality * 2`. Combined with §5.1 below, `Quality`
+reads 0 at that moment, so the item collapses to `Quality 0 / IsItemPlus 0 / WasItemUpgraded 0`.
+`UnifyIconicsUpgradeCountWithEffectiveTierInStash` and `ProcessNonIconicWeaponsRescaleInStash`
+rewrite the same stats off the same trigger — the latter is why a non-iconic like Crusher was
+affected too.
+
+The unconditional path, `Stash.ScaleStashIconicsToPlayerLevel`, is already harmless: it skips
+items with `ScalingBlocked >= 1`, which `ApplyStatModifiers` sets.
+
+Fix: mark the gates done in `LoadFacts`, the same statement `q000_patch_2_0_new_game` already
+makes for the player side. `wat_sts_counter` and `regina_iconic_subdermalcoprocessor_acquired`
+are left alone — gameplay state, not migration gates.
+
+### 5.1 Stash item stats are lazily initialised
+
+This confounded the whole investigation and is worth stating on its own. **A stash item's stats
+read 0 until the stash is actually opened.** Same save, same item, one log:
+
+```
+(console-stash)  Quality=0                    ← before opening the stash
+(console-stash)  Quality=4.000000/4.000000    ← after opening it
+```
+
+So any measurement of stash items taken at transfer time, or before the player opens the stash,
+is meaningless. Two conclusions in this document's history were drawn from exactly that artifact
+and had to be retracted.
+
+Two further notes on measuring:
+
+- `itemData.GetStatValueByType(...)` (the item's own `StatsBundle`, what `RPGManager.GetItemQuality`
+  and therefore the UI use) and `statsSystem.GetStatValue(objId, ...)` are separate native paths —
+  `GetItemDataQuality` `0x1403834A4` goes through the bundle and never touches the system's map.
+  In practice they agreed everywhere once initialised, but print both when in doubt.
+- The displayed tier is `UIItemsHelper.GetQualityF(qualityInt, isIconic, plusValue)` =
+  `qualityInt + (isIconic ? 0.05 : 0) + plusValue * 0.10`, with `QualityToInt(Legendary) = 8`. So
+  `8.05` is T5, `8.15` is T5+, `8.25` is T5++, and `0.05` is T1 on an iconic. Reading that number
+  directly beats inferring tiers from stat values.

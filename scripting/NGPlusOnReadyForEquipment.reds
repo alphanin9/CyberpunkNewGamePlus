@@ -92,7 +92,49 @@ class PlayerProgressionLoader {
         questsSystem.SetFactStr("q003_jackie_motorcycle_upgraded", 1);
         questsSystem.SetFactStr("q000_patch_2_0_new_game", 1);
 
+        this.MarkStashRetrofixesDone(questsSystem);
+
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadFacts done!");
+    }
+
+    // Stash.ProcessStashRetroFixes runs on every OnOpenStash and is a chain of one-shot 2.x
+    // migrations, each gated only by its own fact. A fresh NG+ game has all of them at 0, so the
+    // whole chain fires over items we just transferred - which are already post-2.0, since the
+    // save picker rejects anything below 2.00.
+    //
+    // The destructive one is IconicReworkCompletedInStash. It runs
+    // Stash.RescaleStashedIconicsToPlayerLevel, which zeroes WasItemUpgraded and then rebuilds it
+    // from Quality * 2. Stash item stats are lazily initialised, so Quality reads 0 at that
+    // moment and the item collapses to Quality 0 / IsItemPlus 0 / WasItemUpgraded 0 - every
+    // transferred iconic drops to Tier 1. IconicsUpgradeCountWithEffectiveTierUnifiedInStash and
+    // NonIconicWeaponsRescaledInStash rewrite the same stats on the same trigger.
+    //
+    // The unconditional path, Stash.ScaleStashIconicsToPlayerLevel, is already harmless because
+    // it skips items with ScalingBlocked >= 1 and ApplyStatModifiers sets that.
+    //
+    // Marking the gates as done is the same statement q000_patch_2_0_new_game makes for the
+    // player side. wat_sts_counter and regina_iconic_subdermalcoprocessor_acquired are
+    // deliberately left alone - those are gameplay state, not migration gates.
+    private final func MarkStashRetrofixesDone(questsSystem: ref<QuestsSystem>) {
+        questsSystem.SetFactStr("ClothingModsRemovedStash", 1);
+        questsSystem.SetFactStr("DLCPlayerStashItemsRevamp", 1);
+        questsSystem.SetFactStr("CYBMETA1695", 1);
+        questsSystem.SetFactStr("BuckGradScopeStashFix", 1);
+        questsSystem.SetFactStr("IconicReworkCompletedInStash", 1);
+        questsSystem.SetFactStr("WeaponAndClothingModsInStashAdjusted", 1);
+        questsSystem.SetFactStr("ConsumablesPlayerStashRetroFix", 1);
+        questsSystem.SetFactStr("IconicsFactsForBlackMarketerAddedInStash", 1);
+        questsSystem.SetFactStr("LeftHandWeaponsCompensatedInStash", 1);
+        questsSystem.SetFactStr("WeaponAndClothingModsInStashAdjusted_201", 1);
+        questsSystem.SetFactStr("NonIconicWeaponsRescaledInStash", 1);
+        questsSystem.SetFactStr("ReginaRewardCompensatedInStash", 1);
+        questsSystem.SetFactStr("GritModsInStashPurged", 1);
+        questsSystem.SetFactStr("RasetsuRescaledandLockedInStash", 1);
+        questsSystem.SetFactStr("IconicsUpgradeCountWithEffectiveTierUnifiedInStash", 1);
+        questsSystem.SetFactStr("KurtMetelFactRetrofixedInStash", 1);
+        questsSystem.SetFactStr("AmazonGritAttachmentsInStashPurged", 1);
+
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::MarkStashRetrofixesDone done!");
     }
 
     private final func LoadPlayerDevelopment() {
