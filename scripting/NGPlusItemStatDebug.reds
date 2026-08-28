@@ -13,8 +13,10 @@ module NGPlus.Debug
 //
 // See docs/item-quality-and-stats-load.md.
 public class NGPlusItemStatDebug {
+    // Flip to true to re-arm the transfer-time dumps. DumpItemTiers stays callable from the
+    // console regardless - it reads live state and does not depend on this.
     public final static func Enabled() -> Bool {
-        return true;
+        return false;
     }
 
     public final static func StatName(statType: gamedataStatType) -> String {
