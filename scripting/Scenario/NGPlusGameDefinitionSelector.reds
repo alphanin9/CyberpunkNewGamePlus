@@ -1,4 +1,4 @@
-import NGPlus.*;
+import NGPlus.*
 
 public class NewGamePlusStartingPointController extends BaseCharacterCreationController {
     public let m_newGameDescription: inkTextRef;
@@ -62,8 +62,6 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
 
     private final func OnSelectedOption() {
         let config = new UserSettings();
-
-        GameInstance.GetNewGamePlusSystem().Spew(s"[selector] Config \(config.selectDifficultyWithNgPlus) \(config.fastUpgradeChance)");
 
         if !config.selectDifficultyWithNgPlus {
             // Telemetry stuff, this is mandatory apparently?
