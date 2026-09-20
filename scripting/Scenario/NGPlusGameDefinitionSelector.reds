@@ -59,11 +59,7 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
     }
 
     private final func OnSelectedOption() {
-        // Telemetry stuff, this is mandatory apparently?
-        this.GetTelemetrySystem().LogInitialChoiceSetStatege(telemetryInitalChoiceStage.Difficulty);
-        GameInstance.GetStatsDataSystem(this.GetPlayerControlledObject().GetGame()).SetDifficulty(gameDifficulty.VeryHard);
-        this.GetTelemetrySystem().LogInitialChoiceDifficultySelected(gameDifficulty.VeryHard);
-
+        // Let the normal difficulty-selection screen choose the difficulty.
         this.NextMenu();
     }
 
@@ -117,6 +113,7 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
     protected func PriorMenu() -> Void {
         this.GetTelemetrySystem().LogInitialChoiceSetStatege(telemetryInitalChoiceStage.None);
         this.GetCharacterCustomizationSystem().ClearState();
+        this.m_ngPlusSystem.SetNewGamePlusQuest(ENGPlusType.Invalid);
         super.PriorMenu();
     }
 

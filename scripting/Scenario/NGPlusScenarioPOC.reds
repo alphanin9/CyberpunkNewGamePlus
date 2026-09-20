@@ -52,8 +52,22 @@ public class MenuScenario_SelectNewGamePlusStart extends MenuScenario_PreGameSub
     }
 
     protected cb func OnAccept() -> Bool {
-        this.SwitchToScenario(n"MenuScenario_NewGamePlusLifePathSelection");
+        this.SwitchToScenario(n"MenuScenario_Difficulty");
     }
+}
+
+// Route the vanilla difficulty screen back into the NG+ flow instead of the normal new-game flow.
+@wrapMethod(MenuScenario_Difficulty)
+protected cb func OnAccept() -> Bool {
+    let ngPlusSystem = GameInstance.GetNewGamePlusSystem();
+    let ngPlusQuest = ngPlusSystem.GetNewGamePlusQuest();
+
+    if Equals(ngPlusQuest, ENGPlusType.StartFromQ001) || Equals(ngPlusQuest, ENGPlusType.StartFromQ101) {
+        this.SwitchToScenario(n"MenuScenario_NewGamePlusLifePathSelection");
+        return true;
+    }
+
+    return wrappedMethod();
 }
 
 // When someone ain't got EP1, we still provide a Post-Heist start for him with EP1 builds!
