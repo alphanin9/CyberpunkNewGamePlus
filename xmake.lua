@@ -78,6 +78,30 @@ target("New Game+")
             path.basename(target_file) .. ".pdb" -- Evil hack #2
         ), plugin_folder)
 
+        -- Wire up the redscript dir if it isn't there yet, so scripts don't have to be
+        -- copied over by hand after every edit. Borrowed from VedalAI/neuro-cyberpunk.
+        local redscript_folder = path.join(plugin_folder, "redscript")
+
+        if not os.exists(redscript_folder) then
+            -- A real link means edits made in the game directory land back in the repo.
+            -- Windows only allows directory symlinks under Developer Mode (or elevation),
+            -- so fall back to a plain copy when that isn't available.
+            local linked = try { function ()
+                os.ln(path.absolute("scripting"), redscript_folder)
+                return true
+            end }
+
+            if linked then
+                cprint("${bright green}Linked " .. redscript_folder .. " -> scripting/")
+            else
+                os.cp(path.absolute("scripting"), redscript_folder)
+                cprint("${bright yellow}Could not symlink the redscript dir (needs Developer Mode), copied it instead")
+            end
+        elseif not os.islink(redscript_folder) then
+            cprint("${bright yellow}" .. redscript_folder .. " is a plain directory, so scripts are not being linked. " ..
+                   "Delete it and re-run xmake install to replace it with a link to scripting/")
+        end
+
         cprint("${bright green}Installed plugin to " .. plugin_folder)
     end)
     on_run( function (target)

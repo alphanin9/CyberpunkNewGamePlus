@@ -31,6 +31,11 @@ public class UserSettings {
     public let disableValidationChecks: Bool = false;
 
     @runtimeProperty("ModSettings.mod", "NewGamePlus_MainMenuButton")
+    @runtimeProperty("ModSettings.displayName", "NewGamePlus_EnableDifficultySelection_Name")
+    @runtimeProperty("ModSettings.description", "NewGamePlus_EnableDifficultySelection_Desc")
+    public let selectDifficultyWithNgPlus: Bool = false;
+
+    @runtimeProperty("ModSettings.mod", "NewGamePlus_MainMenuButton")
     @runtimeProperty("ModSettings.category", "NewGamePlus_Difficulty_Name")
     @runtimeProperty("ModSettings.category.order", "1")
     @runtimeProperty("ModSettings.displayName", "NewGamePlus_FastUpgradeChance_Name")
@@ -141,7 +146,7 @@ public class DynamicSpawnSystemCustomizer extends ScriptableTweak {
                 dynamicSpawnSystemCount = 100;
                 break;
         }
-        
+
         TweakDBManager.SetFlat(t"DynamicSpawnSystem.setup.totalEntitiesLimit", dynamicSpawnSystemCount);
         TweakDBManager.SetFlat(t"DynamicSpawnSystem.setup.numberOfDeadBodiesToTriggerImmediateDespawn", dynamicSpawnSystemCount);
     }

@@ -2,6 +2,7 @@ module NGPlus.PlayerProgression
 
 import NGPlus.EP1Listener.NGPlusEP1StatusListener
 import NGPlus.Ripperdoc.NGPlusTutorialCyberwareProvider
+import NGPlus.Debug.NGPlusItemStatDebug
 
 @if(ModuleExists("EquipmentEx"))
 import EquipmentEx.*
@@ -91,7 +92,49 @@ class PlayerProgressionLoader {
         questsSystem.SetFactStr("q003_jackie_motorcycle_upgraded", 1);
         questsSystem.SetFactStr("q000_patch_2_0_new_game", 1);
 
+        this.MarkStashRetrofixesDone(questsSystem);
+
         this.m_ngPlusSystem.Spew("PlayerProgressionLoader::LoadFacts done!");
+    }
+
+    // Stash.ProcessStashRetroFixes runs on every OnOpenStash and is a chain of one-shot 2.x
+    // migrations, each gated only by its own fact. A fresh NG+ game has all of them at 0, so the
+    // whole chain fires over items we just transferred - which are already post-2.0, since the
+    // save picker rejects anything below 2.00.
+    //
+    // The destructive one is IconicReworkCompletedInStash. It runs
+    // Stash.RescaleStashedIconicsToPlayerLevel, which zeroes WasItemUpgraded and then rebuilds it
+    // from Quality * 2. Stash item stats are lazily initialised, so Quality reads 0 at that
+    // moment and the item collapses to Quality 0 / IsItemPlus 0 / WasItemUpgraded 0 - every
+    // transferred iconic drops to Tier 1. IconicsUpgradeCountWithEffectiveTierUnifiedInStash and
+    // NonIconicWeaponsRescaledInStash rewrite the same stats on the same trigger.
+    //
+    // The unconditional path, Stash.ScaleStashIconicsToPlayerLevel, is already harmless because
+    // it skips items with ScalingBlocked >= 1 and ApplyStatModifiers sets that.
+    //
+    // Marking the gates as done is the same statement q000_patch_2_0_new_game makes for the
+    // player side. wat_sts_counter and regina_iconic_subdermalcoprocessor_acquired are
+    // deliberately left alone - those are gameplay state, not migration gates.
+    private final func MarkStashRetrofixesDone(questsSystem: ref<QuestsSystem>) {
+        questsSystem.SetFactStr("ClothingModsRemovedStash", 1);
+        questsSystem.SetFactStr("DLCPlayerStashItemsRevamp", 1);
+        questsSystem.SetFactStr("CYBMETA1695", 1);
+        questsSystem.SetFactStr("BuckGradScopeStashFix", 1);
+        questsSystem.SetFactStr("IconicReworkCompletedInStash", 1);
+        questsSystem.SetFactStr("WeaponAndClothingModsInStashAdjusted", 1);
+        questsSystem.SetFactStr("ConsumablesPlayerStashRetroFix", 1);
+        questsSystem.SetFactStr("IconicsFactsForBlackMarketerAddedInStash", 1);
+        questsSystem.SetFactStr("LeftHandWeaponsCompensatedInStash", 1);
+        questsSystem.SetFactStr("WeaponAndClothingModsInStashAdjusted_201", 1);
+        questsSystem.SetFactStr("NonIconicWeaponsRescaledInStash", 1);
+        questsSystem.SetFactStr("ReginaRewardCompensatedInStash", 1);
+        questsSystem.SetFactStr("GritModsInStashPurged", 1);
+        questsSystem.SetFactStr("RasetsuRescaledandLockedInStash", 1);
+        questsSystem.SetFactStr("IconicsUpgradeCountWithEffectiveTierUnifiedInStash", 1);
+        questsSystem.SetFactStr("KurtMetelFactRetrofixedInStash", 1);
+        questsSystem.SetFactStr("AmazonGritAttachmentsInStashPurged", 1);
+
+        this.m_ngPlusSystem.Spew("PlayerProgressionLoader::MarkStashRetrofixesDone done!");
     }
 
     private final func LoadPlayerDevelopment() {
@@ -188,70 +231,36 @@ class PlayerProgressionLoader {
         return 1000;
     }
 
-    public final func ApplyStatModifiers(item: ref<NGPlusItemData>, objId: StatsObjectID) {
-        let itemQuality = 0.0;
-        let itemUpgradeCount = 0.0;
+    // Recreates a saved modifier with its original kind intact. A curve modifier rebuilt as a
+    // constant would lose the value entirely, since curve modifiers evaluate lazily.
+    private final func ReapplyStatModifier(
+        modifier: ref<gameStatModifierData>,
+        objId: StatsObjectID
+    ) -> Bool {
+        let asConstant = modifier as gameConstantStatModifierData;
 
-        let statModifiers = item.GetStatModifiers();
-
-        // Maybe do this on the native side? ...
-        for modifier in statModifiers {
-            if Equals(modifier.statType, gamedataStatType.Quality) {
-                let asConstant = modifier as gameConstantStatModifierData;
-                if IsDefined(asConstant) {
-                    if asConstant.value < 0.0 {
-                        itemQuality -= asConstant.value;
-                    } else {
-                        itemQuality += asConstant.value;
-                    }
-                }
-            }
-
-            if Equals(modifier.statType, gamedataStatType.WasItemUpgraded) {
-                let asConstant = modifier as gameConstantStatModifierData;
-                if IsDefined(asConstant) {
-                    itemUpgradeCount += asConstant.value;
-                }
-            }
-        }
-
-        let scalingBlocked = RPGManager
-            .CreateStatModifier(gamedataStatType.ScalingBlocked, gameStatModifierType.Additive, 1);
-        let qualityModifier = RPGManager
-            .CreateStatModifier(gamedataStatType.Quality, gameStatModifierType.Additive, itemQuality);
-        let upgradeModifier = RPGManager
-            .CreateStatModifier(
-                gamedataStatType.WasItemUpgraded,
-                gameStatModifierType.Additive,
-                itemUpgradeCount
-            );
-
-        this.m_statsSystem.AddSavedModifier(objId, qualityModifier);
-        this.m_statsSystem.AddSavedModifier(objId, upgradeModifier);
-        this.m_statsSystem.AddSavedModifier(objId, scalingBlocked);
-
-        for modifier in statModifiers {
-            // NOTE: this feels very hacky - and it is hacky as shit...
-            // The item quality/upgrade system is completely fucked, and I dislike it
-            if NotEquals(modifier.statType, gamedataStatType.WasItemUpgraded)
-                && NotEquals(modifier.statType, gamedataStatType.Quality)
-                && NotEquals(modifier.statType, gamedataStatType.ScalingBlocked)
-                && NotEquals(modifier.statType, gamedataStatType.Invalid) {
-                let asConstant = modifier as gameConstantStatModifierData;
-                if IsDefined(asConstant) {
-                    let newModifier = RPGManager
+        if IsDefined(asConstant) {
+            return this
+                .m_statsSystem
+                .AddSavedModifier(
+                    objId,
+                    RPGManager
                         .CreateStatModifier(
                             asConstant.statType,
                             asConstant.modifierType,
                             asConstant.value
-                        );
-                    this.m_statsSystem.AddSavedModifier(objId, newModifier);
-                }
+                        )
+                );
+        }
 
-                let asCombined = modifier as gameCombinedStatModifierData;
+        let asCombined = modifier as gameCombinedStatModifierData;
 
-                if IsDefined(asCombined) {
-                    let newModifier = RPGManager
+        if IsDefined(asCombined) {
+            return this
+                .m_statsSystem
+                .AddSavedModifier(
+                    objId,
+                    RPGManager
                         .CreateCombinedStatModifier(
                             asCombined.statType,
                             asCombined.modifierType,
@@ -259,24 +268,123 @@ class PlayerProgressionLoader {
                             asCombined.operation,
                             asCombined.value,
                             asCombined.refObject
-                        );
-                    this.m_statsSystem.AddSavedModifier(objId, newModifier);
-                }
+                        )
+                );
+        }
 
-                let asCurve = modifier as gameCurveStatModifierData;
+        let asCurve = modifier as gameCurveStatModifierData;
 
-                if IsDefined(asCurve) {
-                    let newModifier = RPGManager
+        if IsDefined(asCurve) {
+            return this
+                .m_statsSystem
+                .AddSavedModifier(
+                    objId,
+                    RPGManager
                         .CreateStatModifierUsingCurve(
                             asCurve.statType,
                             asCurve.modifierType,
                             asCurve.curveStat,
                             asCurve.curveName,
                             asCurve.columnName
-                        );
-                    this.m_statsSystem.AddSavedModifier(objId, newModifier);
-                }
+                        )
+                );
+        }
+
+        return false;
+    }
+
+    // Replays an item's saved stat modifiers, mirroring what the game does on a normal load.
+    //
+    // Two rules, both learned the hard way - see docs/item-quality-and-stats-load.md:
+    //
+    // 1. Do not clear anything first. Saved modifiers are deltas layered over a record-driven
+    //    base, not a replacement for it. sub_141CBA160 builds a fresh StatsBundle from the item
+    //    record and seed, then applies the buffer on top, removing nothing; the only
+    //    suppression channel is the separate inactiveStats list, which we do not carry.
+    //    GiveItem reproduces that base, and ItemID carries its rngSeed, so random-quality items
+    //    re-roll to the value they originally had. Clearing strips the base and leaves the 2.0
+    //    retrofix's negative Quality delta standing alone, flooring every item at Tier 1.
+    //
+    // 2. Do not filter by stat type. An item's tier is not a self-contained cluster: upgraded
+    //    iconics carry their Quality through stats like EffectiveTier and QualityToMaxQualityRatio
+    //    that feed curve modifiers, so whitelisting Quality / WasItemUpgraded / IsItemPlus /
+    //    ForceQualityHelper silently dropped the base tier on every upgraded iconic while the
+    //    plus suffix still came through. Replay the whole buffer, in order - the game does.
+    public final func ApplyStatModifiers(item: ref<NGPlusItemData>, objId: StatsObjectID) {
+        if NGPlusItemStatDebug.Enabled() {
+            NGPlusItemStatDebug.DumpSavedModifiers(this.m_ngPlusSystem, item);
+
+            // The record-driven base GiveItem established, before we touch anything. The saved
+            // Quality modifiers are snapshot deltas layered on this, so it is the number that
+            // decides whether they reconstruct to the right value.
+            NGPlusItemStatDebug
+                .DumpLiveTierStats(
+                    this.m_ngPlusSystem,
+                    this.m_statsSystem,
+                    objId,
+                    TDBID.ToStringDEBUG(ItemID.GetTDBID(item.GetItemId())),
+                    "pre-apply"
+                );
+        }
+
+        // Mirror sub_141CBA160's order exactly: saved modifiers, then the inactive-stat
+        // removals, then the forced modifiers. Within each, original order matters - the
+        // retrofix modifiers are ordered snapshots and curve modifiers re-derive lazily
+        // against whatever the earlier ones left behind.
+        for modifier in item.GetStatModifiers() {
+            if !this.ReapplyStatModifier(modifier, objId) {
+                this
+                    .m_ngPlusSystem
+                    .Error(
+                        s"ApplyStatModifiers: failed to re-apply stat \(EnumInt(modifier.statType))"
+                    );
             }
+        }
+
+        // The game passes removeSavedModifiers = false here, so this suppresses the
+        // record-driven modifiers only and leaves what we just replayed standing.
+        for statType in item.GetInactiveStats() {
+            this.m_statsSystem.RemoveAllModifiers(objId, statType, false);
+        }
+
+        // Forced modifiers live in a separate store on the stats object that no script API
+        // writes, so they go back as saved modifiers. Different bookkeeping, same contribution
+        // to the stat value.
+        for modifier in item.GetForcedModifiers() {
+            if !this.ReapplyStatModifier(modifier, objId) {
+                this
+                    .m_ngPlusSystem
+                    .Error(
+                        s"ApplyStatModifiers: failed to re-apply forced stat \(EnumInt(modifier.statType))"
+                    );
+            }
+        }
+
+        // Additive on purpose, matching PlayerPuppet.BlockScaling - a record-driven block
+        // should not be cleared, and stacking to 2.0 still reads as blocked.
+        if !this
+            .m_statsSystem
+            .AddSavedModifier(
+                objId,
+                RPGManager
+                    .CreateStatModifier(
+                        gamedataStatType.ScalingBlocked,
+                        gameStatModifierType.Additive,
+                        1.0
+                    )
+            ) {
+            this.m_ngPlusSystem.Error("ApplyStatModifiers: failed to block item scaling");
+        }
+
+        if NGPlusItemStatDebug.Enabled() {
+            NGPlusItemStatDebug
+                .DumpLiveTierStats(
+                    this.m_ngPlusSystem,
+                    this.m_statsSystem,
+                    objId,
+                    TDBID.ToStringDEBUG(ItemID.GetTDBID(item.GetItemId())),
+                    "after-apply"
+                );
         }
     }
 

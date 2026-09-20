@@ -14,7 +14,7 @@ class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
     }
 
     private final func GetWidgetEntry(widgetName: CName, widgetPath: String) -> inkMenuEntry {
-        let widget = new ResourceRef();
+        let widget = ResourceRef();
         ResourceRef.LoadPath(widget, ResRef.FromString(widgetPath));
 
         let menuEntry: inkMenuEntry;
@@ -41,6 +41,9 @@ class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
 
         // Standalone Q101 without expansion... I guess?
         ArrayPush(ret, n"MenuScenario_NewGamePlusSelectStandaloneStartNonEP1");
+
+        // Optional: select ingame difficulty in a NG+ start
+        ArrayPush(ret, n"MenuScenario_NewGamePlusSelectDifficulty");
 
         return ret;
     }

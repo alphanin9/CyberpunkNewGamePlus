@@ -59,6 +59,10 @@ public native class NGPlusItemData extends IScriptable {
     public native func GetAttachments() -> [ItemID];
 
     public native func GetStatModifiers() -> [ref<gameStatModifierData>];
+
+    public native func GetForcedModifiers() -> [ref<gameStatModifierData>];
+
+    public native func GetInactiveStats() -> [gamedataStatType];
 }
 
 public native class InventoryReaderResults extends IScriptable {

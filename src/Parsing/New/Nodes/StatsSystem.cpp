@@ -36,7 +36,7 @@ bool StatsSystemNode::OnRead(Save::Stream::LoadStream& aStream) noexcept
 
 CName StatsSystemNode::GetName() noexcept
 {
-    return NamePoolRegistrar<"ScriptableSystemsContainer">::Get();
+    return NamePoolRegistrar<"StatsSystem">::Get();
 }
 
 RTTI_DEFINE_CLASS(parser::node::StatsSystemNode, { RTTI_PARENT(parser::node::SaveNodeData); });
