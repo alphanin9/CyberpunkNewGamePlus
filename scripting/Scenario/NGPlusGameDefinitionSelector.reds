@@ -1,3 +1,5 @@
+import NGPlus.*;
+
 public class NewGamePlusStartingPointController extends BaseCharacterCreationController {
     public let m_newGameDescription: inkTextRef;
     public let m_textureTop: inkImageRef;
@@ -59,10 +61,16 @@ public class NewGamePlusStartingPointController extends BaseCharacterCreationCon
     }
 
     private final func OnSelectedOption() {
-        // Telemetry stuff, this is mandatory apparently?
-        this.GetTelemetrySystem().LogInitialChoiceSetStatege(telemetryInitalChoiceStage.Difficulty);
-        GameInstance.GetStatsDataSystem(this.GetPlayerControlledObject().GetGame()).SetDifficulty(gameDifficulty.VeryHard);
-        this.GetTelemetrySystem().LogInitialChoiceDifficultySelected(gameDifficulty.VeryHard);
+        let config = new UserSettings();
+
+        GameInstance.GetNewGamePlusSystem().Spew(s"[selector] Config \(config.selectDifficultyWithNgPlus) \(config.fastUpgradeChance)");
+
+        if !config.selectDifficultyWithNgPlus {
+            // Telemetry stuff, this is mandatory apparently?
+            this.GetTelemetrySystem().LogInitialChoiceSetStatege(telemetryInitalChoiceStage.Difficulty);
+            GameInstance.GetStatsDataSystem(this.GetPlayerControlledObject().GetGame()).SetDifficulty(gameDifficulty.VeryHard);
+            this.GetTelemetrySystem().LogInitialChoiceDifficultySelected(gameDifficulty.VeryHard);
+        }
 
         this.NextMenu();
     }

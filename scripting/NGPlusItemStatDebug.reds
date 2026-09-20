@@ -1,5 +1,6 @@
 module NGPlus.Debug
 
+// CLANKED
 // Diagnostic for item tier/quality transfer. Not part of normal operation - set Enabled() to
 // false, or delete this file and its two call sites in NGPlusOnReadyForEquipment.reds, once the
 // tier transfer is settled.

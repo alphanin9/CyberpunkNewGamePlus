@@ -1,3 +1,5 @@
+import NGPlus.*
+
 // DO NOT MAKE THIS A MODULE, THAT BREAKS EVERYTHING
 @addMethod(MenuScenario_SingleplayerMenu)
 protected cb func OnNewGamePlus() -> Bool {
@@ -52,7 +54,13 @@ public class MenuScenario_SelectNewGamePlusStart extends MenuScenario_PreGameSub
     }
 
     protected cb func OnAccept() -> Bool {
-        this.SwitchToScenario(n"MenuScenario_NewGamePlusLifePathSelection");
+        let config = new UserSettings();
+
+        if config.selectDifficultyWithNgPlus {
+            this.SwitchToScenario(n"MenuScenario_NewGamePlusSelectDifficulty");
+        } else {
+            this.SwitchToScenario(n"MenuScenario_NewGamePlusLifePathSelection");
+        }
     }
 }
 
@@ -163,5 +171,27 @@ public class MenuScenario_NewGamePlusStatsAdjustment extends MenuScenario_PreGam
 
     protected cb func OnAccept() -> Bool {
         this.SwitchToScenario(n"MenuScenario_Summary");
+    }
+}
+
+// Optional: difficulty selection
+public class MenuScenario_NewGamePlusSelectDifficulty extends MenuScenario_PreGameSubMenu {
+    protected cb func OnEnterScenario(prevScenario: CName, userData: ref<IScriptable>) -> Bool {
+        super.OnEnterScenario(prevScenario, userData);
+        this.GetMenusState().OpenMenu(n"singleplayer_menu_difficulty");
+    }
+
+    protected cb func OnLeaveScenario(nextScenario: CName) -> Bool {
+        super.OnLeaveScenario(nextScenario);
+        this.GetMenusState().CloseMenu(n"character_customization_background");
+        this.GetMenusState().CloseMenu(n"singleplayer_menu_difficulty");
+    }
+
+    protected cb func OnMainMenuBack() -> Bool {
+        this.SwitchToScenario(this.m_prevScenario);
+    }
+
+    protected cb func OnAccept() -> Bool {
+        this.SwitchToScenario(n"MenuScenario_NewGamePlusLifePathSelection");
     }
 }

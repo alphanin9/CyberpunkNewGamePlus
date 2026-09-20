@@ -42,6 +42,9 @@ class NewGamePlusMenuScenarioRegistrar extends ScriptableService {
         // Standalone Q101 without expansion... I guess?
         ArrayPush(ret, n"MenuScenario_NewGamePlusSelectStandaloneStartNonEP1");
 
+        // Optional: select ingame difficulty in a NG+ start
+        ArrayPush(ret, n"MenuScenario_NewGamePlusSelectDifficulty");
+
         return ret;
     }
 
