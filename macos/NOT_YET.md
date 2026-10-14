@@ -65,4 +65,6 @@ The functions whose macOS registers differ from SharedPunk's prototypes are call
 - The macOS script compiler rejects a semicolon at the end of an `import` line. `tools/build-all.sh` runs
   `transform-reds.py` on the staged copy; the sources are not edited. One file needs it
   (`Scenario/NGPlusGameDefinitionSelector.reds`).
-- `src/Parsing/New/` and `TestingDefs.cpp` are not in the Mac target.
+- `src/Parsing/New/` and `TestingDefs.cpp` are not in the Mac target. The encounter-test console commands
+  (`scripting/Tests/NGPlusEncounterTests.reds`) use natives from `TestingDefs.cpp`, so `tools/build-all.sh` leaves that
+  script out of the Mac install too.
