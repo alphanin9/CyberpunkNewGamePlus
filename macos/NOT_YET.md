@@ -55,6 +55,17 @@ The functions whose macOS registers differ from SharedPunk's prototypes are call
 - CharacterCustomization: lock `0x70`, state `0x78`, IsNewGame `0x200`, GetLifePath `0x148`.
 - Quest list `0xA8` (count `0xB4`), facts pointer `0xF8`.
 
+## Checked in game (automated)
+
+Loading a save with the plugin on: both hooks install, the natives and the game system register, the save scan and the
+resolve answer as on Windows (end-game saves are skipped by design; a Mac save that finished q104, q110 and q112 qualifies),
+and the progression data of a PC end-game save and of a Mac save are read (level, street cred, perk points, money,
+inventory and stash). Not checked yet: starting a New Game Plus run (LaunchNewGamePlus, StartSession), the character
+creation hook's facts on a real new game, and saving and loading inside a New Game Plus run (the save node).
+
+Script note: on macOS, `ArraySize()` applied directly to a native function's result (`ArraySize(obj.GetList())`) reads a
+stale temporary. A local copy, a parameter, or `for x in obj.GetList()` (what the New Game Plus scripts use) is exact.
+
 ## Open
 
 - Requests handler `InputDeviceId` at `+0x630`: the game reads `+0x630` through a getter on the handler-side object;

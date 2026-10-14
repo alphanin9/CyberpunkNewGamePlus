@@ -9,8 +9,9 @@ What is not done yet: `NOT_YET.md`.
 
 ## Status
 
-`NewGamePlus.dylib` builds and links for arm64, and the exports and undefined symbols check clean. It has not been
-loaded in the game yet. What works on paper and what is still missing: `NOT_YET.md`.
+`NewGamePlus.dylib` builds and links for arm64 and runs in the game: with a save loaded, the hooks install, the game system
+registers, and the save scan, the save picker's check and the progression read (a PC end-game save and a Mac save) work in
+automated runs. Starting a New Game Plus run has not been tried yet. Details and what is still missing: `NOT_YET.md`.
 
 Features that need an address which is not in the Mac rows log one line and skip. Adding that row later turns the
 feature on.
