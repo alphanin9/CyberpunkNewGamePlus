@@ -17,6 +17,10 @@
 #include <Shared/Raw/Package/ScriptableSystemsPackage.hpp>
 #include <Shared/Raw/Save/Save.hpp>
 #include <GameSystem/NewGamePlusSystem.hpp>
+#ifdef __APPLE__
+#include "NgpFeatures.hpp"
+#include "MacFileAbi.hpp"
+#endif
 
 using namespace Red;
 
@@ -24,6 +28,16 @@ namespace files
 {
 CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexcept
 {
+#ifdef __APPLE__
+    if (!ngp::mac::SaveReadingAvailable())
+    {
+        return {};
+    }
+
+    static const auto& rootPath = ngp::mac::GetSaveFolder();
+    const CString saveFolder = ngp::mac::MergeDirToPath(rootPath, aSaveName);
+    return ngp::mac::MergeFileToPath(saveFolder, aFileName);
+#else
     static const auto& rootPath = shared::raw::Filesystem::Path::GetSaveFolder();
 
     CString saveFolder{};
@@ -35,10 +49,28 @@ CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexc
     shared::raw::Filesystem::Path::MergeFileToPath(saveFolder, &filePath, aFileName);
 
     return filePath;
+#endif
 }
 
 void HasNewGamePlusSaveAsync(WeakHandle<IScriptable> aTarget, CName aCallback) noexcept
 {
+#ifdef __APPLE__
+    if (!ngp::mac::SaveReadingAvailable())
+    {
+        JobQueue{}.Dispatch(
+            [aTarget, aCallback](const JobGroup&)
+            {
+                if (aTarget.Expired())
+                {
+                    return;
+                }
+
+                auto ref = aTarget.Lock();
+                CallVirtual(ref, aCallback, false);
+            });
+        return;
+    }
+#endif
     static auto s_fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
     static const auto& s_saveFolder = shared::raw::Filesystem::Path::GetSaveFolder();
 
@@ -550,6 +582,15 @@ constexpr std::array c_generatedPostPointOfNoReturnObjectives = {
 
 bool LoadSaveMetadata(const CString& aFilePath, save::Metadata& aMetadataObject) noexcept
 {
+#ifdef __APPLE__
+    if (!ngp::mac::SaveReadingAvailable())
+    {
+        return false;
+    }
+
+    // The game's metadata loader has no macOS entry; read the JSON file directly.
+    return ngp::mac::ReadSaveMetadataJson(aFilePath.c_str(), aMetadataObject);
+#else
     auto engineStream = shared::raw::Filesystem::RedFileManager::GetInstance()->OpenBufferedFileStream(aFilePath);
 
     if (!engineStream)
@@ -558,6 +599,7 @@ bool LoadSaveMetadata(const CString& aFilePath, save::Metadata& aMetadataObject)
     }
 
     return shared::raw::SaveMetadata::LoadSaveMetadataFromStream(engineStream, aMetadataObject);
+#endif
 }
 
 bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughHash) noexcept
@@ -615,7 +657,16 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
     using std::operator""sv;
     auto questsSplitRange = std::views::split(std::string_view{metadata.finishedQuests.c_str()}, " "sv);
 
+#ifdef __APPLE__
+    // string_view from a split subrange is C++23; build each view from its iterator pair (C++20).
+    std::unordered_set<std::string_view> questsSet;
+    for (auto&& part : questsSplitRange)
+    {
+        questsSet.emplace(part.begin(), part.end());
+    }
+#else
     std::unordered_set<std::string_view> questsSet(questsSplitRange.begin(), questsSplitRange.end());
+#endif
 
     if (questsSet.contains("q104") && questsSet.contains("q110") && questsSet.contains("q112"))
     {
@@ -665,6 +716,12 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath) noexcept
 
 bool ReadSaveFileToBuffer(const Red::CString& aSaveName, std::vector<std::byte>& aBuffer) noexcept
 {
+#ifdef __APPLE__
+    if (!ngp::mac::SaveReadingAvailable())
+    {
+        return false;
+    }
+#endif
     const auto fileManager = shared::raw::Filesystem::RedFileManager::GetInstance();
 
     if (!fileManager)

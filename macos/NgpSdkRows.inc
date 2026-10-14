@@ -1,0 +1,17 @@
+        // New Game Plus. Mac RVAs for hashes this plugin names. Format: { hash, RVA },  // name.
+        // RaiseAssert is mapped so Resolve does not trap. The Mac wrappers never call it.
+        // 2577866805 (buffered stream dtor) is inlined into OpenFileStream. No row. Apple code does not call it.
+        { 3923848734, 0x2ce34d0 },  // Telemetry_LoadUsedFactsForImportantFactsList
+        { 2393518559, 0x245733c },  // CharacterCustomizationSystem_OnNewGame
+        { 4285205681, 0x2d80 },  // Assert_RaiseAssert
+        { 4293661415, 0x170cfe0 },  // GetSaveFolder. No args. CString& in x0 (global 0x7a4d3f0, the saves folder).
+        { 836113218, 0x3449908 },  // MergeDirToPath. x0 src CString*, x1 char*, w2 length, x8 dest. Ensures a trailing '/'.
+        { 1194333091, 0x344993c },  // MergeFileToPath. Same registers as MergeDir. No trailing slash. Read the x8 object, not x0.
+        { 3788966949, 0x90031f8 },  // RedFileManager instance. Address of the pointer. RawPtr loads the qword.
+        { 1917464012, 0x170e538 },  // OpenFileStream. Slot +0x10. x1 path, w2 flags, x8 out BaseStream**. x0 unused. Not returned in x0.
+        { 4051576167, 0x170ec50 },  // FindFiles. Slot +0x48. x0 this, x1 root, x2 char*, w3 length, x4 DynArray*, w5 recurse.
+        { 1617892594, 0x2ef9d9c },  // QuestsSystem::AddQuest. QuestsSystem vtable +0x1f8 (Windows +0x1f0). x0 this, x1 ResourcePath.
+        { 188748408, 0x3f106c8 },  // SessionData::AddArgument thunk (body 0x3f0e900). x0 DynArray*, x1 CName, x2 IType*, x3 object.
+        { 1357913210, 0x3f339b8 },  // StartSession. x0 requests handler, x1 SessionData*. Copies the session to handler +0x6f8; does not destroy the source.
+        { 1002050525, 0x3f2d4d0 },  // GameDefinition::ToWorldID. x0 GameDefinition*, x8 WorldID out (MacFileAbi ToWorldID).
+        { 2635337807, 0x8d5d830 },  // InkSystem instance. Address of the pointer (the getter 0x488b8dc loads it).

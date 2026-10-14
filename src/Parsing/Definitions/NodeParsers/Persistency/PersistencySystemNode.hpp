@@ -118,7 +118,13 @@ public:
                         {
                             // Small optimization: instead of resizing the vector for all the persistent nodes (that we
                             // only use one of anyway), we only instantiate the needed one(s)
+#ifdef __APPLE__
+                            // clang finds both Handle conversion operators viable here; name the non-const one.
+                            m_instances.emplace_back(
+                                std::move(static_cast<Red::Handle<Red::game::PersistentState>&>(handle)));
+#else
                             m_instances.emplace_back(std::move(handle));
+#endif
 
                             // We're done here LOL
                             // Seek to the end of the node so LoadNodes doesn't whine

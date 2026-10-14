@@ -1,5 +1,9 @@
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
+#ifdef __APPLE__
+#include <RED4ext/Scripting/Natives/Generated/ent/SlotComponent.hpp>
+#include <RED4ext/Scripting/Natives/Generated/game/PersistentState.hpp>
+#endif
 
 #include <GameSystem/NewGamePlusSystem.hpp>
 
@@ -32,6 +36,10 @@
 #include <parsing/fileReader.hpp>
 
 #include <tsl/hopscotch_set.h>
+#ifdef __APPLE__
+#include "MacFileAbi.hpp"
+#include "NgpFeatures.hpp"
+#endif
 
 #include <chrono>
 #include <unordered_set>
@@ -90,6 +98,13 @@ bool mod::NewGamePlusSystem::IsInNewGamePlusHeistOrStandalone()
 
 void mod::NewGamePlusSystem::UpdateNewGamePlusState()
 {
+#ifdef __APPLE__
+    if constexpr (!ngp::mac::kEnableUnconfirmedFactAndMutex)
+    {
+        ngp::mac::LogUnconfirmed("UpdateNewGamePlusState");
+        return;
+    }
+#endif
     if (!m_questsSystem)
     {
         return;
@@ -129,6 +144,17 @@ void mod::NewGamePlusSystem::UpdateNewGamePlusState()
 
 void mod::NewGamePlusSystem::LoadExpansionIntoSave()
 {
+#ifdef __APPLE__
+    if constexpr (!ngp::mac::kEnableUnconfirmedFactAndMutex)
+    {
+        ngp::mac::LogUnconfirmed("LoadExpansionIntoSave");
+        return;
+    }
+    else if (!ngp::mac::AddQuestAvailable())
+    {
+        return;
+    }
+#endif
     if (!m_questsSystem)
     {
         PluginContext::Error("[LoadExpansionIntoSave] m_questsSystem == NULL");
@@ -302,6 +328,7 @@ bool mod::NewGamePlusSystem::LoadSaveData(const CString& aSaveName)
     // NOTE: Actually bad as this takes a real while
     if constexpr (DumpProgressionDataToJson)
     {
+#ifndef __APPLE__
         shared::raw::JSON::Serializer serializer{m_progressionData};
 
         CString jsonStr{};
@@ -324,6 +351,7 @@ bool mod::NewGamePlusSystem::LoadSaveData(const CString& aSaveName)
         {
             PluginContext::Error("Failed to serialize progression data to JSON");
         }
+#endif
     }
 
     auto end = std::chrono::high_resolution_clock{}.now();
@@ -368,6 +396,12 @@ void mod::NewGamePlusSystem::Error(Red::ScriptRef<CString>& aStr)
 #pragma region InteriorDetection
 void mod::NewGamePlusSystem::TickInteriors()
 {
+#ifdef __APPLE__
+    if (!ngp::mac::InteriorsAvailable())
+    {
+        return;
+    }
+#endif
     // Rebuilt IsEntityInInteriorArea
 
     util::ScopeGuard guard(m_isExterior, false);
@@ -418,6 +452,18 @@ void mod::NewGamePlusSystem::TickInteriors()
 
 void mod::NewGamePlusSystem::TickFactsDB()
 {
+#ifdef __APPLE__
+    if constexpr (!ngp::mac::kEnableUnconfirmedFactAndMutex)
+    {
+        ngp::mac::LogUnconfirmed("TickFactsDB");
+        return;
+    }
+    // ngplus_is_outside comes from TickInteriors, which needs three functions that have no macOS entry yet.
+    if (!ngp::mac::InteriorsAvailable())
+    {
+        return;
+    }
+#endif
     if (m_questsSystem)
     {
         shared::raw::QuestsSystem::FactsDB(m_questsSystem)
@@ -441,6 +487,12 @@ void mod::NewGamePlusSystem::OnRegisterUpdates(UpdateRegistrar* aRegistrar)
 
 void mod::NewGamePlusSystem::OnGameLoad(const JobGroup& aJobGroup, bool& aSuccess, void* aStream)
 {
+#ifdef __APPLE__
+    if (!ngp::mac::NodeAccessorAvailable())
+    {
+        return;
+    }
+#endif
     auto stream = static_cast<BaseStream*>(aStream);
 
     static auto s_nodeName = shared::util::NamePoolRegistrar<"NewGamePlusSystem">::Get();
@@ -480,6 +532,12 @@ std::uint32_t mod::NewGamePlusSystem::OnBeforeGameSave(const JobGroup& aJobGroup
 
 void mod::NewGamePlusSystem::OnGameSave(void* aStream)
 {
+#ifdef __APPLE__
+    if (!ngp::mac::NodeAccessorAvailable())
+    {
+        return;
+    }
+#endif
     auto stream = static_cast<BaseStream*>(aStream);
 
     static auto s_nodeName = shared::util::NamePoolRegistrar<"NewGamePlusSystem">::Get();
@@ -545,6 +603,12 @@ void mod::NewGamePlusSystem::OnInitialize(const JobHandle& aJob)
 #pragma region SessionLauncher
 void mod::NewGamePlusSystem::LaunchNewGamePlus(Handle<game::ui::CharacterCustomizationState> aState)
 {
+#ifdef __APPLE__
+    if (!ngp::mac::LaunchAvailable())
+    {
+        return;
+    }
+#endif
     auto selectedGameDefinition = NgPlusGameDefinitions[static_cast<std::uint32_t>(m_selectedNgPlusType)];
 
     if (selectedGameDefinition == InvalidPath)
@@ -566,7 +630,11 @@ void mod::NewGamePlusSystem::LaunchNewGamePlus(Handle<game::ui::CharacterCustomi
 
                 game::GameSessionDesc desc{};
 
+#ifdef __APPLE__
+                ngp::mac::ToWorldID(asGameDef, &desc.worldId);
+#else
                 shared::raw::GameDefinition::ToWorldID(asGameDef, &desc.worldId);
+#endif
 
                 const auto hasExpansion = CGameEngine::Get()->isEP1;
 
