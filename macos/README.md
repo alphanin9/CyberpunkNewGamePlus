@@ -1,10 +1,10 @@
 # New Game Plus for macOS (Apple Silicon)
 
-A port of [alphanin9/CyberpunkNewGamePlus](https://github.com/alphanin9/CyberpunkNewGamePlus) v1.3.2 (by not_alphanine) to the native macOS build of
-Cyberpunk 2077 (2.3.1, Steam, Apple Silicon). Port by codeman101 (skyman3215). GPL-3.0, like upstream. SharedPunk stays MIT.
+This folder builds New Game Plus (by not_alphanine) for the native macOS build of Cyberpunk 2077 (2.3.1, Steam,
+Apple Silicon). Port by codeman101 (skyman3215). GPL-3.0, like the rest of the repo. SharedPunk stays MIT.
 
 Everything macOS-specific is in this folder and in `#ifdef __APPLE__` blocks. The Windows build is meant to be
-unchanged: `WINDOWS_CHECK.md` is the `unifdef -U__APPLE__` comparison against tag v1.3.2 (SharedPunk against 5779848).
+unchanged: `WINDOWS_CHECK.md` is the `unifdef -U__APPLE__` comparison against `main` at 15fb289 plus the one-line `"mac"` platform fix (SharedPunk against 5779848).
 What is not done yet: `NOT_YET.md`.
 
 ## Status
@@ -15,6 +15,12 @@ automated runs. Starting a New Game Plus run has not been tried yet. Details and
 
 Features that need an address which is not in the Mac rows log one line and skip. Adding that row later turns the
 feature on.
+
+## Game updates
+
+The macOS addresses (`NgpSdkRows.inc`, `hook-offsets.txt` and the offsets listed in `NOT_YET.md`) are for game 2.3.1.
+A game patch moves them, so each patch needs new values. codeman101 (skyman3215) keeps them up to date: open an issue
+and mention @codeman101.
 
 ## What you need to run it
 
@@ -32,9 +38,16 @@ cmake -S macos -B macos/build -DCMAKE_BUILD_TYPE=Release
 cmake --build macos/build -j8
 ```
 
-Needs the Xcode command line tools, CMake 3.21+, and Homebrew `lz4` (the static library). The macOS RED4ext SDK is
-`../../RED4ext.SDK-macos` (override with `-DRED4EXT_SDK_DIR=`). RedLib is the copy the In-World Navigation port uses.
-Codeware's `macos/MacSdkRows.inc` is injected with `NgpSdkRows.inc`.
+Needs the Xcode command line tools, CMake 3.21+ and Homebrew `lz4` (the static library), plus these checkouts. Each has
+a CMake variable; the defaults are paths next to this repo.
+
+- `RED4EXT_SDK_DIR`: a macOS RED4ext SDK. The port was built against a local branch of jackmaxwil's RED4ext.SDK-macos
+  with Mac ABI fixes; some of those are still open as PRs there.
+- `CODEWARE_DIR`: Codeware for macOS (codeman101/cp2077-codeware, branch `macos`). Its `macos/MacSdkRows.inc` and its
+  `gameIGameSystem` headers are used, and `NgpSdkRows.inc` is added to those rows.
+- `SHARED_PUNK_DIR`: SharedPunk with its macOS changes (codeman101/SharedPunk, branch `macos`).
+- `REDLIB_ROOT`: jackhumbert's cp2077-red-lib. `redlib/` here overlays the files that need macOS changes.
+- `HOPSCOTCH_DIR`, `NLOHMANN_JSON_INCLUDE`: Tessil's hopscotch-map and nlohmann/json headers.
 
 After a successful link, `fix-install-names.sh` signs ad hoc. Static lz4 is not a linked dylib, so nothing is copied
 beside the plugin for it. `check-undefined.sh` checks the exports (`Main`, `Query`, `Supports`, `ngplus_registerNatives`)

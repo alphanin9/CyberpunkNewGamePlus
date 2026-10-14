@@ -1,7 +1,7 @@
 # New Game Plus on macOS: not done yet
 
-The dylib builds and links. It has not been loaded in the game yet. Addresses below are image offsets in the macOS
-2.3.1 binary.
+Addresses below are image offsets in the macOS 2.3.1 binary. What has run in the game is under "Checked in game" at
+the end.
 
 ## Rows
 
@@ -73,9 +73,6 @@ stale temporary. A local copy, a parameter, or `for x in obj.GetList()` (what th
 - LoadFactMap writes three facts into the global at image base plus `0x8132140` (a `HashMap<uint32_t, CString>` filled
   to its capacity of 161 by the game). The inserts grow the map through its allocator. Not run yet.
 - GetLifePath has not been called for real.
-- The macOS script compiler rejects a semicolon at the end of an `import` line. `tools/build-all.sh` runs
-  `transform-reds.py` on the staged copy; the sources are not edited. One file needs it
-  (`Scenario/NGPlusGameDefinitionSelector.reds`).
 - `src/Parsing/New/` and `TestingDefs.cpp` are not in the Mac target. The encounter-test console commands
-  (`scripting/Tests/NGPlusEncounterTests.reds`) use natives from `TestingDefs.cpp`, so `tools/build-all.sh` leaves that
-  script out of the Mac install too.
+  (`scripting/Tests/NGPlusEncounterTests.reds`) use natives from `TestingDefs.cpp`, so that script is left out of the
+  Mac install too.
