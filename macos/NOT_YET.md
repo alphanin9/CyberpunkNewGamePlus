@@ -23,6 +23,7 @@ The dylib builds and links. It has not been loaded in the game yet. Addresses be
 | 1357913210 | 0x3f339b8 | StartSession. Copies the session; the caller destroys its copy |
 | 1002050525 | 0x3f2d4d0 | GameDefinition::ToWorldID. x0 definition, x8 result |
 | 2635337807 | 0x8d5d830 | InkSystem instance (address of the pointer) |
+| 2549221846 | 0x90dc3a0 | CGameEngine instance (address of the pointer; RedLib registers game systems through it) |
 
 The functions whose macOS registers differ from SharedPunk's prototypes are called through `MacFileAbi.cpp`.
 
