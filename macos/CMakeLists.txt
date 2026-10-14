@@ -158,11 +158,19 @@ execute_process(COMMAND "${CMAKE_COMMAND}" -E copy
 execute_process(COMMAND "${CMAKE_COMMAND}" -E copy
     "${CMAKE_CURRENT_SOURCE_DIR}/redlib/Red/Utils.hpp"
     "${REDLIB_GEN}/Red/Utils.hpp")
+execute_process(COMMAND "${CMAKE_COMMAND}" -E copy
+    "${CMAKE_CURRENT_SOURCE_DIR}/redlib/Red/TypeInfo/Definition.hpp"
+    "${REDLIB_GEN}/Red/TypeInfo/Definition.hpp")
+execute_process(COMMAND "${CMAKE_COMMAND}" -E copy
+    "${CMAKE_CURRENT_SOURCE_DIR}/redlib/Red/Framework.hpp"
+    "${REDLIB_GEN}/Red/Framework.hpp")
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/redlib/Red/TypeInfo/Registrar.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/redlib/Red/TypeInfo/Resolving.hpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/redlib/Red/TypeInfo/Macros/Definition.hpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/redlib/Red/Utils.hpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/redlib/Red/Utils.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/redlib/Red/TypeInfo/Definition.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/redlib/Red/Framework.hpp")
 
 set(VERSION "${PROJECT_VERSION}")
 configure_file("${NGP_DIR}/config/projectTemplate.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/Config/ProjectTemplate.hpp")
@@ -203,6 +211,7 @@ set(NGP_SOURCES
     MacFileAbi.cpp
     NgpGate.cpp
     NgpMetadata.cpp
+    NgpGameInstance.cpp
 )
 
 add_library(NewGamePlus SHARED ${NGP_SOURCES})

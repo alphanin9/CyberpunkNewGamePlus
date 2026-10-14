@@ -30,6 +30,10 @@ bool ngplus_mac_detach(uintptr_t aAddr);
 namespace NgpMac
 {
 uintptr_t ImageBase();
+
+// Chains onto Codeware's GameInstance constructor hook so the queued game-system registration runs once the GameInstance
+// exists (NgpGameInstance.cpp). True when the chain is in place.
+bool ChainGameInstanceCtor();
 bool IsTrap(uintptr_t aAddress);
 
 std::filesystem::path PluginDir();

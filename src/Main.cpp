@@ -60,6 +60,8 @@ RED4EXT_C_EXPORT void RED4EXT_CALL ngplus_registerNatives()
     NgpMac::Log("[ngplus] ngplus_registerNatives RedLib queued: %zu register, %zu describe",
                 Red::TypeInfoRegistrar::PendingRegisterCount(), Red::TypeInfoRegistrar::PendingDescribeCount());
     Red::TypeInfoRegistrar::RunPending();
+    // The game system is registered once the GameInstance exists (after the scripts load).
+    NgpMac::ChainGameInstanceCtor();
 
     std::error_code archiveError;
     const auto macArchive = NgpMac::RootDir() / "archive" / "Mac" / "mod" / ArchiveName;
