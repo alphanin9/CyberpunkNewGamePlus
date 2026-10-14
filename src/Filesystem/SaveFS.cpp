@@ -572,10 +572,11 @@ bool IsValidForNewGamePlus(const CString& aSaveFullPath, uint64_t& aPlaythroughH
 
     constexpr CName c_pcPlatformName = "pc";
     constexpr CName c_steamDeckPlatformName = "steamdeck";
+    constexpr CName c_macPlatformName = "mac";
 
     const CName platform = metadata.platform.c_str();
 
-    if (platform != c_pcPlatformName && platform != c_steamDeckPlatformName)
+    if (platform != c_pcPlatformName && platform != c_steamDeckPlatformName && platform != c_macPlatformName)
     {
         PluginContext::DebugLog("[IsValidForNewGamePlus {}] Invalid platform", aSaveFullPath.c_str());
         return false;
