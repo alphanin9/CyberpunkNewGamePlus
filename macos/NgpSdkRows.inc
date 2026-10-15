@@ -13,6 +13,6 @@
         { 1617892594, 0x2ef9d9c },  // QuestsSystem::AddQuest. QuestsSystem vtable +0x1f8 (Windows +0x1f0). x0 this, x1 ResourcePath.
         { 188748408, 0x3f106c8 },  // SessionData::AddArgument thunk (body 0x3f0e900). x0 DynArray*, x1 CName, x2 IType*, x3 object.
         { 1357913210, 0x3f339b8 },  // StartSession. x0 requests handler, x1 SessionData*. Copies the session to handler +0x6f8; does not destroy the source.
-        { 1002050525, 0x3f2d4d0 },  // GameDefinition::ToWorldID. x0 GameDefinition*, x8 WorldID out (MacFileAbi ToWorldID).
+        { 1002050525, 0x3f2d4d0 },  // GameDefinition::ToWorldID. x0 GameDefinition*, x8 WorldID out (shared::mac::ToWorldID).
         { 2635337807, 0x8d5d830 },  // InkSystem instance. Address of the pointer (the getter 0x488b8dc loads it).
         { 2549221846, 0x90dc3a0 },  // CGameEngine instance (address of the pointer). The engine-creation function 0x3d8bfc4 ("Initialize Engine") stores CreateInstance's result here, as Windows stores 0x342ac00.

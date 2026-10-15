@@ -67,17 +67,17 @@ extern "C" __attribute__((visibility("hidden"))) uintptr_t ngplus_mac_trap_for_h
     return reinterpret_cast<uintptr_t>(&ngplus_mac_trap_stub);
 }
 
-extern "C" __attribute__((visibility("hidden"))) uintptr_t ngplus_mac_image_base()
+extern "C" __attribute__((visibility("hidden"))) uintptr_t sharedpunk_mac_image_base()
 {
     return NgpMac::ImageBase();
 }
 
-extern "C" __attribute__((visibility("hidden"))) bool ngplus_mac_address_is_real(uintptr_t aAddress)
+extern "C" __attribute__((visibility("hidden"))) bool sharedpunk_mac_address_is_real(uintptr_t aAddress)
 {
     return aAddress != 0 && aAddress != reinterpret_cast<uintptr_t>(&ngplus_mac_trap_stub);
 }
 
-extern "C" __attribute__((visibility("hidden"))) void ngplus_mac_log_missing_hash(uint32_t aHash)
+extern "C" __attribute__((visibility("hidden"))) void sharedpunk_mac_log_missing_hash(uint32_t aHash)
 {
     std::scoped_lock lock(LogLock());
     if (MissingCallHashes().insert(aHash).second)
@@ -86,12 +86,12 @@ extern "C" __attribute__((visibility("hidden"))) void ngplus_mac_log_missing_has
     }
 }
 
-extern "C" __attribute__((visibility("hidden"))) bool ngplus_mac_attach(uintptr_t aAddr, void* aDetour, void** aOriginal)
+extern "C" __attribute__((visibility("hidden"))) bool sharedpunk_mac_attach(uintptr_t aAddr, void* aDetour, void** aOriginal)
 {
     return NgpMac::TryAttach(aAddr, aDetour, aOriginal, "shared");
 }
 
-extern "C" __attribute__((visibility("hidden"))) bool ngplus_mac_detach(uintptr_t aAddr)
+extern "C" __attribute__((visibility("hidden"))) bool sharedpunk_mac_detach(uintptr_t aAddr)
 {
     if (!g_sdk || !g_sdk->hooking || !g_sdk->hooking->Detach)
     {
@@ -121,7 +121,7 @@ uintptr_t ImageBase()
 
 bool IsTrap(uintptr_t aAddress)
 {
-    return !ngplus_mac_address_is_real(aAddress);
+    return !sharedpunk_mac_address_is_real(aAddress);
 }
 
 std::filesystem::path PluginDir()

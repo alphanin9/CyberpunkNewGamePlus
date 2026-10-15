@@ -19,7 +19,7 @@
 #include <GameSystem/NewGamePlusSystem.hpp>
 #ifdef __APPLE__
 #include "NgpFeatures.hpp"
-#include "MacFileAbi.hpp"
+#include <Impl/Mac/FileAbi.hpp>
 #endif
 
 using namespace Red;
@@ -34,9 +34,9 @@ CString GetRedPathToSaveFile(const char* aSaveName, const char* aFileName) noexc
         return {};
     }
 
-    static const auto& rootPath = ngp::mac::GetSaveFolder();
-    const CString saveFolder = ngp::mac::MergeDirToPath(rootPath, aSaveName);
-    return ngp::mac::MergeFileToPath(saveFolder, aFileName);
+    static const auto& rootPath = shared::mac::GetSaveFolder();
+    const CString saveFolder = shared::mac::MergeDirToPath(rootPath, aSaveName);
+    return shared::mac::MergeFileToPath(saveFolder, aFileName);
 #else
     static const auto& rootPath = shared::raw::Filesystem::Path::GetSaveFolder();
 

@@ -37,7 +37,7 @@
 
 #include <tsl/hopscotch_set.h>
 #ifdef __APPLE__
-#include "MacFileAbi.hpp"
+#include <Impl/Mac/FileAbi.hpp>
 #include "MacSessionDesc.hpp"
 #include "NgpFeatures.hpp"
 #endif
@@ -638,7 +638,7 @@ void mod::NewGamePlusSystem::LaunchNewGamePlus(Handle<game::ui::CharacterCustomi
                     return;
                 }
 
-                ngp::mac::ToWorldID(asGameDef, &desc.worldId);
+                shared::mac::ToWorldID(asGameDef, &desc.worldId);
 #else
                 game::GameSessionDesc desc{};
 

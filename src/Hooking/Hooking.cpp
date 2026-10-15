@@ -55,7 +55,7 @@ void OnLoadTelemetryFactMap(HashMap<std::uint32_t, CString>& aMap)
 #ifdef __APPLE__
     // The Mac function fills the global at image offset 0x8132140. The argument is not that map.
     (void)aMap;
-    auto* map = reinterpret_cast<HashMap<std::uint32_t, CString>*>(ngplus_mac_image_base() + 0x8132140);
+    auto* map = reinterpret_cast<HashMap<std::uint32_t, CString>*>(sharedpunk_mac_image_base() + 0x8132140);
     map->Insert(FNV1a32("ngplus_active"), "ngplus_active");
     map->Insert(FNV1a32("ngplus_q001_start"), "ngplus_q001_start");
     map->Insert(FNV1a32("ngplus_standalone_q101_start"), "ngplus_standalone_q101_start");

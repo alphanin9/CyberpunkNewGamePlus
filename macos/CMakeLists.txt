@@ -202,13 +202,13 @@ set(NGP_SOURCES
     ${SRC}/Util/Migration/Migration.cpp
     ${SRC}/Util/Settings/SettingsAccessor.cpp
     ${SP_CODE}/Hooks/HookingDriver.cpp
+    ${SP_CODE}/Mac/FileAbi.cpp
     ${SP_CODE}/Raw/FileSystem/FileSystem.cpp
     ${SP_CODE}/Raw/Ink/InkSystem.cpp
     ${SP_CODE}/Raw/Save/Save.cpp
     ${SP_CODE}/Util/BufferCreator.cpp
     MacShims.cpp
     MacVault.cpp
-    MacFileAbi.cpp
     MacSessionDesc.cpp
     NgpGate.cpp
     NgpMetadata.cpp

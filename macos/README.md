@@ -83,8 +83,8 @@ and that no symbol is left for dynamic lookup.
   directly (the fields New Game Plus uses).
 - **Save node.** The game inlines its node accessor on macOS. SharedPunk's `Save.cpp` has an Apple copy that calls the
   stream's virtuals one slot later than Windows (`+0x98` check, `+0x78` open, `+0x80` close).
-- **Calling convention.** `MacFileAbi.cpp` wraps the game functions whose macOS registers differ from SharedPunk's
-  prototypes (results through `x8`, text as a pointer and a length).
+- **Calling convention.** SharedPunk's `src/code/Mac/FileAbi.cpp` (`shared::mac`) wraps the game functions whose
+  macOS registers differ from its prototypes (results through `x8`, text as a pointer and a length).
 - **IGameSystem.** The build uses Codeware's macOS `gameIGameSystem` header, where `IsSavingLocked` returns its lock
   through `x8`. The SDK's Windows signature crashes the game on the first save.
 - **Left out of the Mac target.** `src/Parsing/New/` and `TestingDefs.cpp`. The quest-resource dedupe hook is not installed.

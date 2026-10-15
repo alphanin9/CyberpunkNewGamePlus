@@ -14,17 +14,17 @@ extern "C"
 uintptr_t ngplus_mac_trap_for_hash(uint32_t aHash);
 
 // Game image base (the executable's Mach-O header). SharedPunk's RawBase calls this on Apple.
-uintptr_t ngplus_mac_image_base();
+uintptr_t sharedpunk_mac_image_base();
 
 // False for 0 and for the trap stub. True for a resolved game address.
-bool ngplus_mac_address_is_real(uintptr_t aAddress);
+bool sharedpunk_mac_address_is_real(uintptr_t aAddress);
 
 // One line per hash. SharedPunk calls this when a missing hash would have been called or read.
-void ngplus_mac_log_missing_hash(uint32_t aHash);
+void sharedpunk_mac_log_missing_hash(uint32_t aHash);
 
 // One attach or detach through the loader hooking API. The SDK is the one SetPlugin stored.
-bool ngplus_mac_attach(uintptr_t aAddr, void* aDetour, void** aOriginal);
-bool ngplus_mac_detach(uintptr_t aAddr);
+bool sharedpunk_mac_attach(uintptr_t aAddr, void* aDetour, void** aOriginal);
+bool sharedpunk_mac_detach(uintptr_t aAddr);
 }
 
 namespace NgpMac

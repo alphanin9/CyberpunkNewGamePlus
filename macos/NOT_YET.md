@@ -25,7 +25,7 @@ the end.
 | 2635337807 | 0x8d5d830 | InkSystem instance (address of the pointer) |
 | 2549221846 | 0x90dc3a0 | CGameEngine instance (address of the pointer; RedLib registers game systems through it) |
 
-The functions whose macOS registers differ from SharedPunk's prototypes are called through `MacFileAbi.cpp`.
+The functions whose macOS registers differ from SharedPunk's prototypes are called through SharedPunk's `shared::mac` wrappers (`src/code/Mac/FileAbi.cpp`).
 
 ## Not on macOS, replaced
 
