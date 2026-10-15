@@ -60,8 +60,14 @@ The functions whose macOS registers differ from SharedPunk's prototypes are call
 Loading a save with the plugin on: both hooks install, the natives and the game system register, the save scan and the
 resolve answer as on Windows (end-game saves are skipped by design; a Mac save that finished q104, q110 and q112 qualifies),
 and the progression data of a PC end-game save and of a Mac save are read (level, street cred, perk points, money,
-inventory and stash). Not checked yet: starting a New Game Plus run (LaunchNewGamePlus, StartSession), the character
-creation hook's facts on a real new game, and saving and loading inside a New Game Plus run (the save node).
+inventory and stash). Not checked yet: saving and loading inside a New Game Plus run (the save node).
+
+## Checked in game (by hand, 2026-10-14)
+
+Starting a New Game Plus run from the main menu, both start types (StartFromQ101 and StartFromQ001): character
+creation, LaunchNewGamePlus and StartSession, loading into the world, and the progression transfer (development,
+inventory, stash, equipped cyberware, garage, craftbook, stash retrofixes, facts). The first try crashed after character
+creation: the Mac `gameGameSessionDesc` is 0x1B0 bytes, not the SDK's 0x1D0 (see `MacSessionDesc.hpp`).
 
 Script note: on macOS, `ArraySize()` applied directly to a native function's result (`ArraySize(obj.GetList())`) reads a
 stale temporary. A local copy, a parameter, or `for x in obj.GetList()` (what the New Game Plus scripts use) is exact.
@@ -72,7 +78,6 @@ stale temporary. A local copy, a parameter, or `for x in obj.GetList()` (what th
   not shown to be the exact pointer `StartSession` receives.
 - LoadFactMap writes three facts into the global at image base plus `0x8132140` (a `HashMap<uint32_t, CString>` filled
   to its capacity of 161 by the game). The inserts grow the map through its allocator. Not run yet.
-- GetLifePath has not been called for real.
 - `src/Parsing/New/` and `TestingDefs.cpp` are not in the Mac target. The encounter-test console commands
   (`scripting/Tests/NGPlusEncounterTests.reds`) use natives from `TestingDefs.cpp`, so that script is left out of the
   Mac install too.
