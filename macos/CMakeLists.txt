@@ -209,6 +209,7 @@ set(NGP_SOURCES
     MacShims.cpp
     MacVault.cpp
     MacFileAbi.cpp
+    MacSessionDesc.cpp
     NgpGate.cpp
     NgpMetadata.cpp
     NgpGameInstance.cpp

@@ -38,6 +38,7 @@
 #include <tsl/hopscotch_set.h>
 #ifdef __APPLE__
 #include "MacFileAbi.hpp"
+#include "MacSessionDesc.hpp"
 #include "NgpFeatures.hpp"
 #endif
 
@@ -628,11 +629,19 @@ void mod::NewGamePlusSystem::LaunchNewGamePlus(Handle<game::ui::CharacterCustomi
                     return;
                 }
 
-                game::GameSessionDesc desc{};
-
 #ifdef __APPLE__
+                // The Mac game's GameSessionDesc layout differs from the SDK struct (see MacSessionDesc.hpp).
+                ngp::mac::SessionDesc desc{};
+                if (!desc)
+                {
+                    PluginContext::Error("[mac] gameGameSessionDesc type missing or not 0x1B0 bytes, NG+ start skipped");
+                    return;
+                }
+
                 ngp::mac::ToWorldID(asGameDef, &desc.worldId);
 #else
+                game::GameSessionDesc desc{};
+
                 shared::raw::GameDefinition::ToWorldID(asGameDef, &desc.worldId);
 #endif
 
@@ -664,7 +673,11 @@ void mod::NewGamePlusSystem::LaunchNewGamePlus(Handle<game::ui::CharacterCustomi
 
                 shared::raw::Ink::SessionData::Data sessionData{};
 
+#ifdef __APPLE__
+                desc.AddTo(sessionData, "gameSessionDesc");
+#else
                 sessionData.AddArgument("gameSessionDesc", &desc);
+#endif
 
                 TweakDBID lifePath{};
                 shared::raw::CharacterCustomizationState::GetLifePath(aState, lifePath);
