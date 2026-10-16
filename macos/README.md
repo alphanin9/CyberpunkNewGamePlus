@@ -63,7 +63,8 @@ and that no symbol is left for dynamic lookup.
 - **Game system.** The game creates the GameInstance before the engine stores its framework, so RedLib's system
   registration finds no instance. `NgpGameInstance.cpp` chains onto Codeware's GameInstance constructor hook and adds the
   New Game Plus system to the new instance itself.
-- **Natives.** `ngplus_registerNatives` runs the RedLib queue (`RunPending`), then archive and tweak registration, then sets
+- **Natives.** `Main(Load)` calls `Red::TypeInfoRegistrar::RegisterDiscovered()` and adds `ngplus_registerNatives` as a post-register
+  callback, so the loader's RTTI callbacks run RedLib's queue. `ngplus_registerNatives` then does archive and tweak registration and sets
   the RTTI pointers. The async pool id is `0x7FF80000`. Serializable class bits are 62 through 54.
 - **Hooks.** One attempt through the loader API. The log line says INSTALLED, or SKIPPED when the attach does not take
   (no API, refused, or the offset is not on the allowlist). There is no retry. `OrDie` and `RaiseAssert` log and return.

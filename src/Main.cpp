@@ -55,7 +55,6 @@ RED4EXT_C_EXPORT void RED4EXT_CALL ngplus_registerNatives()
         return;
     }
 
-    Red::TypeInfoRegistrar::RunPending();
     // The game system is registered once the GameInstance exists (after the scripts load).
     NgpMac::ChainGameInstanceCtor();
 
@@ -105,6 +104,8 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::v1::PluginHandle aHandle, RED4e
         // Main (Codeware has installed its hooks in its Main by then). ngplus_registerNatives keeps its once flag.
         if (auto* rtti = RED4ext::CRTTISystem::Get())
         {
+            // Public loader: the game runs these after every plugin's Main, like on Windows.
+            Red::TypeInfoRegistrar::RegisterDiscovered();
             rtti->AddPostRegisterCallback(&ngplus_registerNatives);
             NgpMac::Log("[ngplus] ngplus_registerNatives added as a post-register callback");
         }
