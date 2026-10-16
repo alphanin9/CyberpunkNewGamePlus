@@ -1,15 +1,18 @@
-// macOS: the GameInstance and the late registration of New Game Plus's game system.
+// macOS: the late registration of New Game Plus's game system.
 //
-// The engine's framework is not at the SDK's +0x308 on macOS, so RedLib reaches the GameInstance through Codeware's
-// macOS port (codeware_mac_game_instance), as the Let There Be Flight and CET ports do. The GameInstance is created after
-// the scripts load; RedLib re-queues the system registration until then. Codeware hooks the GameInstance constructor
-// and runs its own queue there; New Game Plus chains onto that hook (codeware_mac_hook_chain_attach, one hook per
-// target) and runs its queue right after the constructor returns.
+// The game creates the GameInstance after the scripts load, inside the framework's constructor; the engine stores the
+// framework (CGameEngine +0x338) only afterwards. RedLib's RegisterSystem reads the GameInstance through that framework,
+// so it re-queues itself and nothing runs the queue again. Codeware hooks the GameInstance constructor (its own systems
+// register there); New Game Plus chains onto that hook (codeware_mac_hook_chain_attach, one hook per target) and puts its
+// system into the new GameInstance itself, the steps RedLib's RegisterSystem takes. Once the framework is stored, RedLib's
+// re-queued callback finds the system in the map and returns.
 
 #include "MacShims.hpp"
 
 #include <RED4ext/GameEngine.hpp>
 #include <RedLib.hpp>
+
+#include <GameSystem/NewGamePlusSystem.hpp>
 
 #include <dlfcn.h>
 
@@ -28,11 +31,28 @@ std::atomic<bool> s_chained{false};
 void* OnGameInstanceCtor(void* aThis)
 {
     void* result = s_originalCtor ? s_originalCtor(aThis) : nullptr;
-    if (auto* engine = Red::CGameEngine::Get(); engine && engine->framework && engine->framework->gameInstance)
+    auto* gameInstance = static_cast<Red::GameInstance*>(aThis);
+    // By name: this file does not see the RTTI_DEFINE_CLASS name mapping of NewGamePlusSystem.cpp, so GetClass<T> here
+    // would fall back to the SDK base's name (gameIGameSystem).
+    auto* systemType = Red::CRTTISystem::Get()->GetClass("NewGamePlusSystem");
+    if (!gameInstance || !systemType)
     {
-        Red::TypeInfoRegistrar::RunPending();
-        NgpMac::Log("[ngplus] GameInstance ready: late registration ran");
+        NgpMac::Log("[ngplus] GameInstance ready: system NOT registered (instance %p, type %p)", aThis,
+                    static_cast<void*>(systemType));
+        return result;
     }
+    if (gameInstance->systemMap.Get(systemType))
+    {
+        return result;
+    }
+    auto system = Red::MakeHandle<mod::NewGamePlusSystem>();
+    Red::JobHandle job{};
+    system->gameInstance = gameInstance;
+    system->OnInitialize(job);
+    gameInstance->systemMap.Insert(systemType, system);
+    gameInstance->systemImplementations.Insert(systemType, systemType);
+    gameInstance->systemInstances.EmplaceBack(static_cast<Red::Handle<Red::IScriptable>&>(system));
+    NgpMac::Log("[ngplus] GameInstance ready: NewGamePlusSystem registered");
     return result;
 }
 } // namespace
