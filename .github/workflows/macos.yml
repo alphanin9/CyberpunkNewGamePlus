@@ -1,0 +1,57 @@
+name: Build macOS (Apple Silicon)
+
+# Build only: it proves the macosx branch of xmake.lua still compiles and links. It does not
+# run the game, and it does not publish anything. The check-undefined step inside the build
+# fails when the dylib lacks its exports or leaves a symbol for dynamic lookup.
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # arm64 runner. macos-14 ships Xcode 15, whose libc++ is too old for the <format> use in
+    # src/Context; the Xcode 16 select below is the newest known to be installed on macos-15.
+    runs-on: macos-15
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Select Xcode 16
+      run: |
+        sudo xcode-select -s /Applications/Xcode_16.4.app || sudo xcode-select -s /Applications/Xcode_16.2.app
+        clang++ --version
+
+    - name: Setup XMake
+      uses: xmake-io/github-action-setup-xmake@v1
+      with:
+        xmake-version: latest
+        actions-cache-folder: .xmake-cache
+        actions-cache-key: macos-arm64
+
+    - name: Update XMake repo
+      run: xmake repo --update
+
+    - name: Configure XMake and install dependencies
+      run: xmake f -p macosx -a arm64 -m release -y -v
+
+    - name: Build
+      run: xmake build -v
+
+    - name: Show the exports
+      run: |
+        dylib="$(find build -name NewGamePlus.dylib | head -n 1)"
+        test -n "$dylib"
+        nm -gU "$dylib" | grep -E ' T _(Main|Query|Supports|ngplus_registerNatives)$'
+        lipo -info "$dylib"
+
+    - name: Upload build
+      uses: actions/upload-artifact@v4
+      with:
+        name: newgameplus_macos_arm64_${{ github.sha }}
+        path: build/**/NewGamePlus.dylib
+        if-no-files-found: error

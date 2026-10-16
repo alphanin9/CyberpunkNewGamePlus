@@ -1,21 +1,45 @@
 set_project("New Game+")
 set_version("1.3.2", { build = "%y%m%d%H" })
 
-set_plat("windows")
-set_arch("x64")
-set_languages("c++latest")
+-- Windows x64 stays the default and the release target. On an Apple Silicon Mac the platform follows the host:
+--   xmake f -p macosx -a arm64 -m release -y && xmake
+if is_host("macosx") then
+    set_plat("macosx")
+    set_arch("arm64")
+else
+    set_plat("windows")
+    set_arch("x64")
+end
 
-set_symbols("debug")
-set_strip("all")
-set_optimize("fastest")
-set_runtimes("MD")
-add_cxxflags("/GR-")
+if is_plat("macosx") then
+    set_languages("c++20")
+    -- Hidden by default: Main, Query, Supports and ngplus_registerNatives are exported explicitly.
+    set_symbols("hidden")
+    set_strip("debug")
+    set_optimize("fastest")
+else
+    set_languages("c++latest")
+    set_symbols("debug")
+    set_strip("all")
+    set_optimize("fastest")
+    set_runtimes("MD")
+    add_cxxflags("/GR-")
+end
 
 -- RED4ext.SDK, RedLib, ArchiveXL, TweakXL and SharedPunk come from the CP2077
 -- package registry.
 add_repositories("cp2077-repo https://gitlab.com/alphanin9/cp2077-xmake-repo.git")
 
-add_requires("lz4", "hopscotch-map", "safetyhook", "semver", "wil")
+add_requires("lz4", "hopscotch-map")
+if is_plat("windows") then
+    add_requires("safetyhook", "semver", "wil")
+else
+    -- No safetyhook (x86 only), semver (ProjectTemplate.hpp has its own parser on Apple) or wil there.
+    -- nlohmann_json reads the save's metadata.9.json (macos/NgpMetadata.cpp).
+    add_requires("nlohmann_json")
+end
+-- On macosx the cp2077-repo packages below resolve to jackmaxwil's macOS SDK and to the patched
+-- RedLib / ArchiveXL / TweakXL headers (see the repo's macosx branches).
 add_requires("red4ext-sdk", "red-lib", "archive-xl", "tweak-xl", "sharedpunk")
 
 local cp2077_path = os.getenv("CP2077_PATH")
@@ -23,25 +47,61 @@ local cp2077_path = os.getenv("CP2077_PATH")
 target("New Game+")
     set_default(true)
     set_kind("shared")
-    set_filename("NewGamePlus.dll")
     set_warnings("more")
-    add_files("src/**.cpp", "src/**.rc")
+    add_files("src/**.cpp")
     add_headerfiles("src/**.hpp")
     add_includedirs("src/")
-    add_packages("lz4", "hopscotch-map", "safetyhook", "semver", "wil",
+    add_packages("lz4", "hopscotch-map",
                  "red4ext-sdk", "red-lib", "archive-xl", "tweak-xl", "sharedpunk")
-    add_syslinks("Version", "User32")
-    add_defines("WINVER=0x0601", "WIN32_LEAN_AND_MEAN", "NOMINMAX")
+    if is_plat("windows") then
+        set_filename("NewGamePlus.dll")
+        add_files("src/**.rc")
+        add_packages("safetyhook", "semver", "wil")
+        add_syslinks("Version", "User32")
+        add_defines("WINVER=0x0601", "WIN32_LEAN_AND_MEAN", "NOMINMAX")
+    else
+        set_filename("NewGamePlus.dylib")
+        add_packages("nlohmann_json")
+        -- The Windows-only save parser and test definitions are not part of the Mac target.
+        remove_files("src/Parsing/New/**.cpp", "src/GameSystem/TestingDefs.cpp")
+        -- Mac glue: session description, save metadata, feature gate, GameInstance chain, host shims.
+        add_files("macos/*.cpp")
+        -- macos/inc first: the game-system header with the Mac IsSavingLocked ABI (until the SDK has it).
+        add_includedirs("macos", "macos/inc")
+        add_cxxflags("-fexceptions", "-fms-extensions", "-fvisibility-inlines-hidden",
+                     "-Wno-deprecated-declarations", "-Wno-microsoft-template", "-Wno-invalid-offsetof",
+                     "-ffile-prefix-map=" .. os.projectdir() .. "=new_game_plus", { force = true })
+        -- Completes the SDK types Handle<T> destroys (see the header).
+        add_cxxflags("-include", path.join(os.projectdir(), "macos", "MacPrelude.hpp"), { force = true })
+        -- The game's symbols are bound at load. macos/check-undefined.sh (below) fails the build when a plugin
+        -- symbol is left over, so a function that is declared and never compiled in does not hide here.
+        add_shflags("-Wl,-undefined,dynamic_lookup", { force = true })
+        -- Only the four plugin entry points are exported. The packages (SharedPunk, lz4) are built without
+        -- -fvisibility=hidden and would otherwise leak their symbols, which the CMake build never did.
+        add_shflags("-Wl,-exported_symbols_list," .. path.join(os.projectdir(), "macos", "exports.txt"), { force = true })
+    end
     set_configdir("src")
-    add_configfiles("config/ProjectTemplate.hpp.in", { prefixdir = "Config" })
-    add_configfiles("config/ProjectMetadata.rc.in", { prefixdir = "Config" })
+    add_configfiles("config/projectTemplate.hpp.in", { prefixdir = "Config" })
+    add_configfiles("config/projectMetadata.rc.in", { prefixdir = "Config" })
     set_configvar("NAME", "New Game+")
     set_configvar("DESC", "New Game+ for Cyberpunk 2077")
     set_configvar("AUTHOR_NAME", "not_alphanine")
-    add_cxxflags("/Oi", "/Os", "/GL")
-    add_ldflags("/LTCG")
-    set_rundir(path.join(cp2077_path, "bin", "x64"))
+    if is_plat("windows") then
+        add_cxxflags("/Oi", "/Os", "/GL")
+        add_ldflags("/LTCG")
+        set_rundir(path.join(cp2077_path, "bin", "x64"))
+    else
+        -- Ad hoc signature, then the export / undefined-symbol check.
+        after_link( function (target)
+            local script_dir = path.join(os.projectdir(), "macos")
+            os.execv("bash", {path.join(script_dir, "fix-install-names.sh"), target:targetfile()})
+            os.execv("bash", {path.join(script_dir, "check-undefined.sh"), target:targetfile()})
+        end)
+    end
     on_package( function (target)
+        if not target:is_plat("windows") then
+            return -- The Mac layout (Scripts/, archive/Mac/mod) is not packaged by xmake yet, see macos/README.md
+        end
         os.rm("packaging/*")
         os.rm("packaging_pdb/*")
 
@@ -67,6 +127,9 @@ target("New Game+")
         ), "packaging_pdb/red4ext/plugins/NewGamePlus")
     end)
     on_install( function (target)
+        if not target:is_plat("windows") then
+            return
+        end
         local target_file = target:targetfile()
         local plugin_folder = path.join(cp2077_path, "red4ext/plugins/NewGamePlus/")
 
@@ -105,7 +168,12 @@ target("New Game+")
         cprint("${bright green}Installed plugin to " .. plugin_folder)
     end)
     on_run( function (target)
+        if not target:is_plat("windows") then
+            return
+        end
         os.run(path.join(cp2077_path, "bin", "x64", "Cyberpunk2077.exe"))
     end)
 
-add_rules("plugin.vsxmake.autoupdate")
+if is_plat("windows") then
+    add_rules("plugin.vsxmake.autoupdate")
+end

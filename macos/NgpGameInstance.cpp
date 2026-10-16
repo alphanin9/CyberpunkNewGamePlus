@@ -28,22 +28,14 @@ std::atomic<bool> s_chained{false};
 void* OnGameInstanceCtor(void* aThis)
 {
     void* result = s_originalCtor ? s_originalCtor(aThis) : nullptr;
-    if (Red::MacGameInstance() && Red::TypeInfoRegistrar::PendingDescribeCount() > 0)
+    if (auto* engine = Red::CGameEngine::Get(); engine && engine->framework && engine->framework->gameInstance)
     {
         Red::TypeInfoRegistrar::RunPending();
-        NgpMac::Log("[ngplus] GameInstance ready: late registration ran (left %zu / %zu)",
-                    Red::TypeInfoRegistrar::PendingRegisterCount(), Red::TypeInfoRegistrar::PendingDescribeCount());
+        NgpMac::Log("[ngplus] GameInstance ready: late registration ran");
     }
     return result;
 }
 } // namespace
-
-::RED4ext::GameInstance* Red::MacGameInstance()
-{
-    using Fn = ::RED4ext::GameInstance* (*)();
-    static const Fn fn = reinterpret_cast<Fn>(dlsym(RTLD_DEFAULT, "codeware_mac_game_instance"));
-    return fn ? fn() : nullptr;
-}
 
 namespace NgpMac
 {

@@ -13,8 +13,8 @@ namespace
 {
 int g_anchor = 0;
 std::atomic<bool> g_trapCalled{false};
-const RED4ext::Sdk* g_sdk = nullptr;
-RED4ext::PluginHandle g_handle = nullptr;
+const RED4ext::v1::Sdk* g_sdk = nullptr;
+RED4ext::v1::PluginHandle g_handle = nullptr;
 
 std::mutex& LogLock()
 {
@@ -146,18 +146,18 @@ void Log(const char* aFormat, ...)
     std::fprintf(stderr, "%s\n", buffer);
 }
 
-void SetPlugin(const RED4ext::Sdk* aSdk, RED4ext::PluginHandle aHandle)
+void SetPlugin(const RED4ext::v1::Sdk* aSdk, RED4ext::v1::PluginHandle aHandle)
 {
     g_sdk = aSdk;
     g_handle = aHandle;
 }
 
-const RED4ext::Sdk* PluginSdk()
+const RED4ext::v1::Sdk* PluginSdk()
 {
     return g_sdk;
 }
 
-RED4ext::PluginHandle PluginHandleValue()
+RED4ext::v1::PluginHandle PluginHandleValue()
 {
     return g_handle;
 }

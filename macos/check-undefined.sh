@@ -6,7 +6,7 @@ set -eu
 DYLIB="$1"
 ALLOW="$(dirname "$0")/undefined-allowed.txt"
 for sym in _Main _Query _Supports _ngplus_registerNatives; do
-  nm -gU "$DYLIB" | grep -q " T $sym\$" || { echo "check-undefined: FAILED. export $sym is missing" >&2; exit 1; }
+  nm -gU "$DYLIB" | grep " T $sym\$" >/dev/null || { echo "check-undefined: FAILED. export $sym is missing" >&2; exit 1; }
 done
 BAD=$(nm -m -u "$DYLIB" | grep "dynamically looked up" | sed -E 's/^ +\(undefined\) external //; s/ \(dynamically looked up\)$//' || true)
 if [[ -f "$ALLOW" && -n "$BAD" ]]; then

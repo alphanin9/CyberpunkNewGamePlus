@@ -5,8 +5,8 @@
 #include <cstdint>
 #include <filesystem>
 
-#include <RED4ext/Api/PluginHandle.hpp>
-#include <RED4ext/Api/Sdk.hpp>
+#include <RED4ext/Api/v1/PluginHandle.hpp>
+#include <RED4ext/Api/v1/Sdk.hpp>
 
 extern "C"
 {
@@ -41,9 +41,9 @@ std::filesystem::path RootDir();
 
 void Log(const char* aFormat, ...) __attribute__((format(printf, 1, 2)));
 
-void SetPlugin(const RED4ext::Sdk* aSdk, RED4ext::PluginHandle aHandle);
-const RED4ext::Sdk* PluginSdk();
-RED4ext::PluginHandle PluginHandleValue();
+void SetPlugin(const RED4ext::v1::Sdk* aSdk, RED4ext::v1::PluginHandle aHandle);
+const RED4ext::v1::Sdk* PluginSdk();
+RED4ext::v1::PluginHandle PluginHandleValue();
 
 // One attach attempt. Logs INSTALLED, or SKIPPED when the attach does not take.
 // *aOriginal is null unless the hook was installed.

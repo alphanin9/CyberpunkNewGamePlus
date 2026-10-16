@@ -9,8 +9,8 @@
 namespace PluginContext
 {
 #ifdef __APPLE__
-inline Red::PluginHandle m_redPlugin;
-inline const Red::Sdk* m_redSdk;
+inline Red::v1::PluginHandle m_redPlugin;
+inline const Red::v1::Sdk* m_redSdk;
 #else
 inline Red::v1::PluginHandle m_redPlugin;
 inline const Red::v1::Sdk* m_redSdk;

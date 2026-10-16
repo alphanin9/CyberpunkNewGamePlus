@@ -9,8 +9,8 @@
 #include <RED4ext/ArchiveXL.hpp>
 #include <RED4ext/TweakXL.hpp>
 #else
-#include "ArchiveXL.hpp"
-#include "TweakXL.hpp"
+#include <RED4ext/ArchiveXL.hpp>
+#include <RED4ext/TweakXL.hpp>
 #include "MacShims.hpp"
 
 #include <atomic>
@@ -57,8 +57,6 @@ RED4EXT_C_EXPORT void RED4EXT_CALL ngplus_registerNatives()
 
     const bool vaultOk = NgpMac::VaultSelfTest();
     NgpMac::Log("[ngplus] ngplus_registerNatives vault self-test: %s", vaultOk ? "ok" : "FAILED");
-    NgpMac::Log("[ngplus] ngplus_registerNatives RedLib queued: %zu register, %zu describe",
-                Red::TypeInfoRegistrar::PendingRegisterCount(), Red::TypeInfoRegistrar::PendingDescribeCount());
     Red::TypeInfoRegistrar::RunPending();
     // The game system is registered once the GameInstance exists (after the scripts load).
     NgpMac::ChainGameInstanceCtor();
@@ -80,16 +78,15 @@ RED4EXT_C_EXPORT void RED4EXT_CALL ngplus_registerNatives()
 
     PluginContext::m_rtti = CRTTISystem::Get();
     PluginContext::m_rttiReady = true;
-    NgpMac::Log("[ngplus] ngplus_registerNatives done (RedLib left %zu / %zu)",
-                Red::TypeInfoRegistrar::PendingRegisterCount(), Red::TypeInfoRegistrar::PendingDescribeCount());
+    NgpMac::Log("[ngplus] ngplus_registerNatives done");
 }
 
-RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::EMainReason aReason,
-                                        const RED4ext::Sdk* aSdk)
+RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::v1::PluginHandle aHandle, RED4ext::v1::EMainReason aReason,
+                                        const RED4ext::v1::Sdk* aSdk)
 {
     switch (aReason)
     {
-    case RED4ext::EMainReason::Load:
+    case RED4ext::v1::EMainReason::Load:
     {
         PluginContext::m_redPlugin = aHandle;
         PluginContext::m_redSdk = aSdk;
@@ -108,7 +105,7 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
         s_ngpLoaded.store(true);
         break;
     }
-    case RED4ext::EMainReason::Unload:
+    case RED4ext::v1::EMainReason::Unload:
     {
         if (!hooking::DetachHooking())
         {
@@ -122,23 +119,24 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::PluginHandle aHandle, RED4ext::
     return true;
 }
 
-RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::PluginInfo* aInfo)
+RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::v1::PluginInfo* aInfo)
 {
     aInfo->name = L"New Game+";
     aInfo->author = L"not_alphanine";
 
     constexpr auto ModVersion = build::GetModVersion();
 
-    aInfo->version = RED4EXT_SEMVER(static_cast<std::uint8_t>(ModVersion.major()),
-                                    static_cast<std::uint8_t>(ModVersion.minor()),
-                                    static_cast<std::uint8_t>(ModVersion.patch()));
-    aInfo->runtime = RED4EXT_RUNTIME_INDEPENDENT;
-    aInfo->sdk = RED4EXT_SDK_LATEST;
+    aInfo->version = RED4EXT_V1_SEMVER_EX(static_cast<std::uint8_t>(ModVersion.major()),
+                                          static_cast<std::uint8_t>(ModVersion.minor()),
+                                          static_cast<std::uint8_t>(ModVersion.patch()),
+                                          RED4EXT_V1_SEMVER_PRERELEASE_TYPE_NONE, 0);
+    aInfo->runtime = RED4EXT_V1_RUNTIME_VERSION_INDEPENDENT;
+    aInfo->sdk = RED4EXT_V1_SDK_VERSION_CURRENT;
 }
 
 RED4EXT_C_EXPORT uint32_t RED4EXT_CALL Supports()
 {
-    return RED4EXT_API_VERSION_LATEST;
+    return RED4EXT_API_VERSION_1;
 }
 #else
 RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::v1::PluginHandle aHandle, RED4ext::v1::EMainReason aReason, const RED4ext::v1::Sdk* aSdk)
