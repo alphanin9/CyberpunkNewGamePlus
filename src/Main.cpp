@@ -103,6 +103,17 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::v1::PluginHandle aHandle, RED4e
         }
 
         s_ngpLoaded.store(true);
+        // The loader has no NATREG step: the game itself runs the CRTTISystem post-register callbacks after every plugin's
+        // Main (Codeware has installed its hooks in its Main by then). ngplus_registerNatives keeps its once flag.
+        if (auto* rtti = RED4ext::CRTTISystem::Get())
+        {
+            rtti->AddPostRegisterCallback(&ngplus_registerNatives);
+            NgpMac::Log("[ngplus] ngplus_registerNatives added as a post-register callback");
+        }
+        else
+        {
+            NgpMac::Log("[ngplus] no RTTI system in Main(Load): ngplus_registerNatives is left to the loader");
+        }
         break;
     }
     case RED4ext::v1::EMainReason::Unload:
