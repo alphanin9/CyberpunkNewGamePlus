@@ -5,13 +5,13 @@ the end.
 
 ## Rows
 
-Addresses the loader's database does not have yet:
+Addresses the loader's database does not have yet. The first table's rows go to jackmaxwil/RED4ext.SDK-macos in one pull
+request; with them added locally, the automated run on his loader passes (see the end).
 
 | hash | offset | name |
 |---|---|---|
 | 3923848734 | 0x2ce34d0 | Telemetry LoadFactMap (hooked) |
 | 2393518559 | 0x245733c | CharacterCustomization OnNewGame (hooked) |
-| 4285205681 | 0x2d80 | RaiseAssert (mapped so a resolve does not trap; never called) |
 | 4293661415 | 0x170cfe0 | GetSaveFolder. No arguments. `CString&` in x0 |
 | 836113218 | 0x3449908 | MergeDirToPath. x0 source, x1 chars, w2 length, x8 result |
 | 1194333091 | 0x344993c | MergeFileToPath. Same registers |
@@ -23,7 +23,9 @@ Addresses the loader's database does not have yet:
 | 1357913210 | 0x3f339b8 | StartSession. Copies the session; the caller destroys its copy |
 | 1002050525 | 0x3f2d4d0 | GameDefinition::ToWorldID. x0 definition, x8 result |
 | 2635337807 | 0x8d5d830 | InkSystem instance (address of the pointer) |
-| 2549221846 | 0x90dc3a0 | CGameEngine instance (address of the pointer; RedLib registers game systems through it) |
+
+`RaiseAssert` (4285205681) is not compiled into the SDK 1.0 build. `CGameEngine` (2549221846) is a verified row of his
+database already (`3:0x1D483A0`, the same address).
 
 The functions whose macOS registers differ from SharedPunk's prototypes are called through SharedPunk's `shared::mac` wrappers (`src/code/Mac/FileAbi.cpp`).
 
@@ -60,14 +62,16 @@ The functions whose macOS registers differ from SharedPunk's prototypes are call
 Loading a save with the plugin on: both hooks install, the natives and the game system register, the save scan and the
 resolve answer as on Windows (end-game saves are skipped by design; a Mac save that finished q104, q110 and q112 qualifies),
 and the progression data of a PC end-game save and of a Mac save are read (level, street cred, perk points, money,
-inventory and stash). Not checked yet: saving and loading inside a New Game Plus run (the save node).
+inventory and stash). Last run 2026-10-15: this xmake build on jackmaxwil's loader, with the rows above added to its
+database, 8 of 8 checks.
 
 ## Checked in game (by hand, 2026-10-14)
 
 Starting a New Game Plus run from the main menu, both start types (StartFromQ101 and StartFromQ001): character
 creation, LaunchNewGamePlus and StartSession, loading into the world, and the progression transfer (development,
 inventory, stash, equipped cyberware, garage, craftbook, stash retrofixes, facts). The first try crashed after character
-creation: the Mac `gameGameSessionDesc` is 0x1B0 bytes, not the SDK's 0x1D0 (see `MacSessionDesc.hpp`).
+creation: the Mac `gameGameSessionDesc` is 0x1B0 bytes, not the SDK's 0x1D0 (see `MacSessionDesc.hpp`). On 2026-10-15
+the run's autosave was loaded back into the world (the save node). These hand checks used the earlier CMake build.
 
 Script note: on macOS, `ArraySize()` applied directly to a native function's result (`ArraySize(obj.GetList())`) reads a
 stale temporary. A local copy, a parameter, or `for x in obj.GetList()` (what the New Game Plus scripts use) is exact.

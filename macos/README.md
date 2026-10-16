@@ -9,12 +9,13 @@ What is not done yet: `NOT_YET.md`.
 
 ## Status
 
-`NewGamePlus.dylib` builds and links for arm64 and runs in the game: with a save loaded, the hooks install, the game system
-registers, and the save scan, the save picker's check and the progression read (a PC end-game save and a Mac save) work in
-automated runs. Starting a New Game Plus run has not been tried yet. Details and what is still missing: `NOT_YET.md`.
+`NewGamePlus.dylib` builds with xmake and runs in the game on jackmaxwil's loader: the hooks install, the game system
+registers, and the save scan, the save picker's check and the progression read (a PC end-game save and a Mac save) pass
+in automated runs. A New Game Plus run was started, saved and loaded by hand (with the earlier CMake build of the same
+code). Details and what is still missing: `NOT_YET.md`.
 
-Features that need an address which is not in the Mac rows log one line and skip. Adding that row later turns the
-feature on.
+Thirteen of the addresses New Game Plus uses are not in the loader's address database yet; a pull request to
+jackmaxwil/RED4ext.SDK-macos adds them. Until then the features that need them log one line and skip.
 
 ## Game updates
 
@@ -59,6 +60,9 @@ and that no symbol is left for dynamic lookup.
 
 - **SDK.** Addresses resolve from the loader's database (jackmaxwil's RED4ext.SDK-macos). A hash the database lacks (or
   has unverified) resolves to 0, `IsAvailable()` is false, and `RawFunc` / `RawPtr` return a stand-in instead of calling or reading address 0.
+- **Game system.** The game creates the GameInstance before the engine stores its framework, so RedLib's system
+  registration finds no instance. `NgpGameInstance.cpp` chains onto Codeware's GameInstance constructor hook and adds the
+  New Game Plus system to the new instance itself.
 - **Natives.** `ngplus_registerNatives` runs the RedLib queue (`RunPending`), then archive and tweak registration, then sets
   the RTTI pointers. The async pool id is `0x7FF80000`. Serializable class bits are 62 through 54.
 - **Hooks.** One attempt through the loader API. The log line says INSTALLED, or SKIPPED when the attach does not take
