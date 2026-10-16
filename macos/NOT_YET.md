@@ -5,7 +5,7 @@ the end.
 
 ## Rows
 
-`NgpSdkRows.inc`:
+Addresses the loader's database does not have yet:
 
 | hash | offset | name |
 |---|---|---|

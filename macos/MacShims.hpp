@@ -10,9 +10,6 @@
 
 extern "C"
 {
-// An address hash with no Mac row: logs once and returns a stub that logs its first call and returns 0.
-uintptr_t ngplus_mac_trap_for_hash(uint32_t aHash);
-
 // Game image base (the executable's Mach-O header). SharedPunk's RawBase calls this on Apple.
 uintptr_t sharedpunk_mac_image_base();
 
@@ -49,6 +46,4 @@ RED4ext::v1::PluginHandle PluginHandleValue();
 // *aOriginal is null unless the hook was installed.
 bool TryAttach(uintptr_t aTarget, void* aDetour, void** aOriginal, const char* aName);
 
-bool VaultReady();
-bool VaultSelfTest();
 }

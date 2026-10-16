@@ -55,8 +55,6 @@ RED4EXT_C_EXPORT void RED4EXT_CALL ngplus_registerNatives()
         return;
     }
 
-    const bool vaultOk = NgpMac::VaultSelfTest();
-    NgpMac::Log("[ngplus] ngplus_registerNatives vault self-test: %s", vaultOk ? "ok" : "FAILED");
     Red::TypeInfoRegistrar::RunPending();
     // The game system is registered once the GameInstance exists (after the scripts load).
     NgpMac::ChainGameInstanceCtor();

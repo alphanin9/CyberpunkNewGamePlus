@@ -22,12 +22,6 @@ std::mutex& LogLock()
     return s_lock;
 }
 
-std::set<uint32_t>& TrappedHashes()
-{
-    static std::set<uint32_t> s_set;
-    return s_set;
-}
-
 std::set<uint32_t>& MissingCallHashes()
 {
     static std::set<uint32_t> s_set;
@@ -52,19 +46,6 @@ const char* PluginPathC()
     }
     return nullptr;
 }
-}
-
-extern "C" __attribute__((visibility("hidden"))) uintptr_t ngplus_mac_trap_for_hash(uint32_t aHash)
-{
-    {
-        std::scoped_lock lock(LogLock());
-        if (TrappedHashes().insert(aHash).second)
-        {
-            std::fprintf(stderr, "[ngplus] address hash %u has no Mac row: it resolves to the fail-safe trap stub (see macos/NOT_YET.md)\n",
-                         aHash);
-        }
-    }
-    return reinterpret_cast<uintptr_t>(&ngplus_mac_trap_stub);
 }
 
 extern "C" __attribute__((visibility("hidden"))) uintptr_t sharedpunk_mac_image_base()
