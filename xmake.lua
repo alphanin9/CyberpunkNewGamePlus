@@ -28,7 +28,7 @@ end
 
 -- RED4ext.SDK, RedLib, ArchiveXL, TweakXL and SharedPunk come from the CP2077
 -- package registry.
-add_repositories("cp2077-repo https://gitlab.com/alphanin9/cp2077-xmake-repo.git")
+add_repositories("cp2077-repo https://github.com/alphanin9/cp2077-xmake-repo.git")
 
 add_requires("lz4", "hopscotch-map")
 if is_plat("windows") then
