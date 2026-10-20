@@ -21,11 +21,6 @@ namespace hooking
 {
 namespace QuestsSystem
 {
-// This should be in Sharedpunk but lazy
-constexpr auto HashLoadQuestResources = 407969320u;
-constexpr auto LoadQuestResources =
-    shared::util::RawFunc<HashLoadQuestResources, void (*)(quest::QuestsSystem*, JobQueue&, bool&)>();
-
 void OnLoadQuestResources(quest::QuestsSystem* aQuestsSystem, JobQueue& aQueue, bool& aSuccess) {
     // Dedupe quests list - maybe this works for bugfix of 9999 root quests? Not sure
     // No need for mutex here I think
@@ -142,7 +137,7 @@ bool InitializeHooking()
         .OrDie("Failed to hook CharacterCustomizationSystem::OnNewGame");
 
 #ifndef __APPLE__
-    shared::hook::HookBefore<QuestsSystem::LoadQuestResources>(&QuestsSystem::OnLoadQuestResources)
+    shared::hook::HookBefore<shared::raw::QuestsSystem::LoadQuestResources>(&QuestsSystem::OnLoadQuestResources)
         .OrDie("Failed to hook QuestsSystem::LoadQuestResources");
 #endif
 
