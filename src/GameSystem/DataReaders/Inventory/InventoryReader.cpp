@@ -1,3 +1,6 @@
+#ifdef __APPLE__
+#include <cstdio>
+#endif
 #include "inventoryReader.hpp"
 
 #include <RED4ext/Scripting/Natives/Generated/game/data/ItemCategory_Record.hpp>
@@ -321,4 +324,9 @@ InventoryReader::InventoryReaderResults::InventoryReaderResults(modsave::Invento
     {
         ProcessItem(item, m_stash, addedIconics, aContext);
     }
+#ifdef __APPLE__
+    std::fprintf(stderr, "[ngplus] inventory reader: save items local=%zu stash=%zu -> lists inventory=%u stash=%u money=%d\n",
+                 localInventory.m_inventoryItems.size(), stashInventory.m_inventoryItems.size(),
+                 static_cast<std::uint32_t>(m_inventory.size()), static_cast<std::uint32_t>(m_stash.size()), m_money);
+#endif
 }

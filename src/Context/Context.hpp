@@ -8,8 +8,13 @@
 
 namespace PluginContext
 {
+#ifdef __APPLE__
 inline Red::v1::PluginHandle m_redPlugin;
 inline const Red::v1::Sdk* m_redSdk;
+#else
+inline Red::v1::PluginHandle m_redPlugin;
+inline const Red::v1::Sdk* m_redSdk;
+#endif
 
 inline Red::CRTTISystem* m_rtti;
 
@@ -25,7 +30,9 @@ inline void Spew(std::string_view aStr, Args&&... aArgs)
     auto str = std::vformat(aStr, std::make_format_args(aArgs...));
     if (m_rttiReady)
     {
+#ifndef __APPLE__
         Red::Log::Channel(shared::util::NamePoolRegistrar<"New Game+">::Get(), str);
+#endif
     }
     m_redSdk->logger->Info(m_redPlugin, str.c_str());
 }
@@ -36,7 +43,9 @@ inline void Error(std::string_view aStr, Args&&... aArgs)
     auto str = std::vformat(aStr, std::make_format_args(aArgs...));
     if (m_rttiReady)
     {
+#ifndef __APPLE__
         Red::Log::Channel(shared::util::NamePoolRegistrar<"New Game+ | Error">::Get(), str);
+#endif
     }
     m_redSdk->logger->Error(m_redPlugin, str.c_str());
 }
@@ -53,7 +62,9 @@ inline void DebugLog(std::string_view aStr, Args&&... aArgs)
     auto str = std::vformat(aStr, std::make_format_args(aArgs...));
     if (m_rttiReady)
     {
+#ifndef __APPLE__
         Red::Log::Channel(shared::util::NamePoolRegistrar<"New Game+ | Debug">::Get(), str);
+#endif
     }
     m_redSdk->logger->Error(m_redPlugin, str.c_str());
 }

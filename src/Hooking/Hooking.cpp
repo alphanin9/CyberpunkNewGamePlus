@@ -10,6 +10,10 @@
 #include <Shared/Raw/CharacterCustomizationState/CharacterCustomizationState.hpp>
 
 #include <tsl/hopscotch_set.h>
+#ifdef __APPLE__
+#include "MacShims.hpp"
+#include "NgpFeatures.hpp"
+#endif
 
 using namespace Red;
 
@@ -48,9 +52,18 @@ namespace LoadFacts
 void OnLoadTelemetryFactMap(HashMap<std::uint32_t, CString>& aMap)
 {
     // We add our own facts to the gatherer
+#ifdef __APPLE__
+    // The Mac function fills the global at image offset 0x8132140. The argument is not that map.
+    (void)aMap;
+    auto* map = reinterpret_cast<HashMap<std::uint32_t, CString>*>(sharedpunk_mac_image_base() + 0x8132140);
+    map->Insert(FNV1a32("ngplus_active"), "ngplus_active");
+    map->Insert(FNV1a32("ngplus_q001_start"), "ngplus_q001_start");
+    map->Insert(FNV1a32("ngplus_standalone_q101_start"), "ngplus_standalone_q101_start");
+#else
     aMap.Insert(FNV1a32("ngplus_active"), "ngplus_active");
     aMap.Insert(FNV1a32("ngplus_q001_start"), "ngplus_q001_start");
     aMap.Insert(FNV1a32("ngplus_standalone_q101_start"), "ngplus_standalone_q101_start");
+#endif
 }
 } // namespace LoadFacts
 
@@ -84,6 +97,13 @@ void OnNewGame(game::ui::CharacterCustomizationSystem* aThis, void* aRdx)
 
     shared::raw::CharacterCustomizationState::GetLifePath(state, lifepathId);
 
+#ifdef __APPLE__
+    if constexpr (!ngp::mac::kEnableUnconfirmedFactAndMutex)
+    {
+        ngp::mac::LogUnconfirmed("CharacterCustomization OnNewGame SetFact");
+        return;
+    }
+#endif
     auto questsSystem = GetGameSystem<quest::QuestsSystem>();
     auto factsDB = shared::raw::QuestsSystem::FactsDB(questsSystem);
 
@@ -111,6 +131,9 @@ void OnNewGame(game::ui::CharacterCustomizationSystem* aThis, void* aRdx)
 bool InitializeHooking()
 {
     // Note: OrDie here really doesn't do anything!
+#ifdef __APPLE__
+    ngp::mac::LogDedupeSkipped();
+#endif
     shared::hook::HookAfter<shared::raw::Telemetry::LoadFactMap>(&LoadFacts::OnLoadTelemetryFactMap)
         .OrDie("Failed to hook Telemetry::LoadFacts");
 
@@ -118,8 +141,10 @@ bool InitializeHooking()
         &CharacterCustomizationSystem::OnNewGame)
         .OrDie("Failed to hook CharacterCustomizationSystem::OnNewGame");
 
+#ifndef __APPLE__
     shared::hook::HookBefore<QuestsSystem::LoadQuestResources>(&QuestsSystem::OnLoadQuestResources)
         .OrDie("Failed to hook QuestsSystem::LoadQuestResources");
+#endif
 
     return true;
 }

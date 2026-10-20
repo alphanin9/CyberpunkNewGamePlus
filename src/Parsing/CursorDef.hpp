@@ -2,14 +2,18 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#ifndef __APPLE__
 #include <print>
+#endif
 #include <span>
 #include <string>
 
 #include <RED4ext/RED4ext.hpp>
 #include <RedLib.hpp>
 
+#ifndef __APPLE__
 #include <intrin.h>
+#endif
 
 struct FileCursor;
 
@@ -273,6 +277,46 @@ struct FileCursor {
     {
         auto buffer = readLengthPrefixedString();
 
+#ifdef __APPLE__
+        std::string ret;
+        ret.reserve(buffer.size());
+        for (std::size_t i = 0; i < buffer.size(); ++i)
+        {
+            std::uint32_t cp = static_cast<std::uint16_t>(buffer[i]);
+            if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < buffer.size())
+            {
+                const std::uint32_t low = static_cast<std::uint16_t>(buffer[i + 1]);
+                if (low >= 0xDC00 && low <= 0xDFFF)
+                {
+                    cp = 0x10000 + (((cp - 0xD800) << 10) | (low - 0xDC00));
+                    ++i;
+                }
+            }
+            if (cp < 0x80)
+            {
+                ret.push_back(static_cast<char>(cp));
+            }
+            else if (cp < 0x800)
+            {
+                ret.push_back(static_cast<char>(0xC0 | (cp >> 6)));
+                ret.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+            }
+            else if (cp < 0x10000)
+            {
+                ret.push_back(static_cast<char>(0xE0 | (cp >> 12)));
+                ret.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+                ret.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+            }
+            else
+            {
+                ret.push_back(static_cast<char>(0xF0 | (cp >> 18)));
+                ret.push_back(static_cast<char>(0x80 | ((cp >> 12) & 0x3F)));
+                ret.push_back(static_cast<char>(0x80 | ((cp >> 6) & 0x3F)));
+                ret.push_back(static_cast<char>(0x80 | (cp & 0x3F)));
+            }
+        }
+        return ret;
+#else
         auto lengthNeeded = WideCharToMultiByte(CP_UTF8, 0, &buffer[0], static_cast<int>(buffer.size()), nullptr, 0, nullptr, nullptr);
         
         std::string ret(lengthNeeded, char{});
@@ -280,6 +324,7 @@ struct FileCursor {
         WideCharToMultiByte(CP_UTF8, 0, &buffer[0], static_cast<int>(buffer.size()), &ret[0], lengthNeeded, nullptr, nullptr);
         
         return ret;
+#endif
     }
 
     // Theoretically if we don't need a copy we could just do a string_view

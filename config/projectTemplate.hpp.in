@@ -1,3 +1,70 @@
+#ifdef __APPLE__
+#include <cstdint>
+
+namespace build
+{
+struct SemVer
+{
+    int m_major{};
+    int m_minor{};
+    int m_patch{};
+
+    constexpr int major() const
+    {
+        return m_major;
+    }
+
+    constexpr int minor() const
+    {
+        return m_minor;
+    }
+
+    constexpr int patch() const
+    {
+        return m_patch;
+    }
+};
+
+constexpr SemVer ParseSemVer(const char* aText)
+{
+    int major = 0;
+    int minor = 0;
+    int patch = 0;
+    int phase = 0;
+    for (const char* p = aText; *p; ++p)
+    {
+        if (*p == '.')
+        {
+            ++phase;
+            continue;
+        }
+        if (*p < '0' || *p > '9')
+        {
+            continue;
+        }
+        const int value = *p - '0';
+        if (phase == 0)
+        {
+            major = major * 10 + value;
+        }
+        else if (phase == 1)
+        {
+            minor = minor * 10 + value;
+        }
+        else
+        {
+            patch = patch * 10 + value;
+        }
+    }
+    return SemVer{major, minor, patch};
+}
+
+constexpr SemVer GetModVersion()
+{
+    return ParseSemVer("${VERSION}");
+}
+}
+#else
 #include <semver.hpp>
 
 namespace build 
@@ -9,3 +76,4 @@ constexpr semver::version<> GetModVersion()
     return ver;
 }
 }
+#endif

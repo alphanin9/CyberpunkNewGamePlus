@@ -1,0 +1,4 @@
+# Image-relative offsets New Game Plus hooks. One per line; # starts a comment.
+# RED4ext-macos installs a detour only for an offset on this list. Any other Attach reports success and does nothing.
+0x2ce34d0  # LoadFactMap, hash 3923848734
+0x245733c  # OnNewGame, hash 2393518559
