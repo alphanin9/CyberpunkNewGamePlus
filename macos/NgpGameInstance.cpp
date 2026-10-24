@@ -22,7 +22,7 @@
 namespace
 {
 // The GameInstance constructor Codeware hooks (cp2077-codeware macos/MacSupport.cpp, kGameInstanceCtorRva).
-constexpr uintptr_t kGameInstanceCtorRva = 0x1F2D640;
+constexpr uintptr_t kGameInstanceCtorRva = 0x1691AEC;
 
 using CtorFn = void* (*)(void*);
 CtorFn s_originalCtor = nullptr;
