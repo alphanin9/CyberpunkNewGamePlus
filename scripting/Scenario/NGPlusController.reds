@@ -142,7 +142,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
 
             if IsDefined(controller) {
                 // NOTE: add localization? Better error messages?
-                controller.SetInvalid("Failed to parse progression data!\nTry going into a game and saving again.");
+                controller.SetInvalid("Failed to parse progression data!\nTry going into a game and saving again.", true);
                 return;
             }
         }
@@ -154,7 +154,7 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
         // Store used controller for error reporting
         // Then tell NG+ system to process the save
         this.m_selectedLoadListItem = controller;
-        this.m_ngPlusSystem.RequestLoadSaveData(this.m_saves[controller.Index()], this, n"OnNewGamePlusSaveLoaded");
+        this.m_ngPlusSystem.RequestLoadSaveData(this.m_saves[controller.SaveIndex()], this, n"OnNewGamePlusSaveLoaded");
     }
 
     protected cb func OnSavesForLoadReady(saves: [String]) -> Bool {
@@ -188,13 +188,13 @@ public class NewGamePlusSelectionController extends gameuiSaveHandlingController
         while i < inkCompoundRef.GetNumChildren(this.m_list) {
             let button: wref<inkWidget> = inkCompoundRef.GetWidgetByIndex(this.m_list, i);
             let controller: wref<LoadListItem> = button.GetController() as LoadListItem;
-            if controller.Index() == info.saveIndex {
+            if controller.SaveIndex() == info.saveIndex {
                 // Platform check is moved into native code now
                 if info.isValid {
                     controller.SetMetadataForNGPlus(info, this.m_isEp1Enabled);
-                    controller.CheckThumbnailCensorship(!characterCustomizationSystem.IsNudityAllowed());
+                    controller.CheckThumbnailCensorship(!characterCustomizationSystem.IsNudityAllowed(), false);
                 } else {
-                    controller.SetInvalid(info.internalName);
+                    controller.SetInvalid(info.internalName, true);
                 };
                 break;
             };
