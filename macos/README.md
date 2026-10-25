@@ -80,4 +80,7 @@ and that no symbol is left for dynamic lookup.
   macOS registers differ from its prototypes (results through `x8`, text as a pointer and a length).
 - **IGameSystem.** The build uses the `gameIGameSystem` header in `macos/inc`, where `IsSavingLocked` returns its lock
   through `x8`. The SDK's Windows signature crashes the game on the first save.
+- **2.5 stats types.** The macOS SDK package predates the SDK's patch 2.5 types, so `macos/inc` carries
+  `game/StatsStateMapStructure.hpp`, `SavedStatsDataOptimized.hpp` and `BufferSlice.hpp` from RED4ext.SDK 5246e659d
+  (#232), unchanged. Drop them when the macOS package has the 2.5 types.
 - **Left out of the Mac target.** `src/Parsing/New/` and `TestingDefs.cpp`. The quest-resource dedupe hook is not installed.
