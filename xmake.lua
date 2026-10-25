@@ -1,5 +1,5 @@
 set_project("New Game+")
-set_version("1.4.0", { build = "%y%m%d%H" })
+set_version("1.4.1", { build = "%y%m%d%H" })
 
 -- Windows x64 stays the default and the release target. On an Apple Silicon Mac the platform follows the host:
 --   xmake f -p macosx -a arm64 -m release -y && xmake

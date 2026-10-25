@@ -6,7 +6,4 @@
   <Email />
   <Version />
   <ModIoId>-1</ModIoId>
-  <OpenProjectFiles>base\open_world\vendors\glamdocs.questphase</OpenProjectFiles>
-  <OpenProjectFiles>base\open_world\phases\open_world_content.questphase</OpenProjectFiles>
-  <OpenProjectFiles>mod\quest\changedQuests\open_world\NewGamePlus_open_world_content.questphase</OpenProjectFiles>
 </CP77Mod>

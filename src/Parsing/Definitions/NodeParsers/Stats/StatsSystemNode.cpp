@@ -144,13 +144,31 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
         return;
     }
 
-    // Will this help?
-    // m_statsMap.reserve((size_t)(asStatsStateMap->keys.size()));
     for (auto i = 0u; i < asStatsStateMap->keys.size(); i++)
     {
+        // Note: need to explicitly do this copy
+        auto savedStatsDataUnique = MakeUnique<game::SavedStatsData>();
+        auto& source = asStatsStateMap->values[i];
         
+        // redRTTI::native::SetDataBufferView(
+        //        *perKindBuffers[bufferKind], static_cast<std::byte*>(sharedData.data) + slice.offset, bufferSize);
 
-        m_statsMap.try_emplace(asStatsStateMap->keys[i].entityHash, MakeUnique<game::SavedStatsData>(asStatsStateMap->values[i])); 
+        redRTTI::native::SetDataBufferView(savedStatsDataUnique->modifiersBuffer, source.modifiersBuffer.buffer.data,
+                                           source.modifiersBuffer.buffer.size);
+
+        redRTTI::native::SetDataBufferView(savedStatsDataUnique->forcedModifiersBuffer, source.forcedModifiersBuffer.buffer.data,
+                                           source.forcedModifiersBuffer.buffer.size);
+
+        redRTTI::native::SetDataBufferView(savedStatsDataUnique->savedModifierGroupStatTypesBuffer,
+                                           source.savedModifierGroupStatTypesBuffer.buffer.data,
+                                           source.savedModifierGroupStatTypesBuffer.buffer.size);
+
+        savedStatsDataUnique->statModifiers = source.statModifiers;
+        savedStatsDataUnique->inactiveStats = source.inactiveStats;
+        savedStatsDataUnique->recordID = source.recordID;
+        savedStatsDataUnique->seed = source.seed;
+
+        m_statsMap.try_emplace(asStatsStateMap->keys[i].entityHash, std::move(savedStatsDataUnique)); 
     }
 }
 
