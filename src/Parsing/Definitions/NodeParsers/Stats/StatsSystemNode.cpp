@@ -160,18 +160,15 @@ void StatsSystemNode::ReadOptimizedStatsData(game::StatsStateMapStructure& aStat
 
     for (auto& optimizedEntry : aStatsStateMap.valuesOptimized)
     {
-        auto handle = MakeScriptedHandle(GetClass<game::SavedStatsData>());       
+        // Nothing game-side ever touches these - our readers parse the buffers themselves -
+        // so they are plain SDK structs rather than game RTTI instances. (Game-created
+        // gameSavedStatsData can't be Handle-released on 2.5 - CanBeDestructed wants the
+        // async save reader's deferred-buffer token - which is why we don't make them that
+        // way. See docs/item-quality-and-stats-load.md 2.7.)
+        auto& savedData = m_rebuiltStatsData.emplace_back();
 
-        if (!handle)
-        {
-            PluginContext::Error("StatsSystemNode: failed to allocate a gameSavedStatsData instance!");
-            continue;
-        }
-
-        auto* savedData = reinterpret_cast<game::SavedStatsData*>(handle.GetPtr());
-
-        DataBuffer* perKindBuffers[] = {&savedData->modifiersBuffer, &savedData->forcedModifiersBuffer,
-                                             &savedData->savedModifierGroupStatTypesBuffer};
+        DataBuffer* perKindBuffers[] = {&savedData.modifiersBuffer, &savedData.forcedModifiersBuffer,
+                                        &savedData.savedModifierGroupStatTypesBuffer};
 
         // A slice picks a window of sharedDataBuffer. `combined` packs the window size in its
         // low 30 bits and which of the three DataBuffers it belongs to in the top two bits
@@ -207,25 +204,17 @@ void StatsSystemNode::ReadOptimizedStatsData(game::StatsStateMapStructure& aStat
                 continue;
             }
 
-            savedData->inactiveStats.PushBack(aStatsStateMap.sharedInactiveStats[statIndex]);
+            savedData.inactiveStats.PushBack(aStatsStateMap.sharedInactiveStats[statIndex]);
         }
 
         if (optimizedEntry.recordIDIndex < aStatsStateMap.sharedRecordId.size())
         {
-            savedData->recordID = aStatsStateMap.sharedRecordId[optimizedEntry.recordIDIndex];
+            savedData.recordID = aStatsStateMap.sharedRecordId[optimizedEntry.recordIDIndex];
         }
 
-        savedData->seed = optimizedEntry.seed;
+        savedData.seed = optimizedEntry.seed;
 
-        m_statsMap.try_emplace(optimizedEntry.entityHash, savedData);
-
-        // 2.5's gameSavedStatsData::CanBeDestructed (vtable slot 0xD0, the check Handle's
-        // dtor runs before destroying) dereferences the deferred-buffer token at
-        // DataBuffer+0x20 - a token only the game's async save reader attaches. Releasing a
-        // token-less instance crashes in the game (0x140FEDAA4), so orphan the handle: the
-        // instance leaks and outlives the parser, like every other parse artifact here.
-        handle.instance = nullptr;
-        handle.refCount = nullptr;
+        m_statsMap.try_emplace(optimizedEntry.entityHash, &savedData);
     }
 }
 
