@@ -223,6 +223,17 @@ objects are allocated through the game's RTTI, and their buffers are non-freeing
 the parser's decompressed node data — the same lifetime model the package reader already uses
 for its own `DataBuffer`s.
 
+**Never release those instances through `Handle`.** 2.5's `gameSavedStatsData::CanBeDestructed`
+(vtable slot `0xD0`, the check `Handle`'s destructor runs before destroying) dereferences the
+deferred-buffer token at `DataBuffer+0x20` — a token only the game's async save reader
+attaches — and crashes on token-less instances (`sub_140FEDA90`, null-deref at `0x140FEDAA4`).
+The game's own load path never releases these via `Handle` (it calls the destructor directly),
+so mod-created instances must be orphaned instead. Related generator quirk: the SDK header
+flattens the object header (`vtable` at `0x00`, one zeroed qword at `0x08`) into
+`SavedStatsData`'s fake `statModifiers` DynArray member — the real buffers still start at
+`0x10`, which is why `CanBeDestructed` reaching into `+0x30` (`modifiersBuffer.unk20`) is
+invisible in the generated layout.
+
 ---
 
 ## 3. Where quality is first created

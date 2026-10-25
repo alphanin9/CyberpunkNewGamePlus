@@ -18,7 +18,7 @@ using namespace Red;
 
 namespace modsave
 {
-Red::DynArray<Red::Handle<Red::game::StatModifierData_Deprecated>> GetStatModifiersInternal(Red::DataBuffer* aBuffer)
+DynArray<Handle<game::StatModifierData_Deprecated>> GetStatModifiersInternal(DataBuffer* aBuffer)
 {
     static const auto statTypes = GetEnum<game::data::StatType>();
 
@@ -152,16 +152,15 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     }
 }
 
-void StatsSystemNode::ReadOptimizedStatsData(Red::game::StatsStateMapStructure& aStatsStateMap) noexcept
+void StatsSystemNode::ReadOptimizedStatsData(game::StatsStateMapStructure& aStatsStateMap) noexcept
 {
     const auto& sharedData = aStatsStateMap.sharedDataBuffer.buffer;
 
     m_statsMap.reserve(aStatsStateMap.valuesOptimized.size());
-    m_rebuiltStatsData.reserve(aStatsStateMap.valuesOptimized.size());
 
     for (auto& optimizedEntry : aStatsStateMap.valuesOptimized)
     {
-        auto handle = Red::MakeScriptedHandle(Red::CName{Red::game::SavedStatsData::NAME});
+        auto handle = MakeScriptedHandle(GetClass<game::SavedStatsData>());       
 
         if (!handle)
         {
@@ -169,9 +168,9 @@ void StatsSystemNode::ReadOptimizedStatsData(Red::game::StatsStateMapStructure& 
             continue;
         }
 
-        auto* savedData = reinterpret_cast<Red::game::SavedStatsData*>(handle.GetPtr());
+        auto* savedData = reinterpret_cast<game::SavedStatsData*>(handle.GetPtr());
 
-        Red::DataBuffer* perKindBuffers[] = {&savedData->modifiersBuffer, &savedData->forcedModifiersBuffer,
+        DataBuffer* perKindBuffers[] = {&savedData->modifiersBuffer, &savedData->forcedModifiersBuffer,
                                              &savedData->savedModifierGroupStatTypesBuffer};
 
         // A slice picks a window of sharedDataBuffer. `combined` packs the window size in its
@@ -219,7 +218,14 @@ void StatsSystemNode::ReadOptimizedStatsData(Red::game::StatsStateMapStructure& 
         savedData->seed = optimizedEntry.seed;
 
         m_statsMap.try_emplace(optimizedEntry.entityHash, savedData);
-        m_rebuiltStatsData.push_back(std::move(handle));
+
+        // 2.5's gameSavedStatsData::CanBeDestructed (vtable slot 0xD0, the check Handle's
+        // dtor runs before destroying) dereferences the deferred-buffer token at
+        // DataBuffer+0x20 - a token only the game's async save reader attaches. Releasing a
+        // token-less instance crashes in the game (0x140FEDAA4), so orphan the handle: the
+        // instance leaks and outlives the parser, like every other parse artifact here.
+        handle.instance = nullptr;
+        handle.refCount = nullptr;
     }
 }
 

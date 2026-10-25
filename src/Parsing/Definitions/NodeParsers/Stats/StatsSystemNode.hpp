@@ -15,10 +15,6 @@ class StatsSystemNode : public NodeDataInterface
 {
     package::Package m_package;
     std::unordered_map<std::uint64_t, Red::game::SavedStatsData*> m_statsMap;
-    // Save version 0x114+ (patch 2.5) carries per-object stats as shared pools instead of the
-    // keys/values arrays; the SavedStatsData objects are rebuilt from those pools, so they are
-    // allocated through the game's RTTI and kept here for the parser's lifetime.
-    std::vector<Red::Handle<Red::ISerializable>> m_rebuiltStatsData;
 public:
     static constexpr Red::CName m_nodeName = "StatsSystem";
 
