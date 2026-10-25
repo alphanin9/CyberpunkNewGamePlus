@@ -18,7 +18,7 @@ public final func SetMetadataForNGPlus(metadata: ref<SaveMetadataInfo>, opt isEp
     inkWidgetRef.SetVisible(this.m_imageReplacement, true);
     inkWidgetRef.SetVisible(this.m_lifepath, true);
     inkWidgetRef.SetVisible(this.m_cloudStatus, true);
-    inkWidgetRef.SetVisible(this.m_level, true);
+    inkWidgetRef.SetVisible(this.m_lifePathText, true);
     inkWidgetRef.SetVisible(this.m_quest, true);
     inkWidgetRef.SetVisible(this.m_characterLevel, true);
     inkWidgetRef.SetVisible(this.m_characterLevelLabel, true);
@@ -66,15 +66,15 @@ public final func SetMetadataForNGPlus(metadata: ref<SaveMetadataInfo>, opt isEp
     };
     if Equals(metadata.lifePath, inkLifePath.Corporate) {
       inkImageRef.SetTexturePart(this.m_lifepath, n"LifepathCorpo1");
-      inkTextRef.SetText(this.m_level, "Gameplay-LifePaths-Corporate");
+      inkTextRef.SetText(this.m_lifePathText, "Gameplay-LifePaths-Corporate");
     };
     if Equals(metadata.lifePath, inkLifePath.Nomad) {
       inkImageRef.SetTexturePart(this.m_lifepath, n"LifepathNomad1");
-      inkTextRef.SetText(this.m_level, "Gameplay-LifePaths-Nomad");
+      inkTextRef.SetText(this.m_lifePathText, "Gameplay-LifePaths-Nomad");
     };
     if Equals(metadata.lifePath, inkLifePath.StreetKid) {
       inkImageRef.SetTexturePart(this.m_lifepath, n"LifepathStreetKid1");
-      inkTextRef.SetText(this.m_level, "Gameplay-LifePaths-Streetkid");
+      inkTextRef.SetText(this.m_lifePathText, "Gameplay-LifePaths-Streetkid");
     };
 
     // We don't care about cloud...
