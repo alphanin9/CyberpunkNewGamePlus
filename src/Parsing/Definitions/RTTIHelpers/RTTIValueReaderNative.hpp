@@ -11,6 +11,39 @@ namespace redRTTI::native
 {
 // TODO: Finish noexcept variants for this
 // TODO: Make this not use virtual methods, they are inefficient
+// The game's RawBuffer frees through this allocator slot. The save's decompressed node data is
+// owned by the parser, so DataBuffers that are views into it must never free.
+struct RawBufferAllocatorNoFree
+{
+    virtual void sub_0()
+    {
+        
+    }
+
+    virtual void Free(void* aPtr)
+    {
+        
+    }
+
+    virtual Red::Memory::IAllocator* GetAllocator()
+    {
+        return Red::Memory::RTTIAllocator::Get();
+    }
+
+    std::uint64_t m_unknown{};
+};
+
+// Points a DataBuffer at memory someone else owns. The buffer keeps the non-freeing allocator
+// above, exactly like the packages' own DataBuffers read by NativeReader::ReadDataBuffer.
+inline void SetDataBufferView(Red::DataBuffer& aBuffer, void* aData, std::uint32_t aSize) noexcept
+{
+    auto& rawBuffer = aBuffer.buffer;
+
+    new (rawBuffer.allocator) RawBufferAllocatorNoFree();
+
+    rawBuffer.data = aData;
+    rawBuffer.size = aSize;
+}
 class NativeReader
 {
 protected:
@@ -70,26 +103,6 @@ protected:
     {
         // NOTE: this is necessary because, unlike SDK RawBuffer dtor, game RawBuffer dtor does not check if buf allocator is valid
         // Since we already manage the memory of decompressed save data and we don't use classes after parser gets destructed, it should be fine
-        struct RawBufferAllocatorNoFree
-        {
-            virtual void sub_0()
-            {
-                
-            }
-
-            virtual void Free(void* aPtr)
-            {
-                
-            }
-
-            virtual Red::Memory::IAllocator* GetAllocator()
-            {
-                return Red::Memory::RTTIAllocator::Get();
-            }
-
-            std::uint64_t m_unknown{};
-        };
-
         auto bufPointer = reinterpret_cast<Red::DataBuffer*>(aOut);
 
         const auto bufferSize = aCursor.readUInt();
@@ -99,12 +112,7 @@ protected:
             return;
         }
 
-        auto& rawBuf = bufPointer->buffer;
-
-        new (rawBuf.allocator) RawBufferAllocatorNoFree();
-        
-        rawBuf.data = aCursor.GetCurrentPtr();
-        rawBuf.size = bufferSize;
+        SetDataBufferView(*bufPointer, aCursor.GetCurrentPtr(), bufferSize);
 
         aCursor.offset += bufferSize;
     }

@@ -109,7 +109,7 @@ Two quirks the PoC already documents, both worth carrying forward:
 
 | V2 node | state |
 | --- | --- |
-| `Nodes/StatsSystem` | **Working.** `NodeAccessor` → `ReadPackage(GetClass<game::StatsStateMapStructure>())` → `tsl::hopscotch_map<uint64_t, SavedStatsData*>`. Structurally identical to V1's map, minus all the manual cursor work. |
+| `Nodes/StatsSystem` | **Working** for the 2.31 parallel-arrays format. `NodeAccessor` → `ReadPackage(GetClass<game::StatsStateMapStructure>())` → `tsl::hopscotch_map<uint64_t, SavedStatsData*>`. Structurally identical to V1's map, minus all the manual cursor work. The 2.5 shared-pool format (`valuesOptimized` + `shared*`, save version `>= 0x114`) is implemented only in V1 (`StatsSystemNode::ReadOptimizedStatsData`); port it here — `LoadStream::GetSaveVersion()` is the gate — before retiring V1's StatsSystem. See [item-quality-and-stats-load.md](item-quality-and-stats-load.md) §2.7. |
 | `Nodes/ScriptableSystemsContainer` | Package-reader path, double `ReadHeader` as in the PoC. |
 | `Nodes/Inventory` | **Stub.** `OnRead` opens the `NodeAccessor` and returns. The representation structs (`ItemRepresentation`, `InnerItemDataRepresentation`, `UniqueItemDataRepresentation`, `BlueprintStackableItemDataRepresentation`, `StackedItemDataRepresentation`, `ItemLootData`) are declared; only `InnerItemDataRepresentation` and `ItemLootData` have fields. |
 

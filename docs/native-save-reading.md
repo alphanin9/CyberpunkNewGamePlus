@@ -167,7 +167,9 @@ benefits. Until then, either re-declare it locally or go through a `util::RawVFu
   (`game_StatsSystem_LoadLegacyStatsSystemSave` `0x14252196C`). **We never see this** — the mod
   rejects pre-2.00 saves.
 - The node yields parallel `keys` (`StatsObjectID`) and `values` (`SavedStatsData`) arrays; index
-  them together into a hash map.
+  them together into a hash map. **2.5 caveat** (`saveVersion >= 0x114`): `keys`/`values` are
+  empty and the data lives in shared pools instead — see
+  [item-quality-and-stats-load.md](item-quality-and-stats-load.md) §2.7.
 
 **Already implemented** in `Parsing/New/Nodes/StatsSystem.cpp`, and it is the reference example
 for strategy A. See [item-quality-and-stats-load.md](item-quality-and-stats-load.md) §2 for what
@@ -298,6 +300,7 @@ Both are field-by-field. Node 1 reads the stored wardrobe items; node 2 reads cl
 | --- | --- | --- |
 | StatsSystem | `>= 0xA5` | else legacy `gameStatsSystemSave` |
 | StatsSystem | `< 0xE2` | `FilterDeprecatedVitalsModifiers` fixup |
+| StatsSystem | `>= 0x114` | 2.5 shared-pool format instead of `keys`/`values` |
 | ScriptableSystemsContainer | `< 3` | skip entirely |
 | inventory | `>= 0xF8` | one extra leading field |
 | inventory / itemData | `>= 0xE3`, `>= 0xDD`, `>= 0xBE`, `>= 0x61`, `>= 0x55`, `>= 0x33` | per-field |

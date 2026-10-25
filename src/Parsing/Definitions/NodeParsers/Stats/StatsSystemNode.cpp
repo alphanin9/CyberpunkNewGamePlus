@@ -10,6 +10,9 @@
 
 #include "StatsSystemNode.hpp"
 #include <Parsing/Definitions/Package/PackageReader.hpp>
+#include <Parsing/Definitions/RTTIHelpers/RTTIValueReaderNative.hpp>
+
+#include <iterator>
 
 using namespace Red;
 
@@ -132,11 +135,91 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     // Ugly, but inheritance is fucked on this struct...
     auto asStatsStateMap = reinterpret_cast<game::StatsStateMapStructure*>(handlePtr->GetPtr());
 
+    // Patch 2.5 (save version >= 0x114) empties keys/values and stores per-object stats in
+    // shared pools instead; the game's own StatsSystem::OnGameLoad rebuilds SavedStatsData from
+    // those, and so do we. Older saves keep the parallel arrays path below.
+    if (aNode.saveVersion >= m_optimizedStatsFormatSaveVersion)
+    {
+        ReadOptimizedStatsData(*asStatsStateMap);
+        return;
+    }
+
     // Will this help?
     m_statsMap.reserve(asStatsStateMap->keys.size());
     for (auto i = 0u; i < asStatsStateMap->keys.size(); i++)
     {
         m_statsMap.try_emplace(asStatsStateMap->keys[i].entityHash, &asStatsStateMap->values[i]); 
+    }
+}
+
+void StatsSystemNode::ReadOptimizedStatsData(Red::game::StatsStateMapStructure& aStatsStateMap) noexcept
+{
+    const auto& sharedData = aStatsStateMap.sharedDataBuffer.buffer;
+
+    m_statsMap.reserve(aStatsStateMap.valuesOptimized.size());
+    m_rebuiltStatsData.reserve(aStatsStateMap.valuesOptimized.size());
+
+    for (auto& optimizedEntry : aStatsStateMap.valuesOptimized)
+    {
+        auto handle = Red::MakeScriptedHandle(Red::CName{Red::game::SavedStatsData::NAME});
+
+        if (!handle)
+        {
+            PluginContext::Error("StatsSystemNode: failed to allocate a gameSavedStatsData instance!");
+            continue;
+        }
+
+        auto* savedData = reinterpret_cast<Red::game::SavedStatsData*>(handle.GetPtr());
+
+        Red::DataBuffer* perKindBuffers[] = {&savedData->modifiersBuffer, &savedData->forcedModifiersBuffer,
+                                             &savedData->savedModifierGroupStatTypesBuffer};
+
+        // A slice picks a window of sharedDataBuffer. `combined` packs the window size in its
+        // low 30 bits and which of the three DataBuffers it belongs to in the top two bits
+        // (the game's converter: size = combined & 0x3FFFFFFF, kind = combined >> 30).
+        for (auto sliceIndex : optimizedEntry.bufferSliceIndices)
+        {
+            if (sliceIndex >= aStatsStateMap.sharedBufferSlices.size())
+            {
+                continue;
+            }
+
+            const auto& slice = aStatsStateMap.sharedBufferSlices[sliceIndex];
+
+            const auto bufferKind = slice.combined >> 30;
+            const auto bufferSize = slice.combined & 0x3FFFFFFF;
+
+            if (bufferKind >= std::size(perKindBuffers) || bufferSize == 0 || !sharedData.data ||
+                slice.offset > sharedData.size || bufferSize > sharedData.size - slice.offset)
+            {
+                continue;
+            }
+
+            // The buffers stay views into the parser-owned node data, same as every other
+            // DataBuffer the package reader hands out.
+            redRTTI::native::SetDataBufferView(
+                *perKindBuffers[bufferKind], static_cast<std::byte*>(sharedData.data) + slice.offset, bufferSize);
+        }
+
+        for (auto statIndex : optimizedEntry.inactiveStatsIndices)
+        {
+            if (statIndex >= aStatsStateMap.sharedInactiveStats.size())
+            {
+                continue;
+            }
+
+            savedData->inactiveStats.PushBack(aStatsStateMap.sharedInactiveStats[statIndex]);
+        }
+
+        if (optimizedEntry.recordIDIndex < aStatsStateMap.sharedRecordId.size())
+        {
+            savedData->recordID = aStatsStateMap.sharedRecordId[optimizedEntry.recordIDIndex];
+        }
+
+        savedData->seed = optimizedEntry.seed;
+
+        m_statsMap.try_emplace(optimizedEntry.entityHash, savedData);
+        m_rebuiltStatsData.push_back(std::move(handle));
     }
 }
 

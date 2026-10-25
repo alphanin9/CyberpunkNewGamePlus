@@ -78,8 +78,9 @@ stale temporary. A local copy, a parameter, or `for x in obj.GetList()` (what th
 
 ## Open
 
-- Requests handler `InputDeviceId` at `+0x630`: the game reads `+0x630` through a getter on the handler-side object;
-  not shown to be the exact pointer `StartSession` receives.
+- Requests handler `InputDeviceId`: SharedPunk now reads `+0x6C8` (Windows 2.5's vanilla
+  `StartNewGame` reads it there; 2.3.1 read `+0x630` through a getter on the handler-side
+  object). The Mac 2.5 offset is still unverified.
 - LoadFactMap writes three facts into the global at image base plus `0x8132140` (a `HashMap<uint32_t, CString>` filled
   to its capacity of 161 by the game). The inserts grow the map through its allocator. Not run yet.
 - `src/Parsing/New/` and `TestingDefs.cpp` are not in the Mac target. The encounter-test console commands

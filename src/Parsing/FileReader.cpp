@@ -73,6 +73,11 @@ bool Parser::ParseSavegame(const CString& aSaveName) noexcept
 
     m_flatNodes = cursor.ReadMultipleClasses<modsave::NodeEntry>(cursor.readVlqInt32());
 
+    for (auto& node : m_flatNodes)
+    {
+        node.saveVersion = m_header.saveVersion;
+    }
+
     DecompressFile();
 
     return LoadNodes();

@@ -80,7 +80,10 @@ So: one canonical mapper, and it is only reachable from script.
 Quality persists as a serialized `gameConstantStatModifier` (statType 1171) inside
 `SavedStatsData::modifiersBuffer`, keyed by the item's `StatsObjectID`.
 
-### 2.1 `game::StatsSystem::OnGameLoad` — `0x1405564F4`
+### 2.1 `game::StatsSystem::OnGameLoad` — `0x1405564F4` (2.31)
+
+2.31 addresses. 2.5 moved this to `0x140A96E68` and version-gates the per-entry flow —
+see §2.7 for the `>= 0x114` shared-pool format; everything else here still applies.
 
 Save version `>= 0xA5`: opens the `StatsSystem` node, reads a `gameStatsStateMapStructure`
 (`ReadStatsStateMapStructureHandleFromSave` `0x1414AACE8`), and for each entry:
@@ -180,6 +183,45 @@ narrow encodings and would misparse, but NGP+ rejects those saves outright
 (`MinSupportedGameVersion = 2000` in `src/Filesystem/SaveFS.cpp:80`), so no legacy handling is
 needed. The game's own fixup for them is
 `game_StatsStateMap_RemapLegacySerializedStatTypes` `0x141CB9A00`.
+
+### 2.7 Patch 2.5: the shared-pool stats format (save version >= 0x114)
+
+2.5 moved `StatsSystem::OnGameLoad` to `0x140A96E68` and added a branch: for
+`saveVersion >= 0x114` (2.5 writes `0x115`) it ignores `keys`/`values` — both empty in a 2.5
+save — and rebuilds each `SavedStatsData` from new shared-pool members of
+`gameStatsStateMapStructure` (property registration `sub_140A2D1F0`):
+
+| member | offset | contents |
+| --- | --- | --- |
+| `valuesOptimized` | `0x50` | `DynArray<gameSavedStatsDataOptimized>`, one entry per stats object |
+| `sharedBufferSlices` | `0x60` | `DynArray<gameBufferSlice>` — windows into `sharedDataBuffer` |
+| `sharedInactiveStats` | `0x70` | `DynArray<gamedataStatType>` pool |
+| `sharedRecordId` | `0x80` | `DynArray<TweakDBID>` pool |
+| `sharedDataBuffer` | `0x90` | a single `DataBuffer` holding every buffer's bytes |
+
+`gameSavedStatsDataOptimized` (`0x40`) carries `statModifiers` (`0x00`),
+`bufferSliceIndices` (`DynArray<uint16_t>`, `0x10`), `inactiveStatsIndices`
+(`DynArray<uint16_t>`, `0x20`), `entityHash` (`0x30`), `seed` (`0x38`), `recordIDIndex`
+(`0x3C`) and `idType` (`0x3E`) — the object's key moved into the entry itself.
+
+`gameBufferSlice` is `{ uint32_t offset; uint32_t combined; }`. The converter `sub_14217DA10`
+decodes `combined` as **size = `combined & 0x3FFFFFFF`, buffer kind = `combined >> 30`**
+(0 -> `modifiersBuffer`, 1 -> `forcedModifiersBuffer`, 2 ->
+`savedModifierGroupStatTypesBuffer`). A slice is `sharedDataBuffer`'s data from `offset`,
+`size` bytes long. Each referenced slice *assigns* its buffer kind (the game overwrites, it
+does not concatenate — multiple slices for one kind means last wins), inactive stats are
+gathered by index from `sharedInactiveStats`, and `recordID` comes from
+`sharedRecordId[recordIDIndex]`. The `statModifiers` handle array is copied verbatim, but
+nothing in the buffer path reads it.
+
+The buffer *contents* are unchanged: a slice window parses exactly like the old standalone
+`modifiersBuffer`, so `GetStatModifiersInternal` needed no version branches.
+
+V1 follows this in `modsave::StatsSystemNode::ReadOptimizedStatsData`, gated on the same
+`saveVersion >= 0x114`; older saves keep the parallel-arrays path. The rebuilt `SavedStatsData`
+objects are allocated through the game's RTTI, and their buffers are non-freeing views into
+the parser's decompressed node data — the same lifetime model the package reader already uses
+for its own `DataBuffer`s.
 
 ---
 

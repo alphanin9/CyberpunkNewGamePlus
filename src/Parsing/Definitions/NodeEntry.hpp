@@ -33,6 +33,10 @@ namespace modsave {
 		// It would likely be best to have a unique pointer to a structure
 		// std::vector<std::byte> nodeDataBuffer;
 
+		// Stamped from the save header by the Parser; node readers branch on it the same way
+		// the game's loaders do.
+		std::uint32_t saveVersion = 0;
+
 		// EVIL UGLY CODE AHEAD, WILL LIKELY LEAK MEMORY LIKE CRAZY
 		std::unique_ptr<NodeDataInterface> nodeData;
 
