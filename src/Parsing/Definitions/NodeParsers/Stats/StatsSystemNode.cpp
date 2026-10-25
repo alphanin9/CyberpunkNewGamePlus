@@ -133,7 +133,7 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     }
 
     // Ugly, but inheritance is fucked on this struct...
-    auto asStatsStateMap = reinterpret_cast<game::StatsStateMapStructure*>(handlePtr->GetPtr());
+    auto asStatsStateMap = (game::StatsStateMapStructure*)(handlePtr->GetPtr());
 
     // Patch 2.5 (save version >= 0x114) empties keys/values and stores per-object stats in
     // shared pools instead; the game's own StatsSystem::OnGameLoad rebuilds SavedStatsData from
@@ -145,30 +145,37 @@ void StatsSystemNode::ReadData(FileCursor& aCursor, NodeEntry& aNode) noexcept
     }
 
     // Will this help?
-    m_statsMap.reserve(asStatsStateMap->keys.size());
+    // m_statsMap.reserve((size_t)(asStatsStateMap->keys.size()));
     for (auto i = 0u; i < asStatsStateMap->keys.size(); i++)
     {
-        m_statsMap.try_emplace(asStatsStateMap->keys[i].entityHash, &asStatsStateMap->values[i]); 
+        
+
+        m_statsMap.try_emplace(asStatsStateMap->keys[i].entityHash, MakeUnique<game::SavedStatsData>(asStatsStateMap->values[i])); 
     }
 }
 
 void StatsSystemNode::ReadOptimizedStatsData(game::StatsStateMapStructure& aStatsStateMap) noexcept
 {
+
+    
     const auto& sharedData = aStatsStateMap.sharedDataBuffer.buffer;
+    // m_statsMap.reserve((size_t)(aStatsStateMap.valuesOptimized.size()));
 
-    m_statsMap.reserve(aStatsStateMap.valuesOptimized.size());
-
-    for (auto& optimizedEntry : aStatsStateMap.valuesOptimized)
+    for (auto i = 0u; i < aStatsStateMap.valuesOptimized.size(); i++)
     {
         // Nothing game-side ever touches these - our readers parse the buffers themselves -
         // so they are plain SDK structs rather than game RTTI instances. (Game-created
         // gameSavedStatsData can't be Handle-released on 2.5 - CanBeDestructed wants the
         // async save reader's deferred-buffer token - which is why we don't make them that
         // way. See docs/item-quality-and-stats-load.md 2.7.)
-        auto& savedData = m_rebuiltStatsData.emplace_back();
+        auto& optimizedEntry = aStatsStateMap.valuesOptimized[i];
 
-        DataBuffer* perKindBuffers[] = {&savedData.modifiersBuffer, &savedData.forcedModifiersBuffer,
-                                        &savedData.savedModifierGroupStatTypesBuffer};
+        // I hope this won't cause lifetime issues but it really should not :D
+
+        auto savedData = Red::MakeUnique<game::SavedStatsData>();
+
+        DataBuffer* perKindBuffers[] = {&savedData->modifiersBuffer, &savedData->forcedModifiersBuffer,
+                                        &savedData->savedModifierGroupStatTypesBuffer};
 
         // A slice picks a window of sharedDataBuffer. `combined` packs the window size in its
         // low 30 bits and which of the three DataBuffers it belongs to in the top two bits
@@ -204,17 +211,17 @@ void StatsSystemNode::ReadOptimizedStatsData(game::StatsStateMapStructure& aStat
                 continue;
             }
 
-            savedData.inactiveStats.PushBack(aStatsStateMap.sharedInactiveStats[statIndex]);
+            savedData->inactiveStats.PushBack(aStatsStateMap.sharedInactiveStats[statIndex]);
         }
 
         if (optimizedEntry.recordIDIndex < aStatsStateMap.sharedRecordId.size())
         {
-            savedData.recordID = aStatsStateMap.sharedRecordId[optimizedEntry.recordIDIndex];
+            savedData->recordID = aStatsStateMap.sharedRecordId[optimizedEntry.recordIDIndex];
         }
 
-        savedData.seed = optimizedEntry.seed;
+        savedData->seed = optimizedEntry.seed;
 
-        m_statsMap.try_emplace(optimizedEntry.entityHash, &savedData);
+        m_statsMap.try_emplace(optimizedEntry.entityHash, std::move(savedData));
     }
 }
 
@@ -292,7 +299,7 @@ DynArray<Handle<game::StatModifierData_Deprecated>> StatsSystemNode::GetStatModi
         return {};
     }
     
-    auto savedStatsDataPtr = m_statsMap[aEntityHash];
+    auto& savedStatsDataPtr = m_statsMap.at(aEntityHash);
 
     return GetStatModifiersInternal(&savedStatsDataPtr->modifiersBuffer);
 }
@@ -305,7 +312,7 @@ DynArray<Handle<game::StatModifierData_Deprecated>> StatsSystemNode::GetForcedMo
         return {};
     }
 
-    auto savedStatsDataPtr = m_statsMap[aEntityHash];
+    auto& savedStatsDataPtr = m_statsMap.at(aEntityHash);
     
     return GetStatModifiersInternal(&savedStatsDataPtr->forcedModifiersBuffer);
 }
@@ -317,6 +324,6 @@ DynArray<game::data::StatType> StatsSystemNode::GetDisabledModifiers(std::uint64
         return {};
     }
 
-    return m_statsMap[aEntityHash]->inactiveStats;
+    return m_statsMap.at(aEntityHash)->inactiveStats;
 }
 }
