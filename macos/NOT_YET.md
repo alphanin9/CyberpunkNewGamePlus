@@ -62,8 +62,8 @@ The functions whose macOS registers differ from SharedPunk's prototypes are call
 Loading a save with the plugin on: both hooks install, the natives and the game system register, the save scan and the
 resolve answer as on Windows (end-game saves are skipped by design; a Mac save that finished q104, q110 and q112 qualifies),
 and the progression data of a PC end-game save and of a Mac save are read (level, street cred, perk points, money,
-inventory and stash). Last run 2026-10-26: this xmake build on game 2.5.0 with the macOS loader codeman101/RED4ext-macos, 18 of 18 checks
-(a 2.5 save included).
+inventory and stash). Last run 2026-10-26: this xmake build on game 2.5.0 with RED4ext for macOS 0.2.0 (codeman101/RED4ext-macos) and its
+Codeware, ArchiveXL and TweakXL, 10 of 10 New Game Plus checks (a 2.5 save included).
 
 ## Checked in game (by hand, 2026-10-14)
 
