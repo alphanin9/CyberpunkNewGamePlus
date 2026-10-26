@@ -5,8 +5,8 @@ the end.
 
 ## Rows
 
-Addresses the loader's database does not have yet. The first table's rows go to jackmaxwil/RED4ext.SDK-macos in one pull
-request; with them added locally, the automated run on his loader passes (see the end).
+Addresses the SDK's macOS table does not have. Their 2.5.0 offsets are in `NgpSdkRows.inc`, which the plugin hands to the
+SDK; the table below keeps the 2.3.1 offsets of the first port.
 
 | hash | offset | name |
 |---|---|---|
@@ -62,8 +62,8 @@ The functions whose macOS registers differ from SharedPunk's prototypes are call
 Loading a save with the plugin on: both hooks install, the natives and the game system register, the save scan and the
 resolve answer as on Windows (end-game saves are skipped by design; a Mac save that finished q104, q110 and q112 qualifies),
 and the progression data of a PC end-game save and of a Mac save are read (level, street cred, perk points, money,
-inventory and stash). Last run 2026-10-15: this xmake build on jackmaxwil's loader, with the rows above added to its
-database, 8 of 8 checks.
+inventory and stash). Last run 2026-10-26: this xmake build on game 2.5.0 with the macOS loader codeman101/RED4ext-macos, 18 of 18 checks
+(a 2.5 save included).
 
 ## Checked in game (by hand, 2026-10-14)
 
