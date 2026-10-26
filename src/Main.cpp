@@ -108,8 +108,11 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::v1::PluginHandle aHandle, RED4e
         }
 
         s_ngpLoaded.store(true);
-        // The macOS loader calls Main before the game's RTTI system exists (CRTTISystem::Get() would construct it here and
-        // crash), and calls ngplus_registerNatives itself once the scripts are loaded.
+        // The macOS loader calls Main from its WinMain hook, where the RTTI system can be used, and the game runs the
+        // post-register callbacks after every plugin's Main, like on Windows. ngplus_registerNatives keeps its once flag.
+        Red::TypeInfoRegistrar::RegisterDiscovered();
+        CRTTISystem::Get()->AddPostRegisterCallback(&ngplus_registerNatives);
+        NgpMac::Log("[ngplus] ngplus_registerNatives added as a post-register callback");
         break;
     }
     case RED4ext::v1::EMainReason::Unload:
