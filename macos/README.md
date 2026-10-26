@@ -39,7 +39,7 @@ xmake build
 ```
 
 Needs the Xcode command line tools and xmake. Dependencies come through alphanin9's cp2077-xmake-repo (macosx recipes
-pending, the patch is attached to the pull request): RED4ext.SDK (jackmaxwil/RED4ext.SDK-macos), RedLib, ArchiveXL and TweakXL
+pending, the patch is attached to the pull request): RED4ext.SDK (codeman101/RED4ext.SDK-macos, current upstream API), RedLib, ArchiveXL and TweakXL
 headers, SharedPunk, lz4, hopscotch-map and nlohmann_json. The RedLib, ArchiveXL and TweakXL macOS changes are applied
 by the recipes.
 
@@ -58,7 +58,7 @@ and that no symbol is left for dynamic lookup.
 
 ## How the macOS build differs
 
-- **SDK.** Addresses resolve from the loader's database (jackmaxwil's RED4ext.SDK-macos). A hash the database lacks (or
+- **SDK.** Addresses resolve from the loader's database (the macOS RED4ext.SDK port). A hash the database lacks (or
   has unverified) resolves to 0, `IsAvailable()` is false, and `RawFunc` / `RawPtr` return a stand-in instead of calling or reading address 0.
 - **Game system.** The game creates the GameInstance before the engine stores its framework, so RedLib's system
   registration finds no instance. `NgpGameInstance.cpp` chains onto Codeware's GameInstance constructor hook and adds the
@@ -78,9 +78,4 @@ and that no symbol is left for dynamic lookup.
   stream's virtuals one slot later than Windows (`+0x98` check, `+0x78` open, `+0x80` close).
 - **Calling convention.** SharedPunk's `src/code/Mac/FileAbi.cpp` (`shared::mac`) wraps the game functions whose
   macOS registers differ from its prototypes (results through `x8`, text as a pointer and a length).
-- **IGameSystem.** The build uses the `gameIGameSystem` header in `macos/inc`, where `IsSavingLocked` returns its lock
-  through `x8`. The SDK's Windows signature crashes the game on the first save.
-- **2.5 stats types.** The macOS SDK package predates the SDK's patch 2.5 types, so `macos/inc` carries
-  `game/StatsStateMapStructure.hpp`, `SavedStatsDataOptimized.hpp` and `BufferSlice.hpp` from RED4ext.SDK 5246e659d
-  (#232), unchanged. Drop them when the macOS package has the 2.5 types.
 - **Left out of the Mac target.** `src/Parsing/New/` and `TestingDefs.cpp`. The quest-resource dedupe hook is not installed.
