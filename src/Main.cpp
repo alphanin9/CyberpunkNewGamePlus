@@ -13,6 +13,7 @@
 #include <RED4ext/TweakXL.hpp>
 #include "MacShims.hpp"
 
+#include <RED4ext/Mac/PluginSupport.hpp>
 #include <atomic>
 #endif
 
@@ -55,6 +56,12 @@ RED4EXT_C_EXPORT void RED4EXT_CALL ngplus_registerNatives()
         return;
     }
 
+    NgpMac::Log("[ngplus] ngplus_registerNatives vault self-test: %s", RED4ext::Mac::VaultSelfTest() ? "ok" : "FAILED");
+    // The macOS loader calls this after the game's RTTI registration phase, so RedLib's queued registrations run here.
+    NgpMac::Log("[ngplus] ngplus_registerNatives RedLib queued: %zu register, %zu describe",
+                Red::TypeInfoRegistrar::PendingRegisterCount(), Red::TypeInfoRegistrar::PendingDescribeCount());
+    Red::TypeInfoRegistrar::RunPending();
+
     // The game system is registered once the GameInstance exists (after the scripts load).
     NgpMac::ChainGameInstanceCtor();
 
@@ -75,7 +82,8 @@ RED4EXT_C_EXPORT void RED4EXT_CALL ngplus_registerNatives()
 
     PluginContext::m_rtti = CRTTISystem::Get();
     PluginContext::m_rttiReady = true;
-    NgpMac::Log("[ngplus] ngplus_registerNatives done");
+    NgpMac::Log("[ngplus] ngplus_registerNatives done (RedLib left %zu / %zu)", Red::TypeInfoRegistrar::PendingRegisterCount(),
+                Red::TypeInfoRegistrar::PendingDescribeCount());
 }
 
 RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::v1::PluginHandle aHandle, RED4ext::v1::EMainReason aReason,
