@@ -29,10 +29,10 @@ and mention @codeman101.
 ## What you need to run it
 
 - Cyberpunk 2077 2.5.0, the native macOS build (Steam), on Apple Silicon.
-- The RED4ext loader for macOS, codeman101/RED4ext-macos, started through its launcher. The plugin only installs its
-  hooks in `Main`; the launcher calls `ngplus_registerNatives` once the game has loaded the scripts.
+- The RED4ext loader for macOS 0.2.0 or newer (codeman101/RED4ext-macos), for game 2.5.0. New Game Plus registers
+  through the RTTI post-register callback, as on Windows.
 - ArchiveXL for macOS. The archive is installed at `archive/Mac/mod/NewGamePlus.archive`, which ArchiveXL mounts at startup.
-- TweakXL for macOS. Tweaks stay in the plugin folder and are registered from `ngplus_registerNatives`.
+- TweakXL for macOS. Tweaks stay in the plugin folder and are registered from the post-register callback.
 
 ## Build
 
@@ -57,7 +57,7 @@ and that no symbol is left for dynamic lookup.
 
 - The scripts are compiled into the script cache by the loader setup. On macOS they are not added through RED4ext (`scripts->Add` is skipped).
 - When `archive/Mac/mod/NewGamePlus.archive` is already present, `RegisterArchive` is skipped.
-- Archive and tweak registration run from `ngplus_registerNatives`, not from `Main` at load. RTTI is not ready at load.
+- Archive and tweak registration run from `ngplus_registerNatives`, the RTTI post-register callback.
 
 ## How the macOS build differs
 
@@ -67,9 +67,9 @@ and that no symbol is left for dynamic lookup.
 - **Game system.** The game creates the GameInstance before the engine stores its framework, so RedLib's system
   registration finds no instance. `NgpGameInstance.cpp` chains onto Codeware's GameInstance constructor hook and adds the
   New Game Plus system to the new instance itself.
-- **Natives.** `Main(Load)` only installs the hooks: the macOS loader calls `Main` before the game's RTTI system exists.
-  `ngplus_registerNatives`, called by the loader's launcher after the scripts load, runs RedLib's queued registrations
-  (`TypeInfoRegistrar::RunPending`), then archive and tweak registration, and sets the RTTI pointers. The async pool id is `0x7FF80000`. Serializable class bits are 62 through 54.
+- **Natives.** `Main(Load)` installs the hooks, queues RedLib's registrations and adds `ngplus_registerNatives` as an
+  RTTI post-register callback: the macOS loader calls `Main` once the RTTI system can be used, as on Windows.
+  `ngplus_registerNatives` then does archive and tweak registration and sets the RTTI pointers. The async pool id is `0x7FF80000`. Serializable class bits are 62 through 54.
 - **Hooks.** One attempt through the loader API. The log line says INSTALLED, or SKIPPED when the attach does not take
   (no API, refused, or the offset is not on the allowlist). There is no retry. `OrDie` and `RaiseAssert` log and return.
   They do not execute `int3`. `RawVFunc` adds 8 to the slot on Apple.
