@@ -10,6 +10,10 @@
 
 extern "C"
 {
+// An address hash with no Mac row: logs once and returns a stub that logs its first call and returns 0. The SDK calls it
+// for such a hash (RED4EXT_MAC_UNKNOWN_HASH_HANDLER in MacSdkSupport.cpp).
+uintptr_t ngplus_mac_trap_for_hash(uint32_t aHash);
+
 // Game image base (the executable's Mach-O header). SharedPunk's RawBase calls this on Apple.
 uintptr_t sharedpunk_mac_image_base();
 

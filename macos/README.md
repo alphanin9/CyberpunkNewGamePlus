@@ -14,8 +14,10 @@ registers, and the save scan, the save picker's check and the progression read (
 in automated runs. A New Game Plus run was started, saved and loaded by hand (with the earlier CMake build of the same
 code). Details and what is still missing: `NOT_YET.md`.
 
-Thirteen of the addresses New Game Plus uses are not in the loader's address database yet; a pull request to
-jackmaxwil/RED4ext.SDK-macos adds them. Until then the features that need them log one line and skip.
+The SDK's macOS address table does not have New Game Plus's own addresses: `NgpSdkRows.inc` adds them, and
+`MacSdkSupport.cpp` hands them to the SDK together with the memory vault and id counters the table needs from the plugin
+(`RED4ext/Mac/PluginSupport.hpp`). A hash with no row anywhere resolves to the trap stub in `MacShims.cpp`: the feature
+that needs it logs one line and skips.
 
 ## Game updates
 
