@@ -38,7 +38,7 @@ else
     -- nlohmann_json reads the save's metadata.9.json (macos/NgpMetadata.cpp).
     add_requires("nlohmann_json")
 end
--- On macosx the cp2077-repo packages below resolve to jackmaxwil's macOS SDK and to the patched
+-- On macosx the cp2077-repo packages below resolve to the macOS port of the current RED4ext.SDK and to the patched
 -- RedLib / ArchiveXL / TweakXL headers (see the repo's macosx branches).
 add_requires("red4ext-sdk", "red-lib", "archive-xl", "tweak-xl", "sharedpunk")
 
@@ -66,8 +66,7 @@ target("New Game+")
         remove_files("src/Parsing/New/**.cpp", "src/GameSystem/TestingDefs.cpp")
         -- Mac glue: session description, save metadata, feature gate, GameInstance chain, host shims.
         add_files("macos/*.cpp")
-        -- macos/inc first: the game-system header with the Mac IsSavingLocked ABI (until the SDK has it).
-        add_includedirs("macos", "macos/inc")
+        add_includedirs("macos")
         add_cxxflags("-fexceptions", "-fms-extensions", "-fvisibility-inlines-hidden",
                      "-Wno-deprecated-declarations", "-Wno-microsoft-template", "-Wno-invalid-offsetof",
                      "-ffile-prefix-map=" .. os.projectdir() .. "=new_game_plus", { force = true })

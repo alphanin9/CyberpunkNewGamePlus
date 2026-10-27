@@ -13,6 +13,7 @@
 #include <RED4ext/TweakXL.hpp>
 #include "MacShims.hpp"
 
+#include <RED4ext/Mac/PluginSupport.hpp>
 #include <atomic>
 #endif
 
@@ -54,6 +55,8 @@ RED4EXT_C_EXPORT void RED4EXT_CALL ngplus_registerNatives()
         NgpMac::Log("[ngplus] ngplus_registerNatives: no RTTI system yet");
         return;
     }
+
+    NgpMac::Log("[ngplus] ngplus_registerNatives vault self-test: %s", RED4ext::Mac::VaultSelfTest() ? "ok" : "FAILED");
 
     // The game system is registered once the GameInstance exists (after the scripts load).
     NgpMac::ChainGameInstanceCtor();
@@ -100,19 +103,11 @@ RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::v1::PluginHandle aHandle, RED4e
         }
 
         s_ngpLoaded.store(true);
-        // The loader has no NATREG step: the game itself runs the CRTTISystem post-register callbacks after every plugin's
-        // Main (Codeware has installed its hooks in its Main by then). ngplus_registerNatives keeps its once flag.
-        if (auto* rtti = RED4ext::CRTTISystem::Get())
-        {
-            // Public loader: the game runs these after every plugin's Main, like on Windows.
-            Red::TypeInfoRegistrar::RegisterDiscovered();
-            rtti->AddPostRegisterCallback(&ngplus_registerNatives);
-            NgpMac::Log("[ngplus] ngplus_registerNatives added as a post-register callback");
-        }
-        else
-        {
-            NgpMac::Log("[ngplus] no RTTI system in Main(Load): ngplus_registerNatives is left to the loader");
-        }
+        // The macOS loader calls Main from its WinMain hook, where the RTTI system can be used, and the game runs the
+        // post-register callbacks after every plugin's Main, like on Windows. ngplus_registerNatives keeps its once flag.
+        Red::TypeInfoRegistrar::RegisterDiscovered();
+        CRTTISystem::Get()->AddPostRegisterCallback(&ngplus_registerNatives);
+        NgpMac::Log("[ngplus] ngplus_registerNatives added as a post-register callback");
         break;
     }
     case RED4ext::v1::EMainReason::Unload:
@@ -141,12 +136,13 @@ RED4EXT_C_EXPORT void RED4EXT_CALL Query(RED4ext::v1::PluginInfo* aInfo)
                                           static_cast<std::uint8_t>(ModVersion.patch()),
                                           RED4EXT_V1_SEMVER_PRERELEASE_TYPE_NONE, 0);
     aInfo->runtime = RED4EXT_V1_RUNTIME_VERSION_INDEPENDENT;
-    aInfo->sdk = RED4EXT_V1_SDK_VERSION_CURRENT;
+    // The macOS RED4ext loader accepts API version 0 only; the v1 plugin info is compatible with it.
+    aInfo->sdk = RED4EXT_V1_SDK_VERSION_1_0_0_COMPAT_0_5_0;
 }
 
 RED4EXT_C_EXPORT uint32_t RED4EXT_CALL Supports()
 {
-    return RED4EXT_API_VERSION_1;
+    return RED4EXT_API_VERSION_1_COMPAT_0;
 }
 #else
 RED4EXT_C_EXPORT bool RED4EXT_CALL Main(RED4ext::v1::PluginHandle aHandle, RED4ext::v1::EMainReason aReason, const RED4ext::v1::Sdk* aSdk)
